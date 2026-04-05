@@ -1,0 +1,89 @@
+/*
+ * Title: globals.css
+ * Tech Stack: Tailwind CSS 3.4, CSS Custom Properties
+ * Description: Global styles, Tailwind directives, and design token definitions.
+ * Important Details: Color palette from ColorHunt (#EFECE3, #8FABD4, #4A70A9, #000000).
+ *   Dark theme is default. Light theme activated via data-theme="light" on <html>.
+ *   Uses Play for display, Source Serif 4 for body, JetBrains Mono for code.
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer base {
+
+  /* ---- DARK THEME (default) ---- */
+  :root,
+  [data-theme="dark"] {
+    --color-bg: #111111;
+    --color-surface: #161616;
+    --color-surface-2: #1c1c1c;
+    --color-surface-3: #222222;
+    --color-border: #2a2a2a;
+    --color-border-hover: #3a3a3a;
+    --color-text-1: #e6e2dc;
+    --color-text-2: #a8a29e;
+    --color-text-3: #6b6560;
+    --color-text-4: #44403c;
+    --color-accent: #8FABD4;
+    --color-accent-dim: #4A70A9;
+    --color-mark: #4A70A9;
+    --color-error: #9A4040;
+  }
+
+  /* ---- LIGHT THEME ---- */
+  [data-theme="light"] {
+    --color-bg: #EFECE3;
+    --color-surface: #E8E4DA;
+    --color-surface-2: #DFDBCF;
+    --color-surface-3: #F5F3EC;
+    --color-border: #CCC8BC;
+    --color-border-hover: #B0ACA0;
+    --color-text-1: #000000;
+    --color-text-2: #333333;
+    --color-text-3: #6B6660;
+    --color-text-4: #9A958E;
+    --color-accent: #4A70A9;
+    --color-accent-dim: #3A5A8A;
+    --color-mark: #4A70A9;
+    --color-error: #9A4040;
+  }
+
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: "Play", sans-serif;
+    background-color: var(--color-bg);
+    color: var(--color-text-1);
+  }
+
+  /* Prevent text selection during window drag */
+  [data-tauri-drag-region] {
+    -webkit-app-region: drag;
+  }
+
+  /* Scrollbar styling for dark theme */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-border-hover);
+  }
+}
