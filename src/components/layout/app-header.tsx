@@ -20,6 +20,8 @@ export function AppHeader() {
 
       <div className="flex items-center gap-2">
         <button
+          type="button"
+          aria-label="Open search (Ctrl+K)"
           className="px-3 py-1 text-xs font-mono text-text-4 bg-surface-2 border border-border
                      hover:border-border-hover transition-colors"
           onClick={() => {
@@ -27,7 +29,7 @@ export function AppHeader() {
           }}
         >
           Search...
-          <kbd className="ml-2 text-text-4">Ctrl+K</kbd>
+          <kbd className="ml-2 text-text-4" aria-hidden="true">Ctrl+K</kbd>
         </button>
       </div>
     </header>

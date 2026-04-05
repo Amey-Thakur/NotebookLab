@@ -26,7 +26,7 @@ export function AppShell({ children }: AppShellProps) {
       <div className="flex flex-1 overflow-hidden">
         <AppSidebar />
 
-        <main className="flex-1 overflow-auto bg-surface">
+        <main className="flex-1 overflow-auto bg-surface" aria-label="Content">
           {children}
         </main>
       </div>

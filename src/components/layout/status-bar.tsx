@@ -8,9 +8,14 @@
 
 export function StatusBar() {
   return (
-    <footer className="flex items-center justify-between h-6 px-4 border-t border-border bg-bg">
+    <footer
+      className="flex items-center justify-between h-6 px-4 border-t border-border bg-bg"
+      role="status"
+      aria-live="polite"
+      aria-label="Application status"
+    >
       <div className="flex items-center gap-2">
-        <span className="inline-block w-1.5 h-1.5 rounded-full bg-mark" />
+        <span className="inline-block w-1.5 h-1.5 rounded-full bg-mark" aria-hidden="true" />
         <span className="font-mono text-[9px] text-text-4">
           No model loaded
         </span>

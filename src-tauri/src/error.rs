@@ -43,13 +43,30 @@ pub enum AppError {
 }
 
 
-/* Tauri commands require errors to be serializable as strings */
+/* Serialize user-safe messages to the frontend, log full detail on backend */
 impl Serialize for AppError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
-        serializer.serialize_str(&self.to_string())
+        /* Expected errors logged at debug, unexpected at error level */
+        match self {
+            Self::NotFound(_) | Self::InvalidInput(_) => tracing::debug!("{self}"),
+            _ => tracing::error!("{self:?}"),
+        }
+
+        let msg = match self {
+            Self::NotFound(s) => s.as_str(),
+            Self::InvalidInput(s) => s.as_str(),
+            Self::Provider(s) => s.as_str(),
+            Self::Database(_) => "A database error occurred",
+            Self::Http(_) => "A network error occurred",
+            Self::Io(_) => "A file system error occurred",
+            Self::Sidecar(s) => s.as_str(),
+            Self::Serialization(_) | Self::Internal(_) => "An internal error occurred",
+        };
+
+        serializer.serialize_str(msg)
     }
 }
 

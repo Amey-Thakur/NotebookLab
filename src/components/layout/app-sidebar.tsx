@@ -8,15 +8,17 @@
 
 import { NavLink } from "react-router-dom";
 
+import { ROUTES } from "@/lib/constants";
+
 
 const NAV_ITEMS = [
-  { path: "/notebooks", label: "Notebooks" },
-  { path: "/search", label: "Search" },
-  { path: "/chat", label: "Chat" },
-  { path: "/thinking-partner", label: "Think" },
-  { path: "/podcasts", label: "Podcasts" },
-  { path: "/models", label: "Models" },
-  { path: "/settings", label: "Settings" },
+  { path: ROUTES.NOTEBOOKS, label: "Notebooks" },
+  { path: ROUTES.SEARCH, label: "Search" },
+  { path: ROUTES.CHAT, label: "Chat" },
+  { path: ROUTES.THINKING_PARTNER, label: "Think" },
+  { path: ROUTES.PODCASTS, label: "Podcasts" },
+  { path: ROUTES.MODELS, label: "Models" },
+  { path: ROUTES.SETTINGS, label: "Settings" },
 ] as const;
 
 
@@ -33,7 +35,7 @@ export function AppSidebar() {
             className={({ isActive }) =>
               `block px-2 py-1 text-sm rounded-sm transition-colors ${
                 isActive
-                  ? "bg-accent-dim text-bg font-semibold"
+                  ? "bg-accent-dim text-text-1 font-semibold"
                   : "text-text-3 hover:text-text-1"
               }`
             }
