@@ -21,8 +21,14 @@ use state::AppState;
 /// Build and run the Tauri application.
 /// Called from main.rs on desktop, or from a test harness.
 pub fn run() {
+    let log_filter = if cfg!(debug_assertions) {
+        "notebooklab=debug,tauri=info"
+    } else {
+        "notebooklab=info,tauri=warn"
+    };
+
     tracing_subscriber::fmt()
-        .with_env_filter("notebooklab=debug,tauri=info")
+        .with_env_filter(log_filter)
         .init();
 
     tracing::info!("Starting NotebookLab v{}", env!("CARGO_PKG_VERSION"));
@@ -44,5 +50,8 @@ pub fn run() {
             commands::system_commands::health_check,
         ])
         .run(tauri::generate_context!())
-        .expect("Failed to run NotebookLab");
+        .unwrap_or_else(|e| {
+            tracing::error!("Failed to run NotebookLab: {e}");
+            eprintln!("Fatal error: {e}");
+        });
 }
