@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+target/
+
+# Tauri sidecar binaries (fetched by script, not committed)
+src-tauri/binaries/*.exe
+src-tauri/binaries/llama-server-*
+!src-tauri/binaries/README.md
+
+# ONNX models (large files, downloaded by script)
+src-tauri/resources/models/embedding/*.onnx
+!src-tauri/resources/models/embedding/README.md
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+
+# Tauri build artifacts
+src-tauri/target/
+src-tauri/WixTools/
+src-tauri/gen/
+
+# Planning artifacts (not production code)
+*.pdf

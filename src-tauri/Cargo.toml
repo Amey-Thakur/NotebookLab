@@ -1,0 +1,64 @@
+# Title: Cargo.toml
+# Tech Stack: Rust, Tauri v2, SQLite, ONNX Runtime
+# Description: Rust package manifest for the Tauri backend.
+# Important Details: Features are split so optional heavy dependencies (ort for ONNX,
+#   reqwest for model downloads) can be conditionally compiled.
+
+[package]
+name = "notebooklab"
+version = "0.1.0"
+description = "Your thinking partner, on your machine."
+authors = ["Amey Thakur", "Archit Konde"]
+edition = "2021"
+rust-version = "1.77"
+
+[lib]
+name = "notebooklab_lib"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# Tauri core
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-shell = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Database
+rusqlite = { version = "0.32", features = ["bundled", "vtab"] }
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Error handling
+thiserror = "2"
+anyhow = "1"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# UUID generation for primary keys
+uuid = { version = "1", features = ["v7"] }
+
+# HTTP client for model downloads and provider API calls
+reqwest = { version = "0.12", features = ["json", "stream"] }
+
+# Date and time
+chrono = { version = "0.4", features = ["serde"] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+panic = "abort"
