@@ -34,7 +34,7 @@ pub fn run() {
     tracing::info!("Starting NotebookLab v{}", env!("CARGO_PKG_VERSION"));
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_shell::init())
+        /* Shell plugin deferred until sidecar (llama.cpp) is implemented */
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .setup(|app| {
@@ -48,6 +48,17 @@ pub fn run() {
             commands::system_commands::get_app_version,
             commands::system_commands::get_data_directory,
             commands::system_commands::health_check,
+            commands::notebook_commands::list_notebooks,
+            commands::notebook_commands::get_notebook,
+            commands::notebook_commands::create_notebook,
+            commands::notebook_commands::update_notebook,
+            commands::notebook_commands::delete_notebook,
+            commands::note_commands::list_notes,
+            commands::note_commands::get_note,
+            commands::note_commands::create_note,
+            commands::note_commands::update_note,
+            commands::note_commands::delete_note,
+            commands::note_commands::search_notes,
         ])
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {
