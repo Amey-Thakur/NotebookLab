@@ -11,12 +11,15 @@ import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
 
 
 type Theme = "light" | "dark" | "system";
+
+const VALID_THEMES: Theme[] = ["light", "dark", "system"];
 
 interface ThemeContext {
   theme: Theme;
@@ -40,18 +43,38 @@ function getSystemTheme(): "light" | "dark" {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return (stored as Theme) || "dark";
+    return VALID_THEMES.includes(stored as Theme) ? (stored as Theme) : "dark";
   });
 
-  const resolvedTheme = theme === "system" ? getSystemTheme() : theme;
+  /* Track OS preference only when user has selected "system" mode */
+  const [systemTheme, setSystemTheme] = useState(getSystemTheme);
+
+  useEffect(() => {
+    if (theme !== "system") return;
+    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = () => setSystemTheme(mql.matches ? "dark" : "light");
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, [theme]);
+
+  const resolvedTheme = theme === "system" ? systemTheme : theme;
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, theme);
+  }, [theme]);
+
+  useEffect(() => {
     document.documentElement.setAttribute("data-theme", resolvedTheme);
-  }, [theme, resolvedTheme]);
+  }, [resolvedTheme]);
+
+  /* Memoize to prevent unnecessary re-renders of consumers */
+  const value = useMemo(
+    () => ({ theme, setTheme, resolvedTheme }),
+    [theme, resolvedTheme],
+  );
 
   return (
-    <ThemeCtx.Provider value={{ theme, setTheme, resolvedTheme }}>
+    <ThemeCtx.Provider value={value}>
       {children}
     </ThemeCtx.Provider>
   );
