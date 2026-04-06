@@ -122,7 +122,7 @@ fn validate_provider_url(url: &str, is_local: bool) -> AppResult<()> {
     if is_local {
         /* Local providers must target loopback only */
         let allowed = ["127.0.0.1", "localhost", "::1", "[::1]"];
-        if !allowed.iter().any(|a| host == *a) {
+        if !allowed.contains(&host) {
             return Err(AppError::InvalidInput(
                 "Local providers must use 127.0.0.1 or localhost".into(),
             ));

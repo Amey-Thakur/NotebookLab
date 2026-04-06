@@ -83,7 +83,7 @@ pub fn add_message(
         params![id],
         Message::from_row,
     )
-    .map_err(|e| AppError::Database(e))
+    .map_err(AppError::Database)
 }
 
 
