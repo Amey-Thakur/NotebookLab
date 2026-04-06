@@ -15,30 +15,7 @@ import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS } from "@/lib/constants";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { formatBytes } from "@/lib/utils";
-import type { Notebook } from "../api/notebook-api";
-
-
-interface Document {
-  id: string;
-  notebook_id: string;
-  title: string;
-  file_path: string;
-  file_type: string;
-  file_hash: string;
-  file_size: number;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Note {
-  id: string;
-  notebook_id: string;
-  title: string;
-  content: string;
-  created_at: string;
-  updated_at: string;
-}
+import type { Notebook, Document, Note } from "@/types/models";
 
 
 export function NotebookDetailPage() {

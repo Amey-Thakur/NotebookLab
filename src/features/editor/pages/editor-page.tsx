@@ -15,17 +15,8 @@ import { tauriInvoke } from "@/services/tauri-client";
 import { debounce } from "@/lib/utils";
 import { EDITOR_AUTOSAVE_MS } from "@/lib/constants";
 
+import type { Note } from "@/types/models";
 import { MilkdownEditor } from "../components/milkdown-editor";
-
-
-interface Note {
-  id: string;
-  notebook_id: string;
-  title: string;
-  content: string;
-  created_at: string;
-  updated_at: string;
-}
 
 
 export function EditorPage() {

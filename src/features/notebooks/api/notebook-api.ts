@@ -8,16 +8,9 @@
  */
 
 import { tauriInvoke } from "@/services/tauri-client";
+import type { Notebook } from "@/types/models";
 
-
-export interface Notebook {
-  id: string;
-  name: string;
-  description: string;
-  color: string;
-  created_at: string;
-  updated_at: string;
-}
+export type { Notebook };
 
 export interface CreateNotebookInput {
   name: string;
