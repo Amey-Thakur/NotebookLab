@@ -69,9 +69,16 @@ impl AppState {
     }
 
     fn run_migrations(conn: &Connection) -> Result<(), Box<dyn std::error::Error>> {
-        let migration_sql = include_str!("../resources/migrations/001_initial_schema.sql");
-        conn.execute_batch(migration_sql)?;
-        tracing::info!("Database migrations applied");
+        let migrations = [
+            include_str!("../resources/migrations/001_initial_schema.sql"),
+            include_str!("../resources/migrations/002_chat_tables.sql"),
+        ];
+
+        for sql in &migrations {
+            conn.execute_batch(sql)?;
+        }
+
+        tracing::info!("Database migrations applied ({} files)", migrations.len());
         Ok(())
     }
 }
