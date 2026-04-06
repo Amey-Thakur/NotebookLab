@@ -11,15 +11,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
-
-
-interface ProviderInfo {
-  index: number;
-  name: string;
-  is_local: boolean;
-  is_available: boolean;
-  is_active: boolean;
-}
+import type { ProviderInfo } from "@/types/models";
 
 
 export function ModelManagerPage() {

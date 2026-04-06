@@ -14,20 +14,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS } from "@/lib/constants";
 import { useNotebookStore } from "@/stores/notebook-store";
-
-
-interface Message {
-  id: string;
-  conversation_id: string;
-  role: string;
-  content: string;
-  created_at: string;
-}
-
-interface ChatResponse {
-  message_id: string;
-  content: string;
-}
+import type { Message, ChatResponse } from "@/types/models";
 
 
 export function ChatPage() {
