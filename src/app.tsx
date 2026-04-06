@@ -12,6 +12,7 @@ import { ROUTES } from "./lib/constants";
 import { AppShell } from "./components/layout/app-shell";
 import { NotebooksPage } from "./features/notebooks/pages/notebooks-page";
 import { EditorPage } from "./features/editor/pages/editor-page";
+import { SearchPage } from "./features/search/pages/search-page";
 
 
 export function App() {
@@ -22,7 +23,7 @@ export function App() {
         <Route path={ROUTES.NOTEBOOKS} element={<NotebooksPage />} />
         <Route path={ROUTES.NOTEBOOK_DETAIL} element={<PlaceholderPage title="Notebook Detail" />} />
         <Route path={ROUTES.EDITOR} element={<EditorPage />} />
-        <Route path={ROUTES.SEARCH} element={<PlaceholderPage title="Search" />} />
+        <Route path={ROUTES.SEARCH} element={<SearchPage />} />
         <Route path={ROUTES.CHAT} element={<PlaceholderPage title="Chat" />} />
         <Route path={ROUTES.THINKING_PARTNER} element={<PlaceholderPage title="Thinking Partner" />} />
         <Route path={ROUTES.PODCASTS} element={<PlaceholderPage title="Podcasts" />} />

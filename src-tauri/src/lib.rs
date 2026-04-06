@@ -71,6 +71,7 @@ pub fn run() {
             commands::chat_commands::list_conversations,
             commands::chat_commands::get_chat_messages,
             commands::chat_commands::delete_conversation,
+            commands::search_commands::search,
         ])
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {
