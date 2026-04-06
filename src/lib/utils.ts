@@ -35,7 +35,8 @@ export function formatBytes(bytes: number, decimals = 1): string {
 /**
  * Debounce a function call by the specified delay in milliseconds.
  */
-export function debounce<T extends (...args: unknown[]) => void>(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function debounce<T extends (...args: any[]) => void>(
   fn: T,
   delay: number,
 ): (...args: Parameters<T>) => void {

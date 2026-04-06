@@ -3,13 +3,15 @@
  * Tech Stack: React 19, React Router v7
  * Description: Root application component. Renders the app shell layout and routes.
  * Important Details: The app shell (sidebar + header + content area) persists across
- *   navigation. Routes use constants from lib/constants.ts to avoid path drift.
+ *   navigation. Real pages replace placeholders as features are built.
  */
 
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import { ROUTES } from "./lib/constants";
 import { AppShell } from "./components/layout/app-shell";
+import { NotebooksPage } from "./features/notebooks/pages/notebooks-page";
+import { EditorPage } from "./features/editor/pages/editor-page";
 
 
 export function App() {
@@ -17,9 +19,9 @@ export function App() {
     <AppShell>
       <Routes>
         <Route path="/" element={<Navigate to={ROUTES.NOTEBOOKS} replace />} />
-        <Route path={ROUTES.NOTEBOOKS} element={<PlaceholderPage title="Notebooks" />} />
+        <Route path={ROUTES.NOTEBOOKS} element={<NotebooksPage />} />
         <Route path={ROUTES.NOTEBOOK_DETAIL} element={<PlaceholderPage title="Notebook Detail" />} />
-        <Route path={ROUTES.EDITOR} element={<PlaceholderPage title="Editor" />} />
+        <Route path={ROUTES.EDITOR} element={<EditorPage />} />
         <Route path={ROUTES.SEARCH} element={<PlaceholderPage title="Search" />} />
         <Route path={ROUTES.CHAT} element={<PlaceholderPage title="Chat" />} />
         <Route path={ROUTES.THINKING_PARTNER} element={<PlaceholderPage title="Thinking Partner" />} />
@@ -33,7 +35,6 @@ export function App() {
 }
 
 
-/* Temporary placeholder until real pages are implemented */
 function PlaceholderPage({ title }: { title: string }) {
   return (
     <div className="flex items-center justify-center h-full text-text-3">
