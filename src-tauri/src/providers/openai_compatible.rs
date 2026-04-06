@@ -14,7 +14,7 @@ use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 
 use super::traits::{
-    ChatMessage, ChatRequest, ChatResponse, LlmProvider, MessageRole, ProviderError, TokenUsage,
+    ChatRequest, ChatResponse, LlmProvider, MessageRole, ProviderError, TokenUsage,
 };
 
 
