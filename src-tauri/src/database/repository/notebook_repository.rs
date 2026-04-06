@@ -35,16 +35,7 @@ pub fn get_by_id(conn: &Connection, id: &str) -> AppResult<Notebook> {
         "SELECT id, name, description, color, created_at, updated_at
          FROM notebooks WHERE id = ?1",
         params![id],
-        |row| {
-            Ok(Notebook {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                description: row.get(2)?,
-                color: row.get(3)?,
-                created_at: row.get(4)?,
-                updated_at: row.get(5)?,
-            })
-        },
+        Notebook::from_row,
     )
     .map_err(|e| match e {
         rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Notebook not found: {id}")),
@@ -60,16 +51,7 @@ pub fn list_all(conn: &Connection) -> AppResult<Vec<Notebook>> {
     )?;
 
     let notebooks = stmt
-        .query_map([], |row| {
-            Ok(Notebook {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                description: row.get(2)?,
-                color: row.get(3)?,
-                created_at: row.get(4)?,
-                updated_at: row.get(5)?,
-            })
-        })?
+        .query_map([], Notebook::from_row)?
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(notebooks)

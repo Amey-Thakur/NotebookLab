@@ -8,6 +8,7 @@
  *   heading context) for citation reconstruction.
  */
 
+use rusqlite::Row;
 use serde::{Deserialize, Serialize};
 
 
@@ -21,6 +22,21 @@ pub struct Chunk {
     pub heading_context: String,
     pub token_count: i32,
     pub created_at: String,
+}
+
+impl Chunk {
+    pub fn from_row(row: &Row) -> rusqlite::Result<Self> {
+        Ok(Self {
+            id: row.get(0)?,
+            document_id: row.get(1)?,
+            content: row.get(2)?,
+            position: row.get(3)?,
+            page_number: row.get(4)?,
+            heading_context: row.get(5)?,
+            token_count: row.get(6)?,
+            created_at: row.get(7)?,
+        })
+    }
 }
 
 

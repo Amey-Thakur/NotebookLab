@@ -70,18 +70,7 @@ pub fn get_by_id(conn: &Connection, id: &str) -> AppResult<Chunk> {
         "SELECT id, document_id, content, position, page_number, heading_context, token_count, created_at
          FROM chunks WHERE id = ?1",
         params![id],
-        |row| {
-            Ok(Chunk {
-                id: row.get(0)?,
-                document_id: row.get(1)?,
-                content: row.get(2)?,
-                position: row.get(3)?,
-                page_number: row.get(4)?,
-                heading_context: row.get(5)?,
-                token_count: row.get(6)?,
-                created_at: row.get(7)?,
-            })
-        },
+        Chunk::from_row,
     )
     .map_err(|e| match e {
         rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Chunk not found: {id}")),
