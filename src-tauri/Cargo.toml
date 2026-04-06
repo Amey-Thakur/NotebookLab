@@ -51,6 +51,12 @@ chrono = { version = "0.4", features = ["serde"] }
 # File hashing for document deduplication
 sha2 = "0.10"
 
+# PDF text extraction
+pdf-extract = "0.7"
+
+# Local REST API server for automation
+tiny_http = "0.12"
+
 [features]
 default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]

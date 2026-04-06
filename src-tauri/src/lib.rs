@@ -7,6 +7,7 @@
  *   Commands are registered via invoke_handler(). Plugins extend Tauri's capabilities.
  */
 
+mod api;
 mod commands;
 mod database;
 mod error;
@@ -40,6 +41,13 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .setup(|app| {
             let app_state = AppState::initialize(app.handle())?;
+
+            /* Start the local REST API server with its own read-only DB connection */
+            let data_dir = app.path().app_data_dir()
+                .map_err(|e| format!("Failed to resolve data dir: {e}"))?;
+            let db_path = data_dir.join("notebooklab.db");
+            api::server::start_api_server(db_path);
+
             app.manage(app_state);
 
             tracing::info!("Application state initialized");

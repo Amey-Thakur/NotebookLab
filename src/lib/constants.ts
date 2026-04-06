@@ -14,6 +14,7 @@ export const ROUTES = {
   SEARCH: "/search",
   CHAT: "/chat",
   THINKING_PARTNER: "/thinking-partner",
+  TRANSFORMS: "/transforms",
   PODCASTS: "/podcasts",
   MODELS: "/models",
   SETTINGS: "/settings",
@@ -39,6 +40,7 @@ export const SUPPORTED_FILE_TYPES = [
   ".text",
   ".md",
   ".markdown",
+  ".pdf",
 ] as const;
 
 
