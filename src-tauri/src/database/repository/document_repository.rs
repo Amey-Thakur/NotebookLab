@@ -32,21 +32,7 @@ pub fn get_by_id(conn: &Connection, id: &str) -> AppResult<Document> {
         "SELECT id, notebook_id, title, file_path, file_type, file_hash, file_size, status, created_at, updated_at
          FROM documents WHERE id = ?1",
         params![id],
-        |row| {
-            let status_str: String = row.get(7)?;
-            Ok(Document {
-                id: row.get(0)?,
-                notebook_id: row.get(1)?,
-                title: row.get(2)?,
-                file_path: row.get(3)?,
-                file_type: row.get(4)?,
-                file_hash: row.get(5)?,
-                file_size: row.get(6)?,
-                status: DocumentStatus::from_str(&status_str),
-                created_at: row.get(8)?,
-                updated_at: row.get(9)?,
-            })
-        },
+        Document::from_row,
     )
     .map_err(|e| match e {
         rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Document not found: {id}")),
@@ -116,21 +102,7 @@ pub fn find_by_hash(conn: &Connection, notebook_id: &str, file_hash: &str) -> Ap
         "SELECT id, notebook_id, title, file_path, file_type, file_hash, file_size, status, created_at, updated_at
          FROM documents WHERE notebook_id = ?1 AND file_hash = ?2",
         params![notebook_id, file_hash],
-        |row| {
-            let status_str: String = row.get(7)?;
-            Ok(Document {
-                id: row.get(0)?,
-                notebook_id: row.get(1)?,
-                title: row.get(2)?,
-                file_path: row.get(3)?,
-                file_type: row.get(4)?,
-                file_hash: row.get(5)?,
-                file_size: row.get(6)?,
-                status: DocumentStatus::from_str(&status_str),
-                created_at: row.get(8)?,
-                updated_at: row.get(9)?,
-            })
-        },
+        Document::from_row,
     );
 
     match result {

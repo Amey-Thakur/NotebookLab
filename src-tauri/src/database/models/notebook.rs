@@ -7,6 +7,7 @@
  *   All timestamps are ISO 8601 UTC strings stored in SQLite TEXT columns.
  */
 
+use rusqlite::Row;
 use serde::{Deserialize, Serialize};
 
 
@@ -18,6 +19,19 @@ pub struct Notebook {
     pub color: String,
     pub created_at: String,
     pub updated_at: String,
+}
+
+impl Notebook {
+    pub fn from_row(row: &Row) -> rusqlite::Result<Self> {
+        Ok(Self {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            description: row.get(2)?,
+            color: row.get(3)?,
+            created_at: row.get(4)?,
+            updated_at: row.get(5)?,
+        })
+    }
 }
 
 

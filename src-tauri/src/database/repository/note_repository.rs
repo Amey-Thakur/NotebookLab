@@ -34,16 +34,7 @@ pub fn get_by_id(conn: &Connection, id: &str) -> AppResult<Note> {
         "SELECT id, notebook_id, title, content, created_at, updated_at
          FROM notes WHERE id = ?1",
         params![id],
-        |row| {
-            Ok(Note {
-                id: row.get(0)?,
-                notebook_id: row.get(1)?,
-                title: row.get(2)?,
-                content: row.get(3)?,
-                created_at: row.get(4)?,
-                updated_at: row.get(5)?,
-            })
-        },
+        Note::from_row,
     )
     .map_err(|e| match e {
         rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Note not found: {id}")),
