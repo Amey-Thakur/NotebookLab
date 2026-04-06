@@ -47,18 +47,7 @@ pub fn get_by_document(conn: &Connection, document_id: &str) -> AppResult<Vec<Ch
     )?;
 
     let chunks = stmt
-        .query_map(params![document_id], |row| {
-            Ok(Chunk {
-                id: row.get(0)?,
-                document_id: row.get(1)?,
-                content: row.get(2)?,
-                position: row.get(3)?,
-                page_number: row.get(4)?,
-                heading_context: row.get(5)?,
-                token_count: row.get(6)?,
-                created_at: row.get(7)?,
-            })
-        })?
+        .query_map(params![document_id], Chunk::from_row)?
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(chunks)

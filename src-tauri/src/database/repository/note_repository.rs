@@ -50,16 +50,7 @@ pub fn list_by_notebook(conn: &Connection, notebook_id: &str) -> AppResult<Vec<N
     )?;
 
     let notes = stmt
-        .query_map(params![notebook_id], |row| {
-            Ok(Note {
-                id: row.get(0)?,
-                notebook_id: row.get(1)?,
-                title: row.get(2)?,
-                content: row.get(3)?,
-                created_at: row.get(4)?,
-                updated_at: row.get(5)?,
-            })
-        })?
+        .query_map(params![notebook_id], Note::from_row)?
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(notes)
@@ -106,16 +97,7 @@ pub fn search_by_title(conn: &Connection, notebook_id: &str, query: &str) -> App
     )?;
 
     let notes = stmt
-        .query_map(params![notebook_id, pattern], |row| {
-            Ok(Note {
-                id: row.get(0)?,
-                notebook_id: row.get(1)?,
-                title: row.get(2)?,
-                content: row.get(3)?,
-                created_at: row.get(4)?,
-                updated_at: row.get(5)?,
-            })
-        })?
+        .query_map(params![notebook_id, pattern], Note::from_row)?
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(notes)
