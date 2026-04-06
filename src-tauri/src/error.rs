@@ -72,3 +72,10 @@ impl Serialize for AppError {
 
 
 pub type AppResult<T> = Result<T, AppError>;
+
+
+impl From<crate::providers::ProviderError> for AppError {
+    fn from(err: crate::providers::ProviderError) -> Self {
+        Self::Provider(err.to_string())
+    }
+}

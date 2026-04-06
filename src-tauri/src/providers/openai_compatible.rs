@@ -144,7 +144,8 @@ impl LlmProvider for OpenAiCompatibleProvider {
             let status = response.status();
             /* Truncate error body to avoid leaking provider internals to frontend */
             let text = response.text().unwrap_or_default();
-            let truncated = if text.len() > 200 { &text[..200] } else { &text };
+            /* Use char boundary check to avoid panic on multi-byte UTF-8 */
+            let truncated = text.get(..200).unwrap_or(&text);
             return Err(ProviderError::RequestFailed(format!(
                 "HTTP {status}: {truncated}"
             )));
