@@ -2,8 +2,8 @@
  * Title: app.tsx
  * Tech Stack: React 19, React Router v7
  * Description: Root application component. Renders the app shell layout and routes.
- * Important Details: The app shell (sidebar + header + content area) persists across
- *   navigation. Real pages replace placeholders as features are built.
+ * Important Details: Only Thinking Partner and Podcasts remain as placeholders.
+ *   All other routes have real page implementations.
  */
 
 import { Routes, Route, Navigate } from "react-router-dom";
@@ -15,6 +15,8 @@ import { NotebookDetailPage } from "./features/notebooks/pages/notebook-detail-p
 import { EditorPage } from "./features/editor/pages/editor-page";
 import { SearchPage } from "./features/search/pages/search-page";
 import { ChatPage } from "./features/chat/pages/chat-page";
+import { ModelManagerPage } from "./features/model-manager/pages/model-manager-page";
+import { SettingsPage } from "./features/settings/pages/settings-page";
 
 
 export function App() {
@@ -29,8 +31,8 @@ export function App() {
         <Route path={ROUTES.CHAT} element={<ChatPage />} />
         <Route path={ROUTES.THINKING_PARTNER} element={<PlaceholderPage title="Thinking Partner" />} />
         <Route path={ROUTES.PODCASTS} element={<PlaceholderPage title="Podcasts" />} />
-        <Route path={ROUTES.MODELS} element={<PlaceholderPage title="Model Manager" />} />
-        <Route path={ROUTES.SETTINGS} element={<PlaceholderPage title="Settings" />} />
+        <Route path={ROUTES.MODELS} element={<ModelManagerPage />} />
+        <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
         <Route path="*" element={<PlaceholderPage title="Page not found" />} />
       </Routes>
     </AppShell>
