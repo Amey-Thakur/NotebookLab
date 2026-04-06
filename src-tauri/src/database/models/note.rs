@@ -7,6 +7,7 @@
  *   Content is stored as raw Markdown text.
  */
 
+use rusqlite::Row;
 use serde::{Deserialize, Serialize};
 
 
@@ -18,6 +19,19 @@ pub struct Note {
     pub content: String,
     pub created_at: String,
     pub updated_at: String,
+}
+
+impl Note {
+    pub fn from_row(row: &Row) -> rusqlite::Result<Self> {
+        Ok(Self {
+            id: row.get(0)?,
+            notebook_id: row.get(1)?,
+            title: row.get(2)?,
+            content: row.get(3)?,
+            created_at: row.get(4)?,
+            updated_at: row.get(5)?,
+        })
+    }
 }
 
 

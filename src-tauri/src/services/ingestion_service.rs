@@ -11,6 +11,7 @@
 use std::path::Path;
 
 use rusqlite::Connection;
+use std::io::Read;
 use sha2::{Digest, Sha256};
 
 use crate::database::models::{CreateDocument, DocumentStatus};
@@ -99,8 +100,14 @@ pub fn ingest_file(
         ));
     }
 
-    /* Store chunks */
-    let chunk_count = chunk_repository::bulk_create(conn, all_chunks)?;
+    /* Store chunks -- recover to Error status if insertion fails */
+    let chunk_count = match chunk_repository::bulk_create(conn, all_chunks) {
+        Ok(count) => count,
+        Err(e) => {
+            document_repository::update_status(conn, &doc.id, DocumentStatus::Error).ok();
+            return Err(e);
+        }
+    };
     tracing::info!("Created {} chunks for document {}", chunk_count, doc.id);
 
     /* Mark as processed (embedding step will be added later) */
@@ -110,11 +117,21 @@ pub fn ingest_file(
 }
 
 
-/// Compute SHA-256 hash of a file for deduplication.
+/// Compute SHA-256 hash via streaming reads to avoid loading entire file into memory.
 fn compute_file_hash(path: &Path) -> AppResult<String> {
-    let bytes = std::fs::read(path)?;
+    let file = std::fs::File::open(path)?;
+    let mut reader = std::io::BufReader::new(file);
     let mut hasher = Sha256::new();
-    hasher.update(&bytes);
+    let mut buffer = [0u8; 8192];
+
+    loop {
+        let bytes_read = reader.read(&mut buffer)?;
+        if bytes_read == 0 {
+            break;
+        }
+        hasher.update(&buffer[..bytes_read]);
+    }
+
     let result = hasher.finalize();
     Ok(format!("{:x}", result))
 }
