@@ -7,6 +7,9 @@
  *   Commands are registered via invoke_handler(). Plugins extend Tauri's capabilities.
  */
 
+/* Allow dead code for future-use functions and re-exports during MVP */
+#![allow(dead_code)]
+
 mod api;
 mod commands;
 mod database;
