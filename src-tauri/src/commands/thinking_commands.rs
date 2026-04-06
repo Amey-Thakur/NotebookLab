@@ -69,6 +69,11 @@ pub fn generate_socratic_questions(
     let context = {
         let conn = state.conn()?;
         let chunks = search_service::search_chunks(&conn, &notebook_id, &thinking, 10)?;
+        if chunks.is_empty() {
+            return Err(AppError::InvalidInput(
+                "No relevant documents found. Import documents first.".into(),
+            ));
+        }
         chunks.iter().map(|c| c.content.clone()).collect::<Vec<_>>().join("\n\n---\n\n")
     };
 
