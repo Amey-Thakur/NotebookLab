@@ -15,6 +15,7 @@ import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS } from "@/lib/constants";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { formatBytes } from "@/lib/utils";
+import type { Notebook } from "../api/notebook-api";
 
 
 interface Document {
@@ -49,6 +50,12 @@ export function NotebookDetailPage() {
   useEffect(() => {
     if (id) setActiveNotebook(id);
   }, [id, setActiveNotebook]);
+
+  const { data: notebook } = useQuery({
+    queryKey: [QUERY_KEYS.NOTEBOOKS, id],
+    queryFn: () => tauriInvoke<Notebook>("get_notebook", { id }),
+    enabled: !!id,
+  });
 
   const { data: documents } = useQuery({
     queryKey: [QUERY_KEYS.DOCUMENTS, id],
@@ -95,7 +102,9 @@ export function NotebookDetailPage() {
           >
             &larr; All Notebooks
           </button>
-          <h1 className="text-2xl font-display font-bold text-text-1">Notebook</h1>
+          <h1 className="text-2xl font-display font-bold text-text-1">
+            {notebook?.name || "Notebook"}
+          </h1>
         </div>
         <div className="flex gap-2">
           <button
