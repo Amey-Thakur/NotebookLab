@@ -18,6 +18,9 @@ use crate::error::{AppError, AppResult};
 /// Insert a batch of chunks within a single transaction.
 /// Used by the ingestion pipeline after document parsing and chunking.
 pub fn bulk_create(conn: &Connection, chunks: Vec<CreateChunk>) -> AppResult<usize> {
+    /* Safety: unchecked_transaction is required because conn is &Connection (not &mut),
+       held behind a Mutex. The Mutex guarantees single-thread access, preventing
+       concurrent transactions on the same connection. */
     let tx = conn.unchecked_transaction()?;
     let now = chrono::Utc::now().to_rfc3339();
     let count = chunks.len();
