@@ -2,8 +2,8 @@
  * Title: status-bar.tsx
  * Tech Stack: React 19, TanStack Query, Tailwind CSS
  * Description: Bottom status bar showing active LLM provider and indexed chunk count.
- * Important Details: Polls chunk count and provider name every 10 seconds via
- *   TanStack Query. Shows green dot when a provider is active, amber when none.
+ * Important Details: Green dot = provider active. Amber/warning dot = no provider.
+ *   Chunk count shows actual indexed count. Polls every 10 seconds.
  */
 
 import { useQuery } from "@tanstack/react-query";
@@ -26,6 +26,7 @@ export function StatusBar() {
   });
 
   const hasProvider = !!activeProvider;
+  const chunks = chunkCount ?? 0;
 
   return (
     <footer
@@ -36,16 +37,18 @@ export function StatusBar() {
     >
       <div className="flex items-center gap-2">
         <span
-          className={`inline-block w-1.5 h-1.5 rounded-full ${hasProvider ? "bg-mark" : "bg-text-4"}`}
+          className={`inline-block w-1.5 h-1.5 rounded-full transition-colors ${
+            hasProvider ? "bg-mark" : "bg-amber-600"
+          }`}
           aria-hidden="true"
         />
-        <span className="font-mono text-[9px] text-text-4">
+        <span className={`font-mono text-[9px] ${hasProvider ? "text-text-3" : "text-text-4"}`}>
           {activeProvider || "No model loaded"}
         </span>
       </div>
 
-      <span className="font-mono text-[9px] text-text-4">
-        {chunkCount ?? 0} chunks indexed
+      <span className={`font-mono text-[9px] ${chunks > 0 ? "text-text-3" : "text-text-4"}`}>
+        {chunks} chunks indexed
       </span>
     </footer>
   );

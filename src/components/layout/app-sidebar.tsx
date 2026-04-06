@@ -1,9 +1,10 @@
 /*
  * Title: app-sidebar.tsx
  * Tech Stack: React 19, Tailwind CSS, React Router
- * Description: Left sidebar containing notebook tree, documents, notes, and quick actions.
- * Important Details: Sidebar width is fixed at 200px for MVP. Sections use JetBrains Mono
- *   uppercase labels per the design system. Active notebook is highlighted with accent color.
+ * Description: Left sidebar with navigation. Collapses on mobile (<768px) behind
+ *   a hamburger toggle. Shows as slide-over on mobile with overlay backdrop.
+ * Important Details: Nav items have hover states for better interactivity feedback.
+ *   Active item uses accent background. Clicking a nav link on mobile auto-closes sidebar.
  */
 
 import { NavLink } from "react-router-dom";
@@ -23,9 +24,22 @@ const NAV_ITEMS = [
 ] as const;
 
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+
+export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
   return (
-    <aside className="w-[200px] flex-shrink-0 border-r border-border bg-bg overflow-y-auto">
+    <aside
+      className={`
+        w-[200px] flex-shrink-0 border-r border-border bg-bg overflow-y-auto
+        transition-transform duration-200 ease-out
+        fixed md:relative z-30 h-full md:h-auto
+        ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+      `}
+    >
       <nav className="p-3">
         <SectionLabel>Navigation</SectionLabel>
 
@@ -33,11 +47,12 @@ export function AppSidebar() {
           <NavLink
             key={item.path}
             to={item.path}
+            onClick={onClose}
             className={({ isActive }) =>
-              `block px-2 py-1 text-sm rounded-sm transition-colors ${
+              `block px-2 py-1.5 text-sm rounded-sm transition-colors ${
                 isActive
                   ? "bg-accent-dim text-text-1 font-semibold"
-                  : "text-text-3 hover:text-text-1"
+                  : "text-text-3 hover:text-text-1 hover:bg-surface-2"
               }`
             }
           >
