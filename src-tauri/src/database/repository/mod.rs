@@ -8,6 +8,7 @@
  */
 
 pub mod chunk_repository;
+pub mod conversation_repository;
 pub mod document_repository;
 pub mod note_repository;
 pub mod notebook_repository;

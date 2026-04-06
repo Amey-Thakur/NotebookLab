@@ -66,6 +66,11 @@ pub fn run() {
             commands::document_commands::delete_document,
             commands::document_commands::get_document_chunks,
             commands::document_commands::get_chunk_count,
+            commands::chat_commands::start_chat,
+            commands::chat_commands::send_chat_message,
+            commands::chat_commands::list_conversations,
+            commands::chat_commands::get_chat_messages,
+            commands::chat_commands::delete_conversation,
         ])
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {
