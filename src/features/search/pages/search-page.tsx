@@ -14,30 +14,7 @@ import { tauriInvoke } from "@/services/tauri-client";
 import { debounce } from "@/lib/utils";
 import { QUERY_KEYS } from "@/lib/constants";
 import { useNotebookStore } from "@/stores/notebook-store";
-
-
-interface SearchResult {
-  chunk_id: string;
-  document_id: string;
-  content: string;
-  heading_context: string;
-  page_number: number | null;
-  score: number;
-}
-
-interface Note {
-  id: string;
-  notebook_id: string;
-  title: string;
-  content: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface UnifiedSearchResult {
-  chunks: SearchResult[];
-  notes: Note[];
-}
+import type { UnifiedSearchResult } from "@/types/models";
 
 
 export function SearchPage() {
