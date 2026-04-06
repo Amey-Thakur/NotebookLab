@@ -1,19 +1,19 @@
 /*
  * Title: search-page.tsx
- * Tech Stack: React 19, TanStack Query, Tailwind CSS
+ * Tech Stack: React 19, TanStack Query, Zustand, Tailwind CSS
  * Description: Search page with unified results across document chunks and notes.
- * Important Details: Search is debounced (300ms) to avoid excessive IPC calls.
- *   Results show matched content with source attribution. Clicking a chunk
- *   navigates to the source document. Clicking a note opens the editor.
+ * Important Details: Search is debounced (300ms). Requires an active notebook to
+ *   scope the search. Results show matched content with source attribution.
  */
 
-import { useState, useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
 import { debounce } from "@/lib/utils";
 import { QUERY_KEYS } from "@/lib/constants";
+import { useNotebookStore } from "@/stores/notebook-store";
 
 
 interface SearchResult {
@@ -42,32 +42,46 @@ interface UnifiedSearchResult {
 
 export function SearchPage() {
   const navigate = useNavigate();
+  const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
-  const debouncedSearch = useCallback(
-    (() => {
-      const fn = debounce((q: string) => setDebouncedQuery(q), 300);
-      return fn;
-    })(),
+  const debouncedSearch = useMemo(
+    () => debounce((q: string) => setDebouncedQuery(q), 300),
     [],
   );
+
+  useEffect(() => {
+    return () => debouncedSearch.cancel();
+  }, [debouncedSearch]);
 
   const handleInput = (value: string) => {
     setQuery(value);
     debouncedSearch(value);
   };
 
-  /* TODO: notebook_id should come from active notebook context */
+  const canSearch = !!activeNotebookId && debouncedQuery.length >= 2;
+
   const { data, isLoading } = useQuery({
-    queryKey: [QUERY_KEYS.SEARCH, debouncedQuery],
+    queryKey: [QUERY_KEYS.SEARCH, activeNotebookId, debouncedQuery],
     queryFn: () =>
       tauriInvoke<UnifiedSearchResult>("search", {
-        notebook_id: "placeholder",
+        notebook_id: activeNotebookId!,
         query: debouncedQuery,
       }),
-    enabled: debouncedQuery.length >= 2,
+    enabled: canSearch,
   });
+
+  if (!activeNotebookId) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-text-3 p-8">
+        <p className="text-lg mb-2">No notebook selected</p>
+        <p className="text-sm text-text-4">
+          Open a notebook first to search its documents and notes.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-3xl mx-auto">
@@ -83,13 +97,12 @@ export function SearchPage() {
         autoFocus
       />
 
-      {isLoading && debouncedQuery && (
+      {isLoading && canSearch && (
         <p className="text-sm text-text-3">Searching...</p>
       )}
 
       {data && (
         <>
-          {/* Note results */}
           {data.notes.length > 0 && (
             <div className="mb-8">
               <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-3">
@@ -111,17 +124,13 @@ export function SearchPage() {
             </div>
           )}
 
-          {/* Chunk results */}
           {data.chunks.length > 0 && (
             <div>
               <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-3">
                 Documents ({data.chunks.length})
               </h2>
               {data.chunks.map((chunk) => (
-                <div
-                  key={chunk.chunk_id}
-                  className="p-4 border border-border mb-2"
-                >
+                <div key={chunk.chunk_id} className="p-4 border border-border mb-2">
                   <div className="flex items-center gap-2 mb-2">
                     {chunk.heading_context && (
                       <span className="text-xs font-mono text-accent-dim">
@@ -142,15 +151,15 @@ export function SearchPage() {
             </div>
           )}
 
-          {data.notes.length === 0 && data.chunks.length === 0 && debouncedQuery && (
+          {data.notes.length === 0 && data.chunks.length === 0 && (
             <p className="text-sm text-text-3 text-center py-12">
-              No results found for "{debouncedQuery}"
+              No results for "{debouncedQuery}"
             </p>
           )}
         </>
       )}
 
-      {!debouncedQuery && (
+      {!canSearch && debouncedQuery.length < 2 && (
         <p className="text-sm text-text-4 text-center py-12">
           Type at least 2 characters to search
         </p>

@@ -72,21 +72,18 @@ pub fn prepare_rag_context(
         },
     ];
 
+    /* Document context uses User role to separate from system instructions.
+       This reduces the privilege level of injected content from adversarial documents. */
     if !context.is_empty() {
         messages.push(ChatMessage {
-            role: MessageRole::System,
-            content: format!("Relevant document excerpts:\n\n{context}"),
+            role: MessageRole::User,
+            content: format!("<document_context>\n{context}\n</document_context>\n\nBased on these documents, answer the following question:"),
         });
     }
 
-    /* Add conversation history (capped to prevent context overflow) */
-    let history = conversation_repository::get_messages(conn, conversation_id)?;
-    let start = if history.len() > MAX_HISTORY_MESSAGES {
-        history.len() - MAX_HISTORY_MESSAGES
-    } else {
-        0
-    };
-    for msg in &history[start..] {
+    /* Add conversation history (limited at SQL layer for efficiency) */
+    let history = conversation_repository::get_recent_messages(conn, conversation_id, MAX_HISTORY_MESSAGES)?;
+    for msg in &history {
         messages.push(ChatMessage {
             role: if msg.role == "user" { MessageRole::User } else { MessageRole::Assistant },
             content: msg.content.clone(),
