@@ -11,6 +11,7 @@ use uuid::Uuid;
 
 use crate::database::models::{CreateNote, Note, UpdateNote};
 use crate::error::{AppError, AppResult};
+use crate::utils::text_utils;
 
 
 pub fn create(conn: &Connection, input: CreateNote) -> AppResult<Note> {
@@ -86,9 +87,7 @@ pub fn delete(conn: &Connection, id: &str) -> AppResult<()> {
 
 /// Search notes by title within a notebook. Used for [[wiki-link]] autocomplete.
 pub fn search_by_title(conn: &Connection, notebook_id: &str, query: &str) -> AppResult<Vec<Note>> {
-    /* Escape LIKE metacharacters so user input with % or _ searches literally */
-    let escaped = query.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_");
-    let pattern = format!("%{escaped}%");
+    let pattern = text_utils::escape_like_pattern(query);
 
     let mut stmt = conn.prepare(
         "SELECT id, notebook_id, title, content, created_at, updated_at

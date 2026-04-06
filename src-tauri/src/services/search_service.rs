@@ -11,6 +11,7 @@ use rusqlite::{params, Connection};
 use serde::Serialize;
 
 use crate::error::AppResult;
+use crate::utils::text_utils;
 
 
 #[derive(Debug, Clone, Serialize)]
@@ -33,9 +34,7 @@ pub fn search_chunks(
     limit: usize,
 ) -> AppResult<Vec<SearchResult>> {
     let limit = limit.min(1000);
-
-    let escaped = query.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_");
-    let pattern = format!("%{escaped}%");
+    let pattern = text_utils::escape_like_pattern(query);
 
     let mut stmt = conn.prepare(
         "SELECT c.id, c.document_id, c.content, c.heading_context, c.page_number
