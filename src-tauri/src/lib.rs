@@ -72,6 +72,9 @@ pub fn run() {
             commands::chat_commands::get_chat_messages,
             commands::chat_commands::delete_conversation,
             commands::search_commands::search,
+            commands::thinking_commands::generate_mind_map,
+            commands::thinking_commands::generate_socratic_questions,
+            commands::transform_commands::transform_document,
         ])
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {

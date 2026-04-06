@@ -11,3 +11,5 @@ pub mod chunking_service;
 pub mod ingestion_service;
 pub mod rag_service;
 pub mod search_service;
+pub mod thinking_service;
+pub mod transform_service;
