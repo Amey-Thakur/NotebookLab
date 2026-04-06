@@ -48,21 +48,7 @@ pub fn list_by_notebook(conn: &Connection, notebook_id: &str) -> AppResult<Vec<D
     )?;
 
     let docs = stmt
-        .query_map(params![notebook_id], |row| {
-            let status_str: String = row.get(7)?;
-            Ok(Document {
-                id: row.get(0)?,
-                notebook_id: row.get(1)?,
-                title: row.get(2)?,
-                file_path: row.get(3)?,
-                file_type: row.get(4)?,
-                file_hash: row.get(5)?,
-                file_size: row.get(6)?,
-                status: DocumentStatus::from_str(&status_str),
-                created_at: row.get(8)?,
-                updated_at: row.get(9)?,
-            })
-        })?
+        .query_map(params![notebook_id], Document::from_row)?
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(docs)

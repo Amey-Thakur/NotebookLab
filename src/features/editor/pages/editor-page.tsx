@@ -4,10 +4,11 @@
  * Description: Full editor view for a single note. Includes the Milkdown editor
  *   with a title input and auto-save functionality.
  * Important Details: Note content is loaded via Tauri IPC on mount. Changes are
- *   debounced and auto-saved every 2 seconds. The note ID comes from the URL params.
+ *   debounced and auto-saved every 2 seconds. The Milkdown editor is keyed by note ID
+ *   to force remount when switching notes (avoids stale content).
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import { tauriInvoke } from "@/services/tauri-client";
@@ -47,18 +48,30 @@ export function EditorPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  /* Debounced auto-save for content changes */
-  const saveContent = useCallback(
-    debounce((markdown: string) => {
-      if (!id) return;
-      tauriInvoke("update_note", { id, input: { content: markdown } }).catch(
+  /* Debounced auto-save with cleanup to prevent firing after unmount */
+  const saveContent = useMemo(() => {
+    const debouncedSave = debounce((noteId: string, markdown: string) => {
+      tauriInvoke("update_note", { id: noteId, input: { content: markdown } }).catch(
         (e) => console.error("Auto-save failed:", e),
       );
-    }, EDITOR_AUTOSAVE_MS),
-    [id],
+    }, EDITOR_AUTOSAVE_MS);
+
+    return debouncedSave;
+  }, []);
+
+  /* Cancel pending saves when unmounting or switching notes */
+  useEffect(() => {
+    return () => saveContent.cancel();
+  }, [id, saveContent]);
+
+  const handleContentChange = useCallback(
+    (markdown: string) => {
+      if (!id) return;
+      saveContent(id, markdown);
+    },
+    [id, saveContent],
   );
 
-  /* Save title on blur */
   const saveTitle = useCallback(() => {
     if (!id || !title.trim()) return;
     tauriInvoke("update_note", { id, input: { title: title.trim() } }).catch(
@@ -97,9 +110,11 @@ export function EditorPage() {
       </div>
 
       <div className="flex-1 overflow-auto px-8 py-4">
+        {/* Key forces remount when switching notes, preventing stale content */}
         <MilkdownEditor
+          key={note.id}
           defaultValue={note.content}
-          onChange={saveContent}
+          onChange={handleContentChange}
           className="min-h-[400px]"
         />
       </div>
