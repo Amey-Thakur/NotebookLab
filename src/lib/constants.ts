@@ -33,11 +33,10 @@ export const QUERY_KEYS = {
 } as const;
 
 
+/* Must match parsers/mod.rs::parser_for_extension */
 export const SUPPORTED_FILE_TYPES = [
-  ".pdf",
-  ".docx",
-  ".doc",
   ".txt",
+  ".text",
   ".md",
   ".markdown",
 ] as const;
