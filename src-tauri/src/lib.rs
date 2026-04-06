@@ -17,6 +17,8 @@ mod services;
 mod state;
 mod utils;
 
+use tauri::Manager;
+
 use state::AppState;
 
 
