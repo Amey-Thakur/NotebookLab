@@ -80,7 +80,10 @@ pub fn get_by_id(conn: &Connection, id: &str) -> AppResult<Chunk> {
             })
         },
     )
-    .map_err(|_| AppError::NotFound(format!("Chunk not found: {id}")))
+    .map_err(|e| match e {
+        rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Chunk not found: {id}")),
+        other => AppError::Database(other),
+    })
 }
 
 
