@@ -15,6 +15,7 @@ import { NotebookDetailPage } from "./features/notebooks/pages/notebook-detail-p
 import { EditorPage } from "./features/editor/pages/editor-page";
 import { SearchPage } from "./features/search/pages/search-page";
 import { ChatPage } from "./features/chat/pages/chat-page";
+import { ThinkingPartnerPage } from "./features/thinking-partner/pages/thinking-partner-page";
 import { ModelManagerPage } from "./features/model-manager/pages/model-manager-page";
 import { SettingsPage } from "./features/settings/pages/settings-page";
 
@@ -29,7 +30,7 @@ export function App() {
         <Route path={ROUTES.EDITOR} element={<EditorPage />} />
         <Route path={ROUTES.SEARCH} element={<SearchPage />} />
         <Route path={ROUTES.CHAT} element={<ChatPage />} />
-        <Route path={ROUTES.THINKING_PARTNER} element={<PlaceholderPage title="Thinking Partner" />} />
+        <Route path={ROUTES.THINKING_PARTNER} element={<ThinkingPartnerPage />} />
         <Route path={ROUTES.PODCASTS} element={<PlaceholderPage title="Podcasts" />} />
         <Route path={ROUTES.MODELS} element={<ModelManagerPage />} />
         <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
