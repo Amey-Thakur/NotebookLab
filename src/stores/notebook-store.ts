@@ -1,12 +1,15 @@
 /*
  * Title: notebook-store.ts
- * Tech Stack: Zustand
+ * Tech Stack: Zustand, localStorage
  * Description: Client-side store for the currently active notebook.
- * Important Details: Persists active notebook ID so search, chat, and editor
- *   know which notebook context to operate in. This is UI state, not data.
+ * Important Details: Persists to localStorage so the active notebook survives page
+ *   reloads. Search, chat, and thinking partner use this to scope operations.
  */
 
 import { create } from "zustand";
+
+
+const STORAGE_KEY = "notebooklab-active-notebook";
 
 
 interface NotebookStore {
@@ -16,6 +19,14 @@ interface NotebookStore {
 
 
 export const useNotebookStore = create<NotebookStore>((set) => ({
-  activeNotebookId: null,
-  setActiveNotebook: (id) => set({ activeNotebookId: id }),
+  activeNotebookId: localStorage.getItem(STORAGE_KEY),
+
+  setActiveNotebook: (id) => {
+    if (id) {
+      localStorage.setItem(STORAGE_KEY, id);
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+    set({ activeNotebookId: id });
+  },
 }));

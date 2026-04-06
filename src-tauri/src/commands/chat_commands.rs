@@ -51,10 +51,9 @@ pub fn send_chat_message(
         rag_service::prepare_rag_context(&conn, &conversation_id, &notebook_id, &message)?
     };
 
-    /* Phase 2: LLM call. No locks held. Other commands can proceed. */
+    /* Phase 2: LLM call. No db lock held. Other commands can proceed. */
     let response_content = {
-        let providers = state.providers.lock()
-            .map_err(|_| AppError::Internal("Provider lock poisoned".into()))?;
+        let providers = state.provider()?;
         rag_service::call_llm(&providers, &rag_context)?
     };
 

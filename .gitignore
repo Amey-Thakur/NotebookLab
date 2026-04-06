@@ -44,3 +44,4 @@ src-tauri/gen/
 
 # Planning artifacts (not production code)
 *.pdf
+.gstack/
