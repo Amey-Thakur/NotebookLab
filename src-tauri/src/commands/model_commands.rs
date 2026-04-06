@@ -36,14 +36,14 @@ pub fn register_provider(
     state: State<'_, AppState>,
     input: RegisterProviderInput,
 ) -> AppResult<usize> {
-    if input.name.trim().is_empty() {
-        return Err(AppError::InvalidInput("Provider name is required".into()));
+    if input.name.trim().is_empty() || input.name.len() > 200 {
+        return Err(AppError::InvalidInput("Provider name is required (max 200 chars)".into()));
     }
-    if input.base_url.trim().is_empty() {
-        return Err(AppError::InvalidInput("Base URL is required".into()));
+    if input.base_url.trim().is_empty() || input.base_url.len() > 2000 {
+        return Err(AppError::InvalidInput("Base URL is required (max 2000 chars)".into()));
     }
-    if input.model.trim().is_empty() {
-        return Err(AppError::InvalidInput("Model name is required".into()));
+    if input.model.trim().is_empty() || input.model.len() > 200 {
+        return Err(AppError::InvalidInput("Model name is required (max 200 chars)".into()));
     }
 
     let provider = OpenAiCompatibleProvider::new(
@@ -80,7 +80,7 @@ pub fn get_active_provider_name(state: State<'_, AppState>) -> AppResult<Option<
 
 
 #[tauri::command]
-pub fn get_model_registry(state: State<'_, AppState>) -> AppResult<serde_json::Value> {
+pub fn get_model_registry() -> AppResult<serde_json::Value> {
     let registry = include_str!("../../resources/model-registry.json");
     let value: serde_json::Value = serde_json::from_str(registry)?;
     Ok(value)

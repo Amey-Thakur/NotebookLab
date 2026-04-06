@@ -81,9 +81,16 @@ pub fn prepare_rag_context(
         });
     }
 
-    /* Add conversation history (limited at SQL layer for efficiency) */
-    let history = conversation_repository::get_recent_messages(conn, conversation_id, MAX_HISTORY_MESSAGES)?;
-    for msg in &history {
+    /* Add conversation history. Fetch MAX+1 because the just-saved user message
+       is already in the DB but will appear in the user's current turn below. */
+    let history = conversation_repository::get_recent_messages(conn, conversation_id, MAX_HISTORY_MESSAGES + 1)?;
+    /* Skip the last message (the one we just saved) to avoid duplication */
+    let history_without_current = if history.last().map(|m| m.role == "user" && m.content == user_message).unwrap_or(false) {
+        &history[..history.len() - 1]
+    } else {
+        &history
+    };
+    for msg in history_without_current {
         messages.push(ChatMessage {
             role: if msg.role == "user" { MessageRole::User } else { MessageRole::Assistant },
             content: msg.content.clone(),

@@ -69,13 +69,9 @@ impl ProviderRouter {
 
         let provider = &self.providers[idx];
 
-        if !provider.is_available() {
-            return Err(ProviderError::NotAvailable(format!(
-                "{} is not available",
-                provider.name()
-            )));
-        }
-
+        /* Availability check removed from hot path. The completion call itself
+           will return a clear error if the provider is unreachable. Checking
+           availability added ~100-300ms latency per request. */
         provider.chat_completion(request)
     }
 
