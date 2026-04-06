@@ -2,9 +2,9 @@
  * Title: chat_commands.rs
  * Tech Stack: Rust, Tauri v2
  * Description: Tauri command handlers for RAG-powered chat conversations.
- * Important Details: The send_chat_message command triggers the full RAG pipeline:
- *   search chunks -> assemble context -> call LLM -> save response + citations.
- *   Both database and provider locks are acquired for the send operation.
+ * Important Details: send_chat_message splits the RAG pipeline into 3 phases to
+ *   minimize lock duration. DB lock is released before the LLM HTTP call (which can
+ *   take 30-120s) so other commands are not blocked during inference.
  */
 
 use tauri::State;
@@ -45,19 +45,26 @@ pub fn send_chat_message(
         return Err(AppError::InvalidInput("Message cannot be empty".into()));
     }
 
-    let conn = state.conn()?;
-    let providers = state.providers.lock()
-        .map_err(|_| AppError::Internal("Provider lock poisoned".into()))?;
+    /* Phase 1: DB read (search + history). Lock released after this block. */
+    let rag_context = {
+        let conn = state.conn()?;
+        rag_service::prepare_rag_context(&conn, &conversation_id, &notebook_id, &message)?
+    };
 
-    let (message_id, content) = rag_service::send_message(
-        &conn,
-        &providers,
-        &conversation_id,
-        &notebook_id,
-        &message,
-    )?;
+    /* Phase 2: LLM call. No locks held. Other commands can proceed. */
+    let response_content = {
+        let providers = state.providers.lock()
+            .map_err(|_| AppError::Internal("Provider lock poisoned".into()))?;
+        rag_service::call_llm(&providers, &rag_context)?
+    };
 
-    Ok(ChatResponse { message_id, content })
+    /* Phase 3: Save response + citations. Re-acquire DB lock. */
+    let message_id = {
+        let conn = state.conn()?;
+        rag_service::save_response(&conn, &conversation_id, &response_content, &rag_context.chunk_ids)?
+    };
+
+    Ok(ChatResponse { message_id, content: response_content })
 }
 
 

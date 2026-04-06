@@ -45,12 +45,3 @@ export const SUPPORTED_FILE_TYPES = [
 
 /* Auto-save interval for the editor in milliseconds */
 export const EDITOR_AUTOSAVE_MS = 2000;
-
-/* Maximum chunk size for document ingestion in tokens */
-export const CHUNK_SIZE_TOKENS = 400;
-
-/* Overlap between chunks in tokens */
-export const CHUNK_OVERLAP_TOKENS = 50;
-
-/* Number of top results for RAG retrieval */
-export const RAG_TOP_K = 10;
