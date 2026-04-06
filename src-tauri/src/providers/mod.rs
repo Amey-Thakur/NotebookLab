@@ -13,4 +13,5 @@ pub mod router;
 pub mod traits;
 
 pub use router::{ProviderInfo, ProviderRouter};
+#[allow(unused_imports)]
 pub use traits::{ChatMessage, ChatRequest, ChatResponse, LlmProvider, MessageRole, ProviderError};
