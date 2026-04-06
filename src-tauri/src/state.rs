@@ -7,18 +7,28 @@
  *   Provider router manages multiple LLM backends with dynamic switching.
  */
 
-use std::sync::Mutex;
+use std::sync::{Mutex, MutexGuard};
 
 use rusqlite::Connection;
 use tauri::{AppHandle, Manager};
 
-use crate::error::AppError;
+use crate::error::{AppError, AppResult};
 use crate::providers::ProviderRouter;
 
 
 pub struct AppState {
     pub db: Mutex<Connection>,
     pub providers: Mutex<ProviderRouter>,
+}
+
+
+impl AppState {
+    /// Acquire the database connection with graceful poison handling.
+    pub fn conn(&self) -> AppResult<MutexGuard<'_, Connection>> {
+        self.db
+            .lock()
+            .map_err(|_| AppError::Internal("Database lock poisoned".into()))
+    }
 }
 
 

@@ -16,35 +16,35 @@ use crate::state::AppState;
 
 #[tauri::command]
 pub fn list_notes(state: State<'_, AppState>, notebook_id: String) -> AppResult<Vec<Note>> {
-    let conn = state.db.lock().map_err(|_| crate::error::AppError::Internal("Database lock poisoned".into()))?;
+    let conn = state.conn()?;
     note_repository::list_by_notebook(&conn, &notebook_id)
 }
 
 
 #[tauri::command]
 pub fn get_note(state: State<'_, AppState>, id: String) -> AppResult<Note> {
-    let conn = state.db.lock().map_err(|_| crate::error::AppError::Internal("Database lock poisoned".into()))?;
+    let conn = state.conn()?;
     note_repository::get_by_id(&conn, &id)
 }
 
 
 #[tauri::command]
 pub fn create_note(state: State<'_, AppState>, input: CreateNote) -> AppResult<Note> {
-    let conn = state.db.lock().map_err(|_| crate::error::AppError::Internal("Database lock poisoned".into()))?;
+    let conn = state.conn()?;
     note_repository::create(&conn, input)
 }
 
 
 #[tauri::command]
 pub fn update_note(state: State<'_, AppState>, id: String, input: UpdateNote) -> AppResult<Note> {
-    let conn = state.db.lock().map_err(|_| crate::error::AppError::Internal("Database lock poisoned".into()))?;
+    let conn = state.conn()?;
     note_repository::update(&conn, &id, input)
 }
 
 
 #[tauri::command]
 pub fn delete_note(state: State<'_, AppState>, id: String) -> AppResult<()> {
-    let conn = state.db.lock().map_err(|_| crate::error::AppError::Internal("Database lock poisoned".into()))?;
+    let conn = state.conn()?;
     note_repository::delete(&conn, &id)
 }
 
@@ -55,6 +55,6 @@ pub fn search_notes(
     notebook_id: String,
     query: String,
 ) -> AppResult<Vec<Note>> {
-    let conn = state.db.lock().map_err(|_| crate::error::AppError::Internal("Database lock poisoned".into()))?;
+    let conn = state.conn()?;
     note_repository::search_by_title(&conn, &notebook_id, &query)
 }

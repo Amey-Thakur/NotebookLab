@@ -47,10 +47,14 @@ impl DocumentStatus {
 
     pub fn from_str(s: &str) -> Self {
         match s {
+            "pending" => Self::Pending,
             "processing" => Self::Processing,
             "processed" => Self::Processed,
             "error" => Self::Error,
-            _ => Self::Pending,
+            other => {
+                tracing::warn!("Unknown document status: {other}, defaulting to Pending");
+                Self::Pending
+            }
         }
     }
 }
