@@ -50,32 +50,33 @@ export function ChatPage() {
     onSuccess: (id) => setConversationId(id),
   });
 
+  /* Accept explicit convoId to avoid stale closure when starting a new conversation */
   const sendMessage = useMutation({
-    mutationFn: (message: string) =>
+    mutationFn: ({ convoId, message }: { convoId: string; message: string }) =>
       tauriInvoke<ChatResponse>("send_chat_message", {
-        conversation_id: conversationId,
+        conversation_id: convoId,
         notebook_id: activeNotebookId,
         message,
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CHAT, conversationId] });
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CHAT, variables.convoId] });
     },
   });
 
   const handleSend = () => {
     if (!input.trim() || sendMessage.isPending) return;
+    const msg = input.trim();
+    setInput("");
 
     if (!conversationId) {
       startChat.mutate(undefined, {
         onSuccess: (id) => {
           setConversationId(id);
-          sendMessage.mutate(input.trim());
-          setInput("");
+          sendMessage.mutate({ convoId: id, message: msg });
         },
       });
     } else {
-      sendMessage.mutate(input.trim());
-      setInput("");
+      sendMessage.mutate({ convoId: conversationId, message: msg });
     }
   };
 
