@@ -8,6 +8,7 @@
 
 pub mod chat_commands;
 pub mod document_commands;
+pub mod model_commands;
 pub mod note_commands;
 pub mod notebook_commands;
 pub mod search_commands;
