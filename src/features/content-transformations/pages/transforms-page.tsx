@@ -1,0 +1,161 @@
+/*
+ * Title: transforms-page.tsx
+ * Tech Stack: React 19, TanStack Query, Tailwind CSS
+ * Description: Content transformations page. Apply AI-powered transformations
+ *   (summarize, extract key points, custom prompts) to imported documents.
+ * Important Details: Requires an active notebook with processed documents.
+ *   Results are displayed inline and can be copied.
+ */
+
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+
+import { tauriInvoke } from "@/services/tauri-client";
+import { QUERY_KEYS } from "@/lib/constants";
+import { useNotebookStore } from "@/stores/notebook-store";
+import type { Document } from "@/types/models";
+
+
+type TransformType = "summarize" | "extractkeypoints" | "custom";
+
+const TRANSFORM_LABELS: Record<TransformType, string> = {
+  summarize: "Summarize",
+  extractkeypoints: "Extract Key Points",
+  custom: "Custom Prompt",
+};
+
+
+export function TransformsPage() {
+  const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
+  const [selectedDoc, setSelectedDoc] = useState<string>("");
+  const [transformType, setTransformType] = useState<TransformType>("summarize");
+  const [customPrompt, setCustomPrompt] = useState("");
+  const [result, setResult] = useState<string | null>(null);
+
+  const { data: documents } = useQuery({
+    queryKey: [QUERY_KEYS.DOCUMENTS, activeNotebookId],
+    queryFn: () => tauriInvoke<Document[]>("list_documents", { notebook_id: activeNotebookId }),
+    enabled: !!activeNotebookId,
+  });
+
+  const processedDocs = documents?.filter((d) => d.status === "processed") || [];
+
+  const transform = useMutation({
+    mutationFn: () =>
+      tauriInvoke<string>("transform_document", {
+        document_id: selectedDoc,
+        transform_type: transformType,
+        custom_prompt: transformType === "custom" ? customPrompt : null,
+      }),
+    onSuccess: (data) => setResult(data),
+  });
+
+  if (!activeNotebookId) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-text-3 p-8">
+        <p className="text-lg mb-2">No notebook selected</p>
+        <p className="text-sm text-text-4">Open a notebook first to transform documents.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="px-8 pt-6 pb-4">
+        <h1 className="text-2xl font-display font-bold text-text-1 mb-4">Content Transforms</h1>
+
+        {/* Document selector */}
+        <div className="mb-4">
+          <label className="block text-xs font-mono text-text-4 mb-1">Document</label>
+          <select
+            value={selectedDoc}
+            onChange={(e) => { setSelectedDoc(e.target.value); setResult(null); }}
+            className="w-full px-3 py-2 text-sm bg-surface border border-border text-text-1 outline-none"
+          >
+            <option value="">Select a document...</option>
+            {processedDocs.map((doc) => (
+              <option key={doc.id} value={doc.id}>{doc.title} (.{doc.file_type})</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Transform type */}
+        <div className="flex gap-1 mb-4">
+          {(Object.entries(TRANSFORM_LABELS) as [TransformType, string][]).map(([type, label]) => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => { setTransformType(type); setResult(null); }}
+              className={`px-4 py-2 text-sm font-mono border transition-colors ${
+                transformType === type
+                  ? "border-accent-dim text-text-1 bg-surface-2"
+                  : "border-border text-text-3"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Custom prompt input */}
+        {transformType === "custom" && (
+          <div className="mb-4">
+            <label className="block text-xs font-mono text-text-4 mb-1">Custom instruction</label>
+            <input
+              type="text"
+              value={customPrompt}
+              onChange={(e) => setCustomPrompt(e.target.value)}
+              placeholder="e.g., Extract all statistics and data points..."
+              className="w-full px-3 py-2 text-sm bg-surface border border-border text-text-1
+                         placeholder:text-text-4 outline-none"
+            />
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => transform.mutate()}
+          disabled={!selectedDoc || transform.isPending || (transformType === "custom" && !customPrompt.trim())}
+          className="px-4 py-2 text-sm font-mono bg-accent-dim text-text-1 disabled:opacity-50"
+        >
+          {transform.isPending ? "Processing..." : "Transform"}
+        </button>
+      </div>
+
+      {/* Result */}
+      <div className="flex-1 overflow-auto px-8 py-4">
+        {transform.isError && (
+          <div className="p-3 border border-error text-xs text-error">
+            {String(transform.error)}
+          </div>
+        )}
+
+        {result && (
+          <div className="p-6 border border-border bg-surface">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xs font-mono tracking-widest uppercase text-text-4">
+                {TRANSFORM_LABELS[transformType]} Result
+              </h2>
+              <button
+                type="button"
+                onClick={() => navigator.clipboard.writeText(result)}
+                className="text-xs font-mono text-text-3 hover:text-text-1"
+              >
+                Copy
+              </button>
+            </div>
+            <pre className="text-sm font-body text-text-2 whitespace-pre-wrap leading-relaxed">
+              {result}
+            </pre>
+          </div>
+        )}
+
+        {!result && !transform.isPending && (
+          <div className="flex items-center justify-center h-full text-text-4">
+            <p className="text-sm">Select a document and choose a transformation.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

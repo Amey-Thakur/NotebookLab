@@ -8,6 +8,7 @@
  */
 
 pub mod markdown_parser;
+pub mod pdf_parser;
 pub mod plaintext_parser;
 pub mod traits;
 
@@ -21,6 +22,7 @@ pub fn parser_for_extension(ext: &str) -> AppResult<Box<dyn DocumentParser>> {
     match ext.to_lowercase().as_str() {
         "txt" | "text" => Ok(Box::new(plaintext_parser::PlaintextParser)),
         "md" | "markdown" => Ok(Box::new(markdown_parser::MarkdownParser)),
+        "pdf" => Ok(Box::new(pdf_parser::PdfParser)),
         other => Err(AppError::InvalidInput(format!(
             "Unsupported file format: .{other}"
         ))),
