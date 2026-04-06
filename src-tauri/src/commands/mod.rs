@@ -6,6 +6,7 @@
  *   Adding a new feature's commands = add one mod line here + register in lib.rs.
  */
 
+pub mod document_commands;
 pub mod note_commands;
 pub mod notebook_commands;
 pub mod system_commands;

@@ -10,6 +10,7 @@
 mod commands;
 mod database;
 mod error;
+mod parsers;
 mod providers;
 mod services;
 mod state;
@@ -59,6 +60,12 @@ pub fn run() {
             commands::note_commands::update_note,
             commands::note_commands::delete_note,
             commands::note_commands::search_notes,
+            commands::document_commands::import_document,
+            commands::document_commands::list_documents,
+            commands::document_commands::get_document,
+            commands::document_commands::delete_document,
+            commands::document_commands::get_document_chunks,
+            commands::document_commands::get_chunk_count,
         ])
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {
