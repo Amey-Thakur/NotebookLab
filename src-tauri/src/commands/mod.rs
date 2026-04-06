@@ -12,3 +12,5 @@ pub mod note_commands;
 pub mod notebook_commands;
 pub mod search_commands;
 pub mod system_commands;
+pub mod thinking_commands;
+pub mod transform_commands;
