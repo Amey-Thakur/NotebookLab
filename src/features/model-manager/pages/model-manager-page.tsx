@@ -11,6 +11,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
+import { QUERY_KEYS } from "@/lib/constants";
 import type { ProviderInfo } from "@/types/models";
 
 
@@ -24,12 +25,12 @@ export function ModelManagerPage() {
   const [isLocal, setIsLocal] = useState(true);
 
   const { data: providers } = useQuery({
-    queryKey: ["providers"],
+    queryKey: [QUERY_KEYS.PROVIDERS],
     queryFn: () => tauriInvoke<ProviderInfo[]>("list_providers"),
   });
 
   const { data: activeName } = useQuery({
-    queryKey: ["active-provider"],
+    queryKey: [QUERY_KEYS.ACTIVE_PROVIDER],
     queryFn: () => tauriInvoke<string | null>("get_active_provider_name"),
   });
 
@@ -39,7 +40,7 @@ export function ModelManagerPage() {
         input: { name, base_url: baseUrl, api_key: apiKey || null, model, is_local: isLocal },
       }),
     onSuccess: (index) => {
-      queryClient.invalidateQueries({ queryKey: ["providers"] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PROVIDERS] });
       setActive.mutate(index);
       setShowRegister(false);
     },
@@ -49,8 +50,8 @@ export function ModelManagerPage() {
     mutationFn: (index: number) =>
       tauriInvoke<void>("set_active_provider", { index }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["providers"] });
-      queryClient.invalidateQueries({ queryKey: ["active-provider"] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PROVIDERS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ACTIVE_PROVIDER] });
     },
   });
 

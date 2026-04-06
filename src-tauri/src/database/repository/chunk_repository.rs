@@ -54,6 +54,7 @@ pub fn get_by_document(conn: &Connection, document_id: &str) -> AppResult<Vec<Ch
 }
 
 
+#[allow(dead_code)]
 pub fn get_by_id(conn: &Connection, id: &str) -> AppResult<Chunk> {
     conn.query_row(
         "SELECT id, document_id, content, position, page_number, heading_context, token_count, created_at
@@ -69,6 +70,7 @@ pub fn get_by_id(conn: &Connection, id: &str) -> AppResult<Chunk> {
 
 
 /// Delete all chunks belonging to a document. Called before re-ingestion.
+#[allow(dead_code)]
 pub fn delete_by_document(conn: &Connection, document_id: &str) -> AppResult<usize> {
     let affected = conn.execute(
         "DELETE FROM chunks WHERE document_id = ?1",

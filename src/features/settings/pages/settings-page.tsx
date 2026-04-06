@@ -9,6 +9,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
+import { QUERY_KEYS } from "@/lib/constants";
 import { useTheme } from "@/components/providers/theme-provider";
 
 
@@ -16,12 +17,12 @@ export function SettingsPage() {
   const { theme, setTheme, resolvedTheme } = useTheme();
 
   const { data: version } = useQuery({
-    queryKey: ["app-version"],
+    queryKey: [QUERY_KEYS.SETTINGS, "version"],
     queryFn: () => tauriInvoke<string>("get_app_version"),
   });
 
   const { data: dataDir } = useQuery({
-    queryKey: ["data-dir"],
+    queryKey: [QUERY_KEYS.SETTINGS, "data-dir"],
     queryFn: () => tauriInvoke<string>("get_data_directory"),
   });
 

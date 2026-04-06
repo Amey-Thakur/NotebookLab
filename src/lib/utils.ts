@@ -36,7 +36,6 @@ export function formatBytes(bytes: number, decimals = 1): string {
  * Debounce a function call. Returns a cancellable debounced function.
  * Call .cancel() in useEffect cleanup to prevent firing after unmount.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function debounce<T extends (...args: any[]) => void>(
   fn: T,
   delay: number,

@@ -32,7 +32,7 @@ export interface Document {
   file_type: string;
   file_hash: string;
   file_size: number;
-  status: string;
+  status: "pending" | "processing" | "processed" | "error";
   created_at: string;
   updated_at: string;
 }
