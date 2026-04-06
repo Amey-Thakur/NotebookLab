@@ -75,6 +75,11 @@ pub fn run() {
             commands::thinking_commands::generate_mind_map,
             commands::thinking_commands::generate_socratic_questions,
             commands::transform_commands::transform_document,
+            commands::model_commands::list_providers,
+            commands::model_commands::register_provider,
+            commands::model_commands::set_active_provider,
+            commands::model_commands::get_active_provider_name,
+            commands::model_commands::get_model_registry,
         ])
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {
