@@ -1,19 +1,19 @@
 /*
  * Title: editor-page.tsx
- * Tech Stack: React 19, React Router, Milkdown
+ * Tech Stack: React 19, React Router, Milkdown, TanStack Query
  * Description: Full editor view for a single note. Includes the Milkdown editor
  *   with a title input and auto-save functionality.
- * Important Details: Note content is loaded via Tauri IPC on mount. Changes are
- *   debounced and auto-saved every 2 seconds. The Milkdown editor is keyed by note ID
- *   to force remount when switching notes (avoids stale content).
+ * Important Details: Note content is loaded via TanStack Query. Title is tracked
+ *   as local edit state, initialized from the query data via key-based remount.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
 import { debounce } from "@/lib/utils";
-import { EDITOR_AUTOSAVE_MS } from "@/lib/constants";
+import { EDITOR_AUTOSAVE_MS, QUERY_KEYS } from "@/lib/constants";
 
 import type { Note } from "@/types/models";
 import { MilkdownEditor } from "../components/milkdown-editor";
@@ -21,56 +21,14 @@ import { MilkdownEditor } from "../components/milkdown-editor";
 
 export function EditorPage() {
   const { id } = useParams<{ id: string }>();
-  const [note, setNote] = useState<Note | null>(null);
-  const [title, setTitle] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!id) return;
+  const { data: note, isLoading, error } = useQuery({
+    queryKey: [QUERY_KEYS.NOTES, id],
+    queryFn: () => tauriInvoke<Note>("get_note", { id }),
+    enabled: !!id,
+  });
 
-    setLoading(true);
-    tauriInvoke<Note>("get_note", { id })
-      .then((n) => {
-        setNote(n);
-        setTitle(n.title);
-      })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [id]);
-
-  /* Debounced auto-save with cleanup to prevent firing after unmount */
-  const saveContent = useMemo(() => {
-    const debouncedSave = debounce((noteId: string, markdown: string) => {
-      tauriInvoke("update_note", { id: noteId, input: { content: markdown } }).catch(
-        (e) => console.error("Auto-save failed:", e),
-      );
-    }, EDITOR_AUTOSAVE_MS);
-
-    return debouncedSave;
-  }, []);
-
-  /* Cancel pending saves when unmounting or switching notes */
-  useEffect(() => {
-    return () => saveContent.cancel();
-  }, [id, saveContent]);
-
-  const handleContentChange = useCallback(
-    (markdown: string) => {
-      if (!id) return;
-      saveContent(id, markdown);
-    },
-    [id, saveContent],
-  );
-
-  const saveTitle = useCallback(() => {
-    if (!id || !title.trim()) return;
-    tauriInvoke("update_note", { id, input: { title: title.trim() } }).catch(
-      (e) => console.error("Title save failed:", e),
-    );
-  }, [id, title]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full text-text-3">
         Loading...
@@ -81,10 +39,45 @@ export function EditorPage() {
   if (error || !note) {
     return (
       <div className="flex items-center justify-center h-full text-error">
-        {error || "Note not found"}
+        {error ? String(error) : "Note not found"}
       </div>
     );
   }
+
+  /* Key-based remount initializes NoteEditor with fresh note data */
+  return <NoteEditor key={note.id} note={note} />;
+}
+
+
+/* Separate component so title state initializes from props on mount, not via effect */
+function NoteEditor({ note }: { note: Note }) {
+  const [title, setTitle] = useState(note.title);
+
+  const saveContent = useMemo(() => {
+    return debounce((noteId: string, markdown: string) => {
+      tauriInvoke("update_note", { id: noteId, input: { content: markdown } }).catch(
+        (e) => console.error("Auto-save failed:", e),
+      );
+    }, EDITOR_AUTOSAVE_MS);
+  }, []);
+
+  useEffect(() => {
+    return () => saveContent.cancel();
+  }, [saveContent]);
+
+  const handleContentChange = useCallback(
+    (markdown: string) => {
+      saveContent(note.id, markdown);
+    },
+    [note.id, saveContent],
+  );
+
+  const saveTitle = useCallback(() => {
+    if (!title.trim()) return;
+    tauriInvoke("update_note", { id: note.id, input: { title: title.trim() } }).catch(
+      (e) => console.error("Title save failed:", e),
+    );
+  }, [note.id, title]);
 
   return (
     <div className="flex flex-col h-full">
@@ -101,9 +94,7 @@ export function EditorPage() {
       </div>
 
       <div className="flex-1 overflow-auto px-8 py-4">
-        {/* Key forces remount when switching notes, preventing stale content */}
         <MilkdownEditor
-          key={note.id}
           defaultValue={note.content}
           onChange={handleContentChange}
           className="min-h-[400px]"
