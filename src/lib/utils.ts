@@ -33,16 +33,22 @@ export function formatBytes(bytes: number, decimals = 1): string {
 
 
 /**
- * Debounce a function call by the specified delay in milliseconds.
+ * Debounce a function call. Returns a cancellable debounced function.
+ * Call .cancel() in useEffect cleanup to prevent firing after unmount.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function debounce<T extends (...args: any[]) => void>(
   fn: T,
   delay: number,
-): (...args: Parameters<T>) => void {
+) {
   let timer: ReturnType<typeof setTimeout>;
-  return (...args: Parameters<T>) => {
+
+  const debounced = (...args: Parameters<T>) => {
     clearTimeout(timer);
     timer = setTimeout(() => fn(...args), delay);
   };
+
+  debounced.cancel = () => clearTimeout(timer);
+
+  return debounced;
 }
