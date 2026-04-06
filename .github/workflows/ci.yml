@@ -2,10 +2,7 @@
 ## Title: ci.yml
 ## Tech Stack: GitHub Actions, Node.js, Rust, Tauri v2
 ## Description: Continuous integration pipeline. Runs on every push and PR.
-##   Lints frontend, type-checks TypeScript, builds the Vite bundle,
-##   and runs cargo check + clippy on the Rust backend.
-## Important Details: Uses matrix strategy for cross-platform verification.
-##   Rust compilation uses the Tauri action's built-in caching.
+## Important Details: Third-party actions are SHA-pinned for supply chain security.
 ##
 
 name: CI
@@ -23,16 +20,15 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
   NODE_VERSION: "22"
-  RUST_TOOLCHAIN: stable
 
 jobs:
   frontend:
     name: Frontend (lint + typecheck + build)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4 # pin:actions/checkout
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4 # pin:actions/setup-node
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm

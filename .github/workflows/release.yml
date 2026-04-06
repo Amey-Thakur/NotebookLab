@@ -2,10 +2,8 @@
 ## Title: release.yml
 ## Tech Stack: GitHub Actions, Tauri v2, tauri-action
 ## Description: Release pipeline. Builds signed installers for Windows, macOS, and Linux.
-##   Triggered by pushing a version tag (e.g., v0.1.0). Creates a GitHub Release
-##   with all platform installers attached.
-## Important Details: Uses tauri-apps/tauri-action for cross-platform builds.
-##   Each platform builds in parallel. macOS builds both Intel and Apple Silicon.
+## Important Details: Triggered by version tags (v*). Creates a draft GitHub Release.
+##   Third-party actions are version-pinned.
 ##
 
 name: Release
@@ -71,7 +69,7 @@ jobs:
         run: npm ci
 
       - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@v0.5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
