@@ -12,6 +12,7 @@ pub mod pdf_parser;
 pub mod plaintext_parser;
 pub mod traits;
 
+#[allow(unused_imports)]
 pub use traits::{DocumentParser, ParsedDocument, ParsedPage};
 
 use crate::error::{AppError, AppResult};
