@@ -1,0 +1,8 @@
+# Every change requires review from at least one owner
+* @Amey-Thakur @architkonde19
+
+# Security-sensitive files require both owners
+src-tauri/capabilities/ @Amey-Thakur @architkonde19
+src-tauri/tauri.conf.json @Amey-Thakur @architkonde19
+src-tauri/resources/prompts/ @Amey-Thakur @architkonde19
+.github/workflows/ @Amey-Thakur @architkonde19
