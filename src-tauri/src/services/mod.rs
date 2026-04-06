@@ -8,6 +8,7 @@
  */
 
 pub mod chunking_service;
+pub mod first_run_service;
 pub mod ingestion_service;
 pub mod rag_service;
 pub mod search_service;

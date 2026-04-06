@@ -42,6 +42,11 @@ pub fn run() {
         .setup(|app| {
             let app_state = AppState::initialize(app.handle())?;
 
+            /* Create sample notebook on first run */
+            if let Ok(conn) = app_state.conn() {
+                services::first_run_service::ensure_sample_notebook(&conn).ok();
+            }
+
             /* Start the local REST API server with its own read-only DB connection */
             let data_dir = app.path().app_data_dir()
                 .map_err(|e| format!("Failed to resolve data dir: {e}"))?;

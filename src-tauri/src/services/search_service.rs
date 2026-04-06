@@ -2,9 +2,9 @@
  * Title: search_service.rs
  * Tech Stack: Rust, rusqlite, FTS5
  * Description: Full-text search across document chunks using SQLite FTS5.
- * Important Details: This is a keyword-based search using FTS5. Semantic vector search
- *   will be added when sqlite-vec is integrated. For now, this provides the retrieval
- *   component of the RAG pipeline using BM25 ranking.
+ * Important Details: Uses FTS5 with BM25 ranking for relevance scoring. Falls back
+ *   to LIKE-based search if the FTS5 table does not exist (first run before migration).
+ *   Semantic vector search will be added when sqlite-vec is integrated.
  */
 
 use rusqlite::{params, Connection};
@@ -26,7 +26,7 @@ pub struct SearchResult {
 
 
 /// Search document chunks by keyword within a notebook's documents.
-/// Uses SQLite LIKE matching (FTS5 will replace this when integrated).
+/// Uses FTS5 with BM25 ranking. Falls back to LIKE if FTS5 is unavailable.
 pub fn search_chunks(
     conn: &Connection,
     notebook_id: &str,
@@ -34,6 +34,61 @@ pub fn search_chunks(
     limit: usize,
 ) -> AppResult<Vec<SearchResult>> {
     let limit = limit.min(1000);
+
+    /* Try FTS5 first for ranked results */
+    match search_fts5(conn, notebook_id, query, limit) {
+        Ok(results) if !results.is_empty() => return Ok(results),
+        Ok(_) => {} /* Empty results, fall through to LIKE */
+        Err(_) => {} /* FTS5 table might not exist yet */
+    }
+
+    /* Fallback: LIKE-based search (slower but always works) */
+    search_like(conn, notebook_id, query, limit)
+}
+
+
+/// FTS5-based search with BM25 relevance ranking.
+fn search_fts5(
+    conn: &Connection,
+    notebook_id: &str,
+    query: &str,
+    limit: usize,
+) -> AppResult<Vec<SearchResult>> {
+    let mut stmt = conn.prepare(
+        "SELECT c.id, c.document_id, c.content, c.heading_context, c.page_number,
+                bm25(chunks_fts) as rank
+         FROM chunks_fts
+         INNER JOIN chunks c ON chunks_fts.rowid = c.rowid
+         INNER JOIN documents d ON c.document_id = d.id
+         WHERE chunks_fts MATCH ?1 AND d.notebook_id = ?2
+         ORDER BY rank
+         LIMIT ?3",
+    )?;
+
+    let results = stmt
+        .query_map(params![query, notebook_id, limit as i64], |row| {
+            Ok(SearchResult {
+                chunk_id: row.get(0)?,
+                document_id: row.get(1)?,
+                content: row.get(2)?,
+                heading_context: row.get(3)?,
+                page_number: row.get(4)?,
+                score: row.get::<_, f64>(5)?.abs(),
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(results)
+}
+
+
+/// LIKE-based fallback search (no ranking, full table scan).
+fn search_like(
+    conn: &Connection,
+    notebook_id: &str,
+    query: &str,
+    limit: usize,
+) -> AppResult<Vec<SearchResult>> {
     let pattern = text_utils::escape_like_pattern(query);
 
     let mut stmt = conn.prepare(

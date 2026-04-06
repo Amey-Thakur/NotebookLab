@@ -98,6 +98,24 @@
   margin: 2em 0;
 }
 
+/* Wiki-links [[note name]] */
+.milkdown-editor-root .wiki-link {
+  color: var(--color-accent);
+  background: rgba(143, 171, 212, 0.1);
+  padding: 1px 4px;
+  border-radius: 2px;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.9em;
+}
+
+.milkdown-editor-root .wiki-link:hover {
+  background: rgba(143, 171, 212, 0.2);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* Focus state */
 .milkdown-editor-root .ProseMirror:focus {
   outline: none;
