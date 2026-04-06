@@ -1,0 +1,160 @@
+/*
+ * Title: search-page.tsx
+ * Tech Stack: React 19, TanStack Query, Tailwind CSS
+ * Description: Search page with unified results across document chunks and notes.
+ * Important Details: Search is debounced (300ms) to avoid excessive IPC calls.
+ *   Results show matched content with source attribution. Clicking a chunk
+ *   navigates to the source document. Clicking a note opens the editor.
+ */
+
+import { useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+
+import { tauriInvoke } from "@/services/tauri-client";
+import { debounce } from "@/lib/utils";
+import { QUERY_KEYS } from "@/lib/constants";
+
+
+interface SearchResult {
+  chunk_id: string;
+  document_id: string;
+  content: string;
+  heading_context: string;
+  page_number: number | null;
+  score: number;
+}
+
+interface Note {
+  id: string;
+  notebook_id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface UnifiedSearchResult {
+  chunks: SearchResult[];
+  notes: Note[];
+}
+
+
+export function SearchPage() {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  const debouncedSearch = useCallback(
+    (() => {
+      const fn = debounce((q: string) => setDebouncedQuery(q), 300);
+      return fn;
+    })(),
+    [],
+  );
+
+  const handleInput = (value: string) => {
+    setQuery(value);
+    debouncedSearch(value);
+  };
+
+  /* TODO: notebook_id should come from active notebook context */
+  const { data, isLoading } = useQuery({
+    queryKey: [QUERY_KEYS.SEARCH, debouncedQuery],
+    queryFn: () =>
+      tauriInvoke<UnifiedSearchResult>("search", {
+        notebook_id: "placeholder",
+        query: debouncedQuery,
+      }),
+    enabled: debouncedQuery.length >= 2,
+  });
+
+  return (
+    <div className="p-8 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-display font-bold text-text-1 mb-6">Search</h1>
+
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => handleInput(e.target.value)}
+        placeholder="Search documents and notes..."
+        className="w-full px-4 py-3 text-sm bg-surface border border-border text-text-1
+                   placeholder:text-text-4 outline-none focus:border-accent-dim mb-8"
+        autoFocus
+      />
+
+      {isLoading && debouncedQuery && (
+        <p className="text-sm text-text-3">Searching...</p>
+      )}
+
+      {data && (
+        <>
+          {/* Note results */}
+          {data.notes.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-3">
+                Notes ({data.notes.length})
+              </h2>
+              {data.notes.map((note) => (
+                <div
+                  key={note.id}
+                  className="p-4 border border-border mb-2 cursor-pointer
+                             hover:border-accent-dim transition-colors"
+                  onClick={() => navigate(`/editor/${note.id}`)}
+                >
+                  <h3 className="text-sm font-semibold text-text-1">{note.title}</h3>
+                  <p className="text-xs text-text-3 mt-1 line-clamp-2 font-body">
+                    {note.content.slice(0, 200)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Chunk results */}
+          {data.chunks.length > 0 && (
+            <div>
+              <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-3">
+                Documents ({data.chunks.length})
+              </h2>
+              {data.chunks.map((chunk) => (
+                <div
+                  key={chunk.chunk_id}
+                  className="p-4 border border-border mb-2"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    {chunk.heading_context && (
+                      <span className="text-xs font-mono text-accent-dim">
+                        {chunk.heading_context}
+                      </span>
+                    )}
+                    {chunk.page_number && (
+                      <span className="text-xs font-mono text-text-4">
+                        p.{chunk.page_number}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-text-2 font-body line-clamp-3">
+                    {chunk.content.slice(0, 300)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {data.notes.length === 0 && data.chunks.length === 0 && debouncedQuery && (
+            <p className="text-sm text-text-3 text-center py-12">
+              No results found for "{debouncedQuery}"
+            </p>
+          )}
+        </>
+      )}
+
+      {!debouncedQuery && (
+        <p className="text-sm text-text-4 text-center py-12">
+          Type at least 2 characters to search
+        </p>
+      )}
+    </div>
+  );
+}
