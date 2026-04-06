@@ -20,7 +20,7 @@ pub fn create(conn: &Connection, input: CreateDocument) -> AppResult<Document> {
     conn.execute(
         "INSERT INTO documents (id, notebook_id, title, file_path, file_type, file_hash, file_size, status, created_at, updated_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
-        params![id, input.notebook_id, input.title, input.file_path, input.file_type, input.file_hash, input.file_size, "pending", now, now],
+        params![id, input.notebook_id, input.title, input.file_path, input.file_type, input.file_hash, input.file_size, DocumentStatus::Pending.as_str(), now, now],
     )?;
 
     get_by_id(conn, &id)
@@ -48,7 +48,10 @@ pub fn get_by_id(conn: &Connection, id: &str) -> AppResult<Document> {
             })
         },
     )
-    .map_err(|_| AppError::NotFound(format!("Document not found: {id}")))
+    .map_err(|e| match e {
+        rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Document not found: {id}")),
+        other => AppError::Database(other),
+    })
 }
 
 

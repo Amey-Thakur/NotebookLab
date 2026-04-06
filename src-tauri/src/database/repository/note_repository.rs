@@ -45,7 +45,10 @@ pub fn get_by_id(conn: &Connection, id: &str) -> AppResult<Note> {
             })
         },
     )
-    .map_err(|_| AppError::NotFound(format!("Note not found: {id}")))
+    .map_err(|e| match e {
+        rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Note not found: {id}")),
+        other => AppError::Database(other),
+    })
 }
 
 
@@ -101,11 +104,13 @@ pub fn delete(conn: &Connection, id: &str) -> AppResult<()> {
 
 /// Search notes by title within a notebook. Used for [[wiki-link]] autocomplete.
 pub fn search_by_title(conn: &Connection, notebook_id: &str, query: &str) -> AppResult<Vec<Note>> {
-    let pattern = format!("%{query}%");
+    /* Escape LIKE metacharacters so user input with % or _ searches literally */
+    let escaped = query.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_");
+    let pattern = format!("%{escaped}%");
 
     let mut stmt = conn.prepare(
         "SELECT id, notebook_id, title, content, created_at, updated_at
-         FROM notes WHERE notebook_id = ?1 AND title LIKE ?2
+         FROM notes WHERE notebook_id = ?1 AND title LIKE ?2 ESCAPE '\\'
          ORDER BY updated_at DESC LIMIT 10",
     )?;
 

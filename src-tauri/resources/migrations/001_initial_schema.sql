@@ -80,3 +80,4 @@ CREATE INDEX IF NOT EXISTS idx_links_source ON links(source_id, source_type);
 CREATE INDEX IF NOT EXISTS idx_links_target ON links(target_id, target_type);
 CREATE INDEX IF NOT EXISTS idx_tag_assoc_entity ON tag_associations(entity_id, entity_type);
 CREATE INDEX IF NOT EXISTS idx_documents_hash ON documents(file_hash);
+CREATE INDEX IF NOT EXISTS idx_notes_title ON notes(notebook_id, title);

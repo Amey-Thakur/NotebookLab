@@ -46,7 +46,10 @@ pub fn get_by_id(conn: &Connection, id: &str) -> AppResult<Notebook> {
             })
         },
     )
-    .map_err(|_| AppError::NotFound(format!("Notebook not found: {id}")))
+    .map_err(|e| match e {
+        rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Notebook not found: {id}")),
+        other => AppError::Database(other),
+    })
 }
 
 
