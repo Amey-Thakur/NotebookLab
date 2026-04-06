@@ -11,11 +11,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { useNotebookStore } from "@/stores/notebook-store";
 import { useNotebooks, useCreateNotebook, useDeleteNotebook } from "../hooks/use-notebooks";
 
 
 export function NotebooksPage() {
   const navigate = useNavigate();
+  const setActiveNotebook = useNotebookStore((s) => s.setActiveNotebook);
   const { data: notebooks, isLoading, error } = useNotebooks();
   const createMutation = useCreateNotebook();
   const deleteMutation = useDeleteNotebook();
@@ -123,7 +125,10 @@ export function NotebooksPage() {
             key={nb.id}
             className="group border border-border bg-surface p-5 cursor-pointer
                        hover:border-accent-dim transition-colors"
-            onClick={() => navigate(`/notebooks/${nb.id}`)}
+            onClick={() => {
+              setActiveNotebook(nb.id);
+              navigate(`/notebooks/${nb.id}`);
+            }}
           >
             <div className="flex items-start justify-between mb-3">
               <div

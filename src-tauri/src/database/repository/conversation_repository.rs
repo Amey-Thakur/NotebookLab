@@ -101,6 +101,27 @@ pub fn get_messages(conn: &Connection, conversation_id: &str) -> AppResult<Vec<M
 }
 
 
+/// Get the most recent N messages for a conversation (for RAG context window).
+/// Returns messages in chronological order (oldest first).
+pub fn get_recent_messages(conn: &Connection, conversation_id: &str, limit: usize) -> AppResult<Vec<Message>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, conversation_id, role, content, created_at
+         FROM (
+             SELECT * FROM messages
+             WHERE conversation_id = ?1
+             ORDER BY created_at DESC
+             LIMIT ?2
+         ) ORDER BY created_at ASC",
+    )?;
+
+    let msgs = stmt
+        .query_map(params![conversation_id, limit as i64], Message::from_row)?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(msgs)
+}
+
+
 pub fn add_citation(
     conn: &Connection,
     message_id: &str,
