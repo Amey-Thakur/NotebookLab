@@ -11,8 +11,10 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { ROUTES } from "./lib/constants";
 import { AppShell } from "./components/layout/app-shell";
 import { NotebooksPage } from "./features/notebooks/pages/notebooks-page";
+import { NotebookDetailPage } from "./features/notebooks/pages/notebook-detail-page";
 import { EditorPage } from "./features/editor/pages/editor-page";
 import { SearchPage } from "./features/search/pages/search-page";
+import { ChatPage } from "./features/chat/pages/chat-page";
 
 
 export function App() {
@@ -21,10 +23,10 @@ export function App() {
       <Routes>
         <Route path="/" element={<Navigate to={ROUTES.NOTEBOOKS} replace />} />
         <Route path={ROUTES.NOTEBOOKS} element={<NotebooksPage />} />
-        <Route path={ROUTES.NOTEBOOK_DETAIL} element={<PlaceholderPage title="Notebook Detail" />} />
+        <Route path={ROUTES.NOTEBOOK_DETAIL} element={<NotebookDetailPage />} />
         <Route path={ROUTES.EDITOR} element={<EditorPage />} />
         <Route path={ROUTES.SEARCH} element={<SearchPage />} />
-        <Route path={ROUTES.CHAT} element={<PlaceholderPage title="Chat" />} />
+        <Route path={ROUTES.CHAT} element={<ChatPage />} />
         <Route path={ROUTES.THINKING_PARTNER} element={<PlaceholderPage title="Thinking Partner" />} />
         <Route path={ROUTES.PODCASTS} element={<PlaceholderPage title="Podcasts" />} />
         <Route path={ROUTES.MODELS} element={<PlaceholderPage title="Model Manager" />} />
