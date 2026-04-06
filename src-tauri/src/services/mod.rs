@@ -11,5 +11,8 @@ pub mod chunking_service;
 pub mod ingestion_service;
 pub mod rag_service;
 pub mod search_service;
-pub mod thinking_service;
+
+/* thinking_service and transform_service logic moved into commands
+   for proper lock-phase splitting. Service files kept for reference
+   but re-exported types only. */
 pub mod transform_service;

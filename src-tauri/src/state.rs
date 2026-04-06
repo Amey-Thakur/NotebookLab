@@ -29,6 +29,13 @@ impl AppState {
             .lock()
             .map_err(|_| AppError::Internal("Database lock poisoned".into()))
     }
+
+    /// Acquire the provider router with graceful poison handling.
+    pub fn provider(&self) -> AppResult<MutexGuard<'_, ProviderRouter>> {
+        self.providers
+            .lock()
+            .map_err(|_| AppError::Internal("Provider lock poisoned".into()))
+    }
 }
 
 
