@@ -52,6 +52,7 @@ impl OpenAiCompatibleProvider {
     }
 
     /// Create a provider configured for a local llama.cpp sidecar.
+    #[allow(dead_code)]
     pub fn llama_cpp(port: u16, model_name: String) -> Self {
         Self::new(
             "llama.cpp".into(),
@@ -63,6 +64,7 @@ impl OpenAiCompatibleProvider {
     }
 
     /// Create a provider configured for Ollama's local server.
+    #[allow(dead_code)]
     pub fn ollama(model_name: String) -> Self {
         Self::new(
             "Ollama".into(),
@@ -74,6 +76,7 @@ impl OpenAiCompatibleProvider {
     }
 
     /// Create a provider configured for the OpenAI API.
+    #[allow(dead_code)]
     pub fn openai(api_key: String, model: String) -> Self {
         Self::new(
             "OpenAI".into(),

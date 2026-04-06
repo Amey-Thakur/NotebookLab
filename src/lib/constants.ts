@@ -28,8 +28,8 @@ export const QUERY_KEYS = {
   CHAT: "chat",
   MODELS: "models",
   SETTINGS: "settings",
-  GRAPH: "graph",
-  PODCASTS: "podcasts",
+  PROVIDERS: "providers",
+  ACTIVE_PROVIDER: "active-provider",
 } as const;
 
 

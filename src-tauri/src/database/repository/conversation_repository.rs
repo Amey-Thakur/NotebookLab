@@ -140,6 +140,7 @@ pub fn add_citation(
 }
 
 
+#[allow(dead_code)]
 pub fn get_citations_for_message(conn: &Connection, message_id: &str) -> AppResult<Vec<Citation>> {
     let mut stmt = conn.prepare(
         "SELECT c.id, c.message_id, c.chunk_id, c.relevance_score
