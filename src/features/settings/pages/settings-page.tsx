@@ -32,7 +32,7 @@ export function SettingsPage() {
 
       {/* Appearance */}
       <section className="mb-8">
-        <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-4">
+        <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-4 pb-2 border-b border-border">
           Appearance
         </h2>
         <div className="flex gap-2">
@@ -58,7 +58,7 @@ export function SettingsPage() {
 
       {/* About */}
       <section className="mb-8">
-        <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-4">
+        <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-4 pb-2 border-b border-border">
           About
         </h2>
         <div className="space-y-2">
@@ -77,7 +77,7 @@ export function SettingsPage() {
 
       {/* Keyboard shortcuts */}
       <section>
-        <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-4">
+        <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-4 pb-2 border-b border-border">
           Keyboard Shortcuts
         </h2>
         <div className="space-y-1">
