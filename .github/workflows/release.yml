@@ -1,0 +1,92 @@
+##
+## Title: release.yml
+## Tech Stack: GitHub Actions, Tauri v2, tauri-action
+## Description: Release pipeline. Builds signed installers for Windows, macOS, and Linux.
+##   Triggered by pushing a version tag (e.g., v0.1.0). Creates a GitHub Release
+##   with all platform installers attached.
+## Important Details: Uses tauri-apps/tauri-action for cross-platform builds.
+##   Each platform builds in parallel. macOS builds both Intel and Apple Silicon.
+##
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  build:
+    name: Build (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            runner: windows-latest
+            target: x86_64-pc-windows-msvc
+
+          - platform: macos-intel
+            runner: macos-13
+            target: x86_64-apple-darwin
+
+          - platform: macos-arm
+            runner: macos-latest
+            target: aarch64-apple-darwin
+
+          - platform: linux
+            runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "NotebookLab ${{ github.ref_name }}"
+          releaseBody: |
+            See the [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+
+            ## Download
+            | Platform | File |
+            |----------|------|
+            | Windows | `.msi` installer |
+            | macOS (Intel) | `.dmg` disk image |
+            | macOS (Apple Silicon) | `.dmg` disk image |
+            | Linux | `.AppImage` or `.deb` |
+          releaseDraft: true
+          prerelease: false
+          args: --target ${{ matrix.target }}
