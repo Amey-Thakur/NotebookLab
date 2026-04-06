@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { path: ROUTES.SEARCH, label: "Search" },
   { path: ROUTES.CHAT, label: "Chat" },
   { path: ROUTES.THINKING_PARTNER, label: "Think" },
+  { path: ROUTES.TRANSFORMS, label: "Transform" },
   { path: ROUTES.PODCASTS, label: "Podcasts" },
   { path: ROUTES.MODELS, label: "Models" },
   { path: ROUTES.SETTINGS, label: "Settings" },
