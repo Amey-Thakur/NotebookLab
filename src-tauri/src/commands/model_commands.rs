@@ -46,6 +46,16 @@ pub fn register_provider(
         return Err(AppError::InvalidInput("Model name is required (max 200 chars)".into()));
     }
 
+    /* Validate URL scheme and host to prevent SSRF */
+    validate_provider_url(&input.base_url, input.is_local)?;
+
+    /* Reject sending API keys over unencrypted HTTP to remote providers */
+    if input.api_key.is_some() && !input.is_local && !input.base_url.starts_with("https://") {
+        return Err(AppError::InvalidInput(
+            "API keys can only be sent to HTTPS endpoints for cloud providers".into(),
+        ));
+    }
+
     let provider = OpenAiCompatibleProvider::new(
         input.name,
         input.base_url,
@@ -84,4 +94,54 @@ pub fn get_model_registry() -> AppResult<serde_json::Value> {
     let registry = include_str!("../../resources/model-registry.json");
     let value: serde_json::Value = serde_json::from_str(registry)?;
     Ok(value)
+}
+
+
+/// Validate provider URL to prevent SSRF attacks.
+/// Local providers: must use loopback addresses only.
+/// Cloud providers: must use https:// and not target private/internal networks.
+fn validate_provider_url(url: &str, is_local: bool) -> AppResult<()> {
+    /* Must start with http:// or https:// */
+    if !url.starts_with("http://") && !url.starts_with("https://") {
+        return Err(AppError::InvalidInput(
+            "Provider URL must use http:// or https:// scheme".into(),
+        ));
+    }
+
+    /* Extract host from URL */
+    let host = url
+        .trim_start_matches("http://")
+        .trim_start_matches("https://")
+        .split('/')
+        .next()
+        .unwrap_or("")
+        .split(':')
+        .next()
+        .unwrap_or("");
+
+    if is_local {
+        /* Local providers must target loopback only */
+        let allowed = ["127.0.0.1", "localhost", "::1", "[::1]"];
+        if !allowed.iter().any(|a| host == *a) {
+            return Err(AppError::InvalidInput(
+                "Local providers must use 127.0.0.1 or localhost".into(),
+            ));
+        }
+    } else {
+        /* Cloud providers must not target private/internal networks */
+        let blocked_prefixes = ["127.", "10.", "192.168.", "172.16.", "172.17.", "172.18.",
+            "172.19.", "172.20.", "172.21.", "172.22.", "172.23.", "172.24.", "172.25.",
+            "172.26.", "172.27.", "172.28.", "172.29.", "172.30.", "172.31.",
+            "169.254.", "0.", "localhost", "::1", "[::1]"];
+
+        for prefix in &blocked_prefixes {
+            if host.starts_with(prefix) || host == *prefix {
+                return Err(AppError::InvalidInput(
+                    "Cloud providers cannot target private/internal networks".into(),
+                ));
+            }
+        }
+    }
+
+    Ok(())
 }
