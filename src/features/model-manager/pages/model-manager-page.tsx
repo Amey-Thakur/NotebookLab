@@ -1,10 +1,11 @@
 /*
  * Title: model-manager-page.tsx
  * Tech Stack: React 19, TanStack Query, Tailwind CSS
- * Description: Model manager page. Register LLM providers (local or cloud),
- *   switch the active provider, and view available models from the registry.
- * Important Details: Supports llama.cpp (local), Ollama (local), and OpenAI-compatible
- *   cloud providers. The active provider is used by chat, thinking partner, and transforms.
+ * Description: Model manager page with zero-config setup guide. Shows a 3-step
+ *   setup guide when no providers are registered. Preset buttons for common
+ *   providers (Ollama, LM Studio, OpenAI) eliminate manual form filling.
+ * Important Details: Auto-detection runs on app startup. This page provides
+ *   a manual fallback with guided setup for users who need it.
  */
 
 import { useState } from "react";
@@ -13,15 +14,23 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS } from "@/lib/constants";
 import type { ProviderInfo } from "@/types/models";
+import { SetupGuide } from "../components/setup-guide";
+
+
+const PRESETS = [
+  { name: "Ollama", base_url: "http://127.0.0.1:11434", model: "llama3.2:3b", is_local: true },
+  { name: "LM Studio", base_url: "http://127.0.0.1:1234", model: "local-model", is_local: true },
+  { name: "llama.cpp", base_url: "http://127.0.0.1:8080", model: "local-model", is_local: true },
+] as const;
 
 
 export function ModelManagerPage() {
   const queryClient = useQueryClient();
-  const [showRegister, setShowRegister] = useState(false);
-  const [name, setName] = useState("Ollama");
-  const [baseUrl, setBaseUrl] = useState("http://127.0.0.1:11434");
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [name, setName] = useState("");
+  const [baseUrl, setBaseUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
-  const [model, setModel] = useState("llama3.2:3b");
+  const [model, setModel] = useState("");
   const [isLocal, setIsLocal] = useState(true);
 
   const { data: providers } = useQuery({
@@ -35,14 +44,11 @@ export function ModelManagerPage() {
   });
 
   const register = useMutation({
-    mutationFn: () =>
-      tauriInvoke<number>("register_provider", {
-        input: { name, base_url: baseUrl, api_key: apiKey || null, model, is_local: isLocal },
-      }),
+    mutationFn: (input: { name: string; base_url: string; api_key: string | null; model: string; is_local: boolean }) =>
+      tauriInvoke<number>("register_provider", { input }),
     onSuccess: (index) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PROVIDERS] });
       setActive.mutate(index);
-      setShowRegister(false);
     },
   });
 
@@ -55,22 +61,75 @@ export function ModelManagerPage() {
     },
   });
 
+  const hasProviders = (providers?.length ?? 0) > 0;
+
+  const handlePreset = (preset: typeof PRESETS[number]) => {
+    register.mutate({
+      name: preset.name,
+      base_url: preset.base_url,
+      api_key: null,
+      model: preset.model,
+      is_local: preset.is_local,
+    });
+  };
+
+  const handleAdvancedRegister = () => {
+    register.mutate({
+      name, base_url: baseUrl, api_key: apiKey || null, model, is_local: isLocal,
+    }, {
+      onSuccess: () => { setShowAdvanced(false); setName(""); setBaseUrl(""); setApiKey(""); setModel(""); },
+    });
+  };
+
+  const refreshProviders = () => {
+    queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PROVIDERS] });
+    queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ACTIVE_PROVIDER] });
+  };
+
   return (
-    <div className="p-8 max-w-3xl mx-auto">
+    <div className="p-8">
       <h1 className="text-2xl font-display font-bold text-text-1 mb-2">Models</h1>
-      <p className="text-sm text-text-3 mb-8">
+      <p className="text-sm text-text-3 mb-6">
         Active: <span className="text-accent font-mono">{activeName || "None"}</span>
       </p>
 
-      <button
-        type="button"
-        onClick={() => setShowRegister(!showRegister)}
-        className="px-4 py-2 text-sm font-mono bg-accent-dim text-text-1 mb-6"
-      >
-        + Add Provider
-      </button>
+      {/* Setup guide shown when no providers */}
+      {!hasProviders && <SetupGuide onRefresh={refreshProviders} />}
 
-      {showRegister && (
+      {/* Quick preset buttons */}
+      <div className="mb-6">
+        <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-3 pb-2 border-b border-border">
+          Quick Setup
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          {PRESETS.map((preset) => (
+            <button
+              key={preset.name}
+              type="button"
+              onClick={() => handlePreset(preset)}
+              disabled={register.isPending}
+              className="px-4 py-2 text-sm font-mono border border-border text-text-2
+                         hover:border-accent-dim hover:text-text-1 transition-colors disabled:opacity-50"
+            >
+              + {preset.name}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="px-4 py-2 text-sm font-mono text-text-4 border border-border
+                       hover:border-accent-dim hover:text-text-1 transition-colors"
+          >
+            Custom...
+          </button>
+        </div>
+        {register.isError && (
+          <p className="text-xs text-error mt-2">{String(register.error)}</p>
+        )}
+      </div>
+
+      {/* Advanced registration form */}
+      {showAdvanced && (
         <div className="p-4 border border-border bg-surface-2 mb-6">
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
@@ -98,53 +157,49 @@ export function ModelManagerPage() {
           <div className="flex items-center gap-4 mb-3">
             <label className="flex items-center gap-2 text-sm text-text-2">
               <input type="checkbox" checked={isLocal} onChange={(e) => setIsLocal(e.target.checked)} />
-              Local provider (no internet needed)
+              Local provider
             </label>
           </div>
           <div className="flex gap-2">
-            <button type="button" onClick={() => register.mutate()}
-              disabled={register.isPending}
+            <button type="button" onClick={handleAdvancedRegister}
+              disabled={register.isPending || !name || !baseUrl || !model}
               className="px-3 py-1 text-xs font-mono bg-accent-dim text-text-1 disabled:opacity-50">
-              Register &amp; Activate
+              Register
             </button>
-            <button type="button" onClick={() => setShowRegister(false)}
+            <button type="button" onClick={() => setShowAdvanced(false)}
               className="px-3 py-1 text-xs font-mono text-text-3 border border-border">
               Cancel
             </button>
           </div>
-          {register.isError && (
-            <p className="text-xs text-error mt-2">{String(register.error)}</p>
-          )}
         </div>
       )}
 
       {/* Provider list */}
-      <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-3">
-        Registered Providers ({providers?.length || 0})
-      </h2>
-      {providers?.length === 0 && (
-        <p className="text-sm text-text-4">No providers registered. Add one to enable AI features.</p>
+      {hasProviders && (
+        <>
+          <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-3 pb-2 border-b border-border">
+            Registered Providers ({providers?.length})
+          </h2>
+          {providers?.map((p) => (
+            <div key={p.index} className={`flex items-center justify-between p-3 border mb-1 ${p.is_active ? "border-accent-dim bg-surface-2" : "border-border"}`}>
+              <div>
+                <span className="text-sm text-text-1 font-medium">{p.name}</span>
+                <span className="text-xs font-mono text-text-4 ml-2">{p.is_local ? "local" : "cloud"}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {p.is_active ? (
+                  <span className="text-xs font-mono text-accent">Active</span>
+                ) : (
+                  <button type="button" onClick={() => setActive.mutate(p.index)}
+                    className="text-xs font-mono text-text-3 hover:text-text-1">
+                    Activate
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </>
       )}
-      {providers?.map((p) => (
-        <div key={p.index} className={`flex items-center justify-between p-3 border mb-1 ${p.is_active ? "border-accent-dim bg-surface-2" : "border-border"}`}>
-          <div>
-            <span className="text-sm text-text-1 font-medium">{p.name}</span>
-            <span className="text-xs font-mono text-text-4 ml-2">
-              {p.is_local ? "local" : "cloud"}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            {p.is_active ? (
-              <span className="text-xs font-mono text-accent">Active</span>
-            ) : (
-              <button type="button" onClick={() => setActive.mutate(p.index)}
-                className="text-xs font-mono text-text-3 hover:text-text-1">
-                Activate
-              </button>
-            )}
-          </div>
-        </div>
-      ))}
     </div>
   );
 }

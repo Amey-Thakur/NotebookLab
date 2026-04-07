@@ -7,6 +7,7 @@
  *   Each service file handles one domain.
  */
 
+pub mod auto_setup_service;
 pub mod chunking_service;
 pub mod first_run_service;
 pub mod ingestion_service;
