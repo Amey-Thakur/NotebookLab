@@ -42,5 +42,12 @@
     ],
     "externalBin": []
   },
-  "plugins": {}
+  "plugins": {
+    "updater": {
+      "pubkey": "",
+      "endpoints": [
+        "https://github.com/Amey-Thakur/NotebookLab/releases/latest/download/latest.json"
+      ]
+    }
+  }
 }
