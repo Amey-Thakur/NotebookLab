@@ -77,6 +77,19 @@ jobs:
           npm ci
           npm run build
 
+      - name: Create placeholder sidecar binary
+        shell: bash
+        run: |
+          # Tauri validates sidecar binaries exist at compile time.
+          # Create a placeholder so cargo check passes in CI.
+          mkdir -p src-tauri/binaries
+          TARGET=$(rustc --print host-tuple 2>/dev/null || rustc -vV | grep host | awk '{print $2}')
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            touch "src-tauri/binaries/llama-server-${TARGET}.exe"
+          else
+            touch "src-tauri/binaries/llama-server-${TARGET}"
+          fi
+
       - name: Cargo check
         working-directory: src-tauri
         run: cargo check --all-features
@@ -84,3 +97,7 @@ jobs:
       - name: Cargo clippy
         working-directory: src-tauri
         run: cargo clippy --all-features -- -D warnings
+
+      - name: Cargo test
+        working-directory: src-tauri
+        run: cargo test
