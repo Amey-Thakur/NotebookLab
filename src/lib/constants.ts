@@ -14,6 +14,7 @@ export const ROUTES = {
   SEARCH: "/search",
   CHAT: "/chat",
   THINKING_PARTNER: "/thinking-partner",
+  DOCUMENTS: "/documents",
   TRANSFORMS: "/transforms",
   PODCASTS: "/podcasts",
   MODELS: "/models",
