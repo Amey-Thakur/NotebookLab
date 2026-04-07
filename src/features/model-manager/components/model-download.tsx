@@ -8,7 +8,7 @@
  *   estimated download size (~2GB for the default model) to set expectations.
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { useMutation } from "@tanstack/react-query";
 
@@ -31,6 +31,9 @@ interface ModelDownloadProps {
 
 export function ModelDownload({ onComplete }: ModelDownloadProps) {
   const [progress, setProgress] = useState<DownloadProgress | null>(null);
+  /* Stable ref to onComplete to avoid listener churn on parent re-renders */
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   const download = useMutation({
     mutationFn: () => tauriInvoke<string>("download_default_model"),
@@ -42,18 +45,18 @@ export function ModelDownload({ onComplete }: ModelDownloadProps) {
       setProgress(event.payload);
 
       if (event.payload.status === "complete") {
-        onComplete();
+        onCompleteRef.current();
       }
     });
 
     return () => {
       unlisten.then((fn) => fn());
     };
-  }, [onComplete]);
+  }, []);
 
   const isDownloading = progress?.status === "downloading";
   const isComplete = progress?.status === "complete";
-  const isError = progress?.status.startsWith("error");
+  const isError = progress?.status?.startsWith("error");
 
   const formatBytes = (bytes: number) => {
     if (bytes >= 1_073_741_824) return `${(bytes / 1_073_741_824).toFixed(1)} GB`;
