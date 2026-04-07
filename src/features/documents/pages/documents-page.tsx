@@ -21,7 +21,7 @@ export function DocumentsPage() {
   const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
 
-  const { data: documents } = useDocuments(activeNotebookId ?? undefined);
+  const { data: documents, isLoading, isError, error } = useDocuments(activeNotebookId ?? undefined);
   const deleteDoc = useDeleteDocument(activeNotebookId ?? undefined);
 
   const handleDelete = (id: string) => {
@@ -56,13 +56,24 @@ export function DocumentsPage() {
           <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-3 pb-2 border-b border-border">
             Imported ({documents?.length ?? 0})
           </h2>
-          <DocumentList
-            documents={documents ?? []}
-            selectedId={selectedDocId}
-            onSelect={setSelectedDocId}
-            onDelete={handleDelete}
-            isDeleting={deleteDoc.isPending}
-          />
+          {isLoading && (
+            <p className="text-xs text-text-4 font-mono py-4">Loading documents...</p>
+          )}
+          {isError && (
+            <p className="text-xs text-error py-4">Failed to load documents: {String(error)}</p>
+          )}
+          {deleteDoc.isError && (
+            <p className="text-xs text-error py-2">Delete failed: {String(deleteDoc.error)}</p>
+          )}
+          {!isLoading && !isError && (
+            <DocumentList
+              documents={documents ?? []}
+              selectedId={selectedDocId}
+              onSelect={setSelectedDocId}
+              onDelete={handleDelete}
+              isDeleting={deleteDoc.isPending}
+            />
+          )}
         </div>
 
         {/* Chunk preview */}

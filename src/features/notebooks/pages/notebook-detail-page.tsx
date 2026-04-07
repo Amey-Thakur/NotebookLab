@@ -17,6 +17,7 @@ import { useNotebookStore } from "@/stores/notebook-store";
 import { formatBytes } from "@/lib/utils";
 import type { Notebook, Document, Note } from "@/types/models";
 import { pickDocumentFile } from "@/features/documents/api/document-api";
+import { useImportDocument } from "@/features/documents/hooks/use-documents";
 
 
 export function NotebookDetailPage() {
@@ -56,13 +57,7 @@ export function NotebookDetailPage() {
     },
   });
 
-  const importDoc = useMutation({
-    mutationFn: (filePath: string) =>
-      tauriInvoke<string>("import_document", { notebook_id: id, file_path: filePath }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.DOCUMENTS, id] });
-    },
-  });
+  const importDoc = useImportDocument(id);
 
   const handleImport = async () => {
     const filePath = await pickDocumentFile();

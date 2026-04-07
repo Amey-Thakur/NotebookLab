@@ -9,11 +9,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { QUERY_KEYS } from "@/lib/constants";
+import type { Document as AppDocument, Chunk } from "@/types/models";
 import * as api from "../api/document-api";
 
 
 export function useDocuments(notebookId: string | undefined) {
-  return useQuery({
+  return useQuery<AppDocument[]>({
     queryKey: [QUERY_KEYS.DOCUMENTS, notebookId],
     queryFn: () => api.listDocuments(notebookId!),
     enabled: !!notebookId,
@@ -21,7 +22,7 @@ export function useDocuments(notebookId: string | undefined) {
 }
 
 export function useDocumentChunks(documentId: string | undefined) {
-  return useQuery({
+  return useQuery<Chunk[]>({
     queryKey: [QUERY_KEYS.DOCUMENTS, "chunks", documentId],
     queryFn: () => api.getDocumentChunks(documentId!),
     enabled: !!documentId,
@@ -32,9 +33,14 @@ export function useImportDocument(notebookId: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (filePath: string) => api.importDocument(notebookId!, filePath),
+    mutationFn: (filePath: string) => {
+      if (!notebookId) throw new Error("No notebook selected");
+      return api.importDocument(notebookId, filePath);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.DOCUMENTS, notebookId] });
+      if (notebookId) {
+        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.DOCUMENTS, notebookId] });
+      }
     },
   });
 }
@@ -45,7 +51,9 @@ export function useDeleteDocument(notebookId: string | undefined) {
   return useMutation({
     mutationFn: (id: string) => api.deleteDocument(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.DOCUMENTS, notebookId] });
+      if (notebookId) {
+        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.DOCUMENTS, notebookId] });
+      }
     },
   });
 }
