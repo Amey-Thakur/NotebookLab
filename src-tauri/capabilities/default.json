@@ -23,8 +23,6 @@
       "allow": [{ "path": "$APPDATA/com.notebooklab.app/**" }]
     },
     "updater:default",
-    "shell:allow-spawn",
-    "shell:allow-stdin-write",
     {
       "identifier": "shell:allow-execute",
       "allow": [

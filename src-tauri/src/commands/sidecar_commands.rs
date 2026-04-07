@@ -13,11 +13,14 @@ use crate::services::sidecar_service;
 
 
 /// Check if the sidecar binary exists in the app bundle.
+/// Returns false if the binary is not found (e.g., dev build without download).
 #[tauri::command]
-pub fn sidecar_available() -> AppResult<bool> {
-    /* This is a simple check; the real binary resolution happens via Tauri's
-       shell plugin when spawning. We just report capability. */
-    Ok(true)
+pub fn sidecar_available(app: tauri::AppHandle) -> AppResult<bool> {
+    /* Check if llama-server sidecar resolves to an actual file.
+       Tauri resolves sidecars relative to the app binary with platform suffix. */
+    use tauri_plugin_shell::ShellExt;
+    let available = app.shell().sidecar("llama-server").is_ok();
+    Ok(available)
 }
 
 

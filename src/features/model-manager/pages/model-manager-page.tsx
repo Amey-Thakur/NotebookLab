@@ -62,6 +62,7 @@ export function ModelManagerPage() {
   });
 
   const hasProviders = (providers?.length ?? 0) > 0;
+  const providerNames = new Set(providers?.map((p) => p.name) ?? []);
 
   const handlePreset = (preset: typeof PRESETS[number]) => {
     register.mutate({
@@ -107,11 +108,11 @@ export function ModelManagerPage() {
               key={preset.name}
               type="button"
               onClick={() => handlePreset(preset)}
-              disabled={register.isPending}
+              disabled={register.isPending || providerNames.has(preset.name)}
               className="px-4 py-2 text-sm font-mono border border-border text-text-2
                          hover:border-accent-dim hover:text-text-1 transition-colors disabled:opacity-50"
             >
-              + {preset.name}
+              {providerNames.has(preset.name) ? "✓" : "+"} {preset.name}
             </button>
           ))}
           <button
