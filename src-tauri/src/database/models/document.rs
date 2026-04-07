@@ -37,7 +37,7 @@ impl Document {
             file_type: row.get(4)?,
             file_hash: row.get(5)?,
             file_size: row.get(6)?,
-            status: DocumentStatus::from_str(&status_str),
+            status: DocumentStatus::parse_status(&status_str),
             created_at: row.get(8)?,
             updated_at: row.get(9)?,
         })
@@ -64,7 +64,7 @@ impl DocumentStatus {
         }
     }
 
-    pub fn from_str(s: &str) -> Self {
+    pub fn parse_status(s: &str) -> Self {
         match s {
             "pending" => Self::Pending,
             "processing" => Self::Processing,

@@ -18,6 +18,12 @@ pub struct ProviderRouter {
 }
 
 
+impl Default for ProviderRouter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ProviderRouter {
     pub fn new() -> Self {
         Self {
