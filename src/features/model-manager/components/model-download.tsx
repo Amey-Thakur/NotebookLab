@@ -33,7 +33,9 @@ export function ModelDownload({ onComplete }: ModelDownloadProps) {
   const [progress, setProgress] = useState<DownloadProgress | null>(null);
   /* Stable ref to onComplete to avoid listener churn on parent re-renders */
   const onCompleteRef = useRef(onComplete);
-  onCompleteRef.current = onComplete;
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   const download = useMutation({
     mutationFn: () => tauriInvoke<string>("download_default_model"),
