@@ -41,7 +41,7 @@ pub fn run() {
     tracing::info!("Starting NotebookLab v{}", env!("CARGO_PKG_VERSION"));
 
     tauri::Builder::default()
-        /* Shell plugin deferred until sidecar (llama.cpp) is implemented */
+        .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -104,6 +104,9 @@ pub fn run() {
             commands::model_commands::set_active_provider,
             commands::model_commands::get_active_provider_name,
             commands::model_commands::get_model_registry,
+            commands::sidecar_commands::sidecar_available,
+            commands::sidecar_commands::get_sidecar_status,
+            commands::sidecar_commands::find_sidecar_port,
         ])
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {

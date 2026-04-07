@@ -68,6 +68,9 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Download llama-server sidecar
+        run: npm run sidecar:download
+
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0.6
         env:
