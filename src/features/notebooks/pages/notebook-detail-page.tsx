@@ -7,7 +7,7 @@
  *   chat know which notebook context to use. Documents can be imported via file dialog.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -16,6 +16,7 @@ import { QUERY_KEYS } from "@/lib/constants";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { formatBytes } from "@/lib/utils";
 import type { Notebook, Document, Note } from "@/types/models";
+import { pickDocumentFile } from "@/features/documents/api/document-api";
 
 
 export function NotebookDetailPage() {
@@ -55,16 +56,18 @@ export function NotebookDetailPage() {
     },
   });
 
-  const [importPath, setImportPath] = useState("");
-
   const importDoc = useMutation({
     mutationFn: (filePath: string) =>
       tauriInvoke<string>("import_document", { notebook_id: id, file_path: filePath }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.DOCUMENTS, id] });
-      setImportPath("");
     },
   });
+
+  const handleImport = async () => {
+    const filePath = await pickDocumentFile();
+    if (filePath) importDoc.mutate(filePath);
+  };
 
   if (!id) return null;
 
@@ -95,30 +98,17 @@ export function NotebookDetailPage() {
       </div>
 
       {/* Document import */}
-      <div className="mb-8 p-4 border border-border bg-surface-2">
-        <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-3">
-          Import Document
-        </h2>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={importPath}
-            onChange={(e) => setImportPath(e.target.value)}
-            placeholder="File path (.txt, .md)..."
-            className="flex-1 px-3 py-2 text-sm bg-surface border border-border text-text-1
-                       placeholder:text-text-4 outline-none focus:border-accent-dim"
-          />
-          <button
-            type="button"
-            onClick={() => importPath && importDoc.mutate(importPath)}
-            disabled={importDoc.isPending || !importPath}
-            className="px-3 py-2 text-xs font-mono bg-accent-dim text-text-1 disabled:opacity-50"
-          >
-            Import
-          </button>
-        </div>
+      <div className="mb-8 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={handleImport}
+          disabled={importDoc.isPending}
+          className="px-3 py-1.5 text-xs font-mono bg-accent-dim text-text-1 disabled:opacity-50"
+        >
+          {importDoc.isPending ? "Importing..." : "+ Import Document"}
+        </button>
         {importDoc.isError && (
-          <p className="text-xs text-error mt-2">{String(importDoc.error)}</p>
+          <p className="text-xs text-error">{String(importDoc.error)}</p>
         )}
       </div>
 

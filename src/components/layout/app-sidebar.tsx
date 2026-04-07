@@ -14,6 +14,7 @@ import { ROUTES } from "@/lib/constants";
 
 const NAV_ITEMS = [
   { path: ROUTES.NOTEBOOKS, label: "Notebooks" },
+  { path: ROUTES.DOCUMENTS, label: "Documents" },
   { path: ROUTES.SEARCH, label: "Search" },
   { path: ROUTES.CHAT, label: "Chat" },
   { path: ROUTES.THINKING_PARTNER, label: "Think" },
