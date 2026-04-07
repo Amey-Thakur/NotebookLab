@@ -44,6 +44,7 @@ pub fn run() {
         /* Shell plugin deferred until sidecar (llama.cpp) is implemented */
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let app_state = AppState::initialize(app.handle())?;
 
