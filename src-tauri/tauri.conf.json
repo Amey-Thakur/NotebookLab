@@ -40,7 +40,9 @@
     "resources": [
       "resources/**/*"
     ],
-    "externalBin": []
+    "externalBin": [
+      "binaries/llama-server"
+    ]
   },
   "plugins": {
     "updater": {
