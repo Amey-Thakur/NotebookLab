@@ -64,6 +64,12 @@ pub struct SidecarInner {
     pub pid: u32,
 }
 
+impl Default for SidecarManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SidecarManager {
     pub fn new() -> Self {
         Self {
