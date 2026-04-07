@@ -44,18 +44,17 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
-        .plugin(tauri_plugin_updater::Builder::new().build())
+        /* Updater disabled until signing key is generated and pubkey committed.
+           Generate: npx @tauri-apps/cli signer generate -w ~/.tauri/notebooklab.key
+           Then: set pubkey in tauri.conf.json, store private key in GitHub Secrets,
+           and uncomment this line. */
+        // .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let app_state = AppState::initialize(app.handle())?;
 
             /* Create sample notebook on first run */
             if let Ok(conn) = app_state.conn() {
                 services::first_run_service::ensure_sample_notebook(&conn).ok();
-            }
-
-            /* Auto-detect local LLM providers (Ollama, LM Studio, llama.cpp) */
-            if let Ok(mut providers) = app_state.provider() {
-                services::auto_setup_service::auto_detect_providers(&mut providers);
             }
 
             /* Start the local REST API server with its own read-only DB connection */
@@ -65,6 +64,17 @@ pub fn run() {
             api::server::start_api_server(db_path);
 
             app.manage(app_state);
+
+            /* Auto-detect local LLM providers on a background thread.
+               Runs after manage() so state is accessible via Tauri's Arc wrapper.
+               This avoids blocking the UI (up to 1.5s if all probes timeout). */
+            let handle = app.handle().clone();
+            std::thread::spawn(move || {
+                let state: tauri::State<'_, AppState> = handle.state();
+                if let Ok(mut providers) = state.provider() {
+                    services::auto_setup_service::auto_detect_providers(&mut providers);
+                };
+            });
 
             tracing::info!("Application state initialized");
             Ok(())

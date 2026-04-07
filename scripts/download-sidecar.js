@@ -8,7 +8,7 @@
  *   or during CI. Skips download if binary already exists and matches expected size.
  */
 
-const https = require("https");
+const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
@@ -17,30 +17,40 @@ const { execSync } = require("child_process");
 const LLAMA_CPP_VERSION = "b5200";
 
 /* Map Node.js platform/arch to Tauri target triple and llama.cpp release asset name */
+/*
+ * SHA256 checksums for each platform's zip archive.
+ * Update these when bumping LLAMA_CPP_VERSION.
+ * To get checksums: download each zip, run `shasum -a 256 <file>`.
+ * Set to null to skip verification (not recommended for production).
+ */
 const PLATFORM_MAP = {
   "win32-x64": {
     triple: "x86_64-pc-windows-msvc",
     asset: `llama-${LLAMA_CPP_VERSION}-bin-win-avx2-x64.zip`,
     binary: "llama-server.exe",
     ext: ".exe",
+    sha256: null, /* TODO: populate after first successful download */
   },
   "darwin-x64": {
     triple: "x86_64-apple-darwin",
     asset: `llama-${LLAMA_CPP_VERSION}-bin-macos-x64.zip`,
     binary: "llama-server",
     ext: "",
+    sha256: null,
   },
   "darwin-arm64": {
     triple: "aarch64-apple-darwin",
     asset: `llama-${LLAMA_CPP_VERSION}-bin-macos-arm64.zip`,
     binary: "llama-server",
     ext: "",
+    sha256: null,
   },
   "linux-x64": {
     triple: "x86_64-unknown-linux-gnu",
     asset: `llama-${LLAMA_CPP_VERSION}-bin-ubuntu-x64.zip`,
     binary: "llama-server",
     ext: "",
+    sha256: null,
   },
 };
 
@@ -88,6 +98,26 @@ try {
   console.error(`Download failed. URL: ${downloadUrl}`);
   console.error("Check that the release version exists at https://github.com/ggml-org/llama.cpp/releases");
   process.exit(1);
+}
+
+/* Verify SHA256 checksum if available */
+if (config.sha256) {
+  const hash = crypto.createHash("sha256");
+  hash.update(fs.readFileSync(tmpZip));
+  const actual = hash.digest("hex");
+
+  if (actual !== config.sha256) {
+    console.error(`Checksum mismatch!`);
+    console.error(`  Expected: ${config.sha256}`);
+    console.error(`  Actual:   ${actual}`);
+    console.error("The download may be corrupted or tampered with.");
+    try { fs.unlinkSync(tmpZip); } catch (_) {}
+    process.exit(1);
+  }
+  console.log(`Checksum verified: ${actual.slice(0, 16)}...`);
+} else {
+  console.log("WARNING: No SHA256 checksum configured. Skipping integrity verification.");
+  console.log("  Set sha256 in PLATFORM_MAP after first successful download for security.");
 }
 
 /* Extract llama-server binary from zip */
