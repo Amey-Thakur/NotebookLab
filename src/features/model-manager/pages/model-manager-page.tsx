@@ -15,6 +15,7 @@ import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS } from "@/lib/constants";
 import type { ProviderInfo } from "@/types/models";
 import { SetupGuide } from "../components/setup-guide";
+import { ModelDownload } from "../components/model-download";
 
 
 const PRESETS = [
@@ -41,6 +42,11 @@ export function ModelManagerPage() {
   const { data: activeName } = useQuery({
     queryKey: [QUERY_KEYS.ACTIVE_PROVIDER],
     queryFn: () => tauriInvoke<string | null>("get_active_provider_name"),
+  });
+
+  const { data: hasLocalModel, refetch: refetchModel } = useQuery({
+    queryKey: [QUERY_KEYS.PROVIDERS, "has-local-model"],
+    queryFn: () => tauriInvoke<boolean>("has_local_model"),
   });
 
   const register = useMutation({
@@ -96,6 +102,14 @@ export function ModelManagerPage() {
 
       {/* Setup guide shown when no providers */}
       {!hasProviders && <SetupGuide onRefresh={refreshProviders} />}
+
+      {/* Model download shown when no local model is available */}
+      {!hasLocalModel && (
+        <ModelDownload onComplete={() => {
+          refetchModel();
+          refreshProviders();
+        }} />
+      )}
 
       {/* Quick preset buttons */}
       <div className="mb-6">
