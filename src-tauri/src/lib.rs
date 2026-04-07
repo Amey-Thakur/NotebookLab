@@ -22,6 +22,7 @@ mod utils;
 
 use tauri::Manager;
 
+use services::sidecar_service::SidecarManager;
 use state::AppState;
 
 
@@ -64,6 +65,7 @@ pub fn run() {
             api::server::start_api_server(db_path);
 
             app.manage(app_state);
+            app.manage(SidecarManager::new());
 
             /* Auto-detect local LLM providers on a background thread.
                Runs after manage() so state is accessible via Tauri's Arc wrapper.
@@ -116,7 +118,9 @@ pub fn run() {
             commands::model_commands::get_model_registry,
             commands::sidecar_commands::sidecar_available,
             commands::sidecar_commands::get_sidecar_status,
-            commands::sidecar_commands::find_sidecar_port,
+            commands::sidecar_commands::start_sidecar,
+            commands::sidecar_commands::stop_sidecar,
+            commands::sidecar_commands::list_local_models,
         ])
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {
