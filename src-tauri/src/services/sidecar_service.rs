@@ -9,16 +9,16 @@
  *   all requests flow through Rust services.
  */
 
-use std::sync::atomic::{AtomicU8, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Mutex;
 
 
 /// Sidecar lifecycle states (stored as u8 for atomic access).
-const STATE_STOPPED: u8 = 0;
-const STATE_STARTING: u8 = 1;
-const STATE_READY: u8 = 2;
-const STATE_CRASHED: u8 = 3;
-const STATE_STOPPING: u8 = 4;
+pub const STATE_STOPPED: u8 = 0;
+pub const STATE_STARTING: u8 = 1;
+pub const STATE_READY: u8 = 2;
+pub const STATE_CRASHED: u8 = 3;
+pub const STATE_STOPPING: u8 = 4;
 
 
 /// Serializable state for the frontend.
@@ -47,24 +47,34 @@ impl From<u8> for SidecarState {
 
 
 /// Thread-safe sidecar manager. Stored in Tauri managed state.
-/// Tracks the running process, its port, and the API key.
+/// Uses a single Mutex for all mutable fields to prevent partial-update reads.
 pub struct SidecarManager {
     state: AtomicU8,
-    port: Mutex<u16>,
-    api_key: Mutex<String>,
-    model_path: Mutex<String>,
-    /// PID of the child process (0 if not running).
-    pid: Mutex<u32>,
+    inner: Mutex<SidecarInner>,
+    /// Shared cancellation flag: set to true when the process exits.
+    /// The health-polling thread checks this to abort early instead of
+    /// waiting the full 120s timeout on a dead process.
+    pub cancelled: AtomicBool,
+}
+
+pub struct SidecarInner {
+    pub port: u16,
+    pub api_key: String,
+    pub model_path: String,
+    pub pid: u32,
 }
 
 impl SidecarManager {
     pub fn new() -> Self {
         Self {
             state: AtomicU8::new(STATE_STOPPED),
-            port: Mutex::new(0),
-            api_key: Mutex::new(String::new()),
-            model_path: Mutex::new(String::new()),
-            pid: Mutex::new(0),
+            inner: Mutex::new(SidecarInner {
+                port: 0,
+                api_key: String::new(),
+                model_path: String::new(),
+                pid: 0,
+            }),
+            cancelled: AtomicBool::new(false),
         }
     }
 
@@ -76,36 +86,45 @@ impl SidecarManager {
         self.state.store(state, Ordering::Release);
     }
 
-    pub fn port(&self) -> u16 {
-        *self.port.lock().unwrap_or_else(|e| e.into_inner())
+    /// Atomically transition from expected_state to new_state.
+    /// Returns true if the transition succeeded (was in expected_state).
+    pub fn try_transition(&self, expected: u8, new: u8) -> bool {
+        self.state.compare_exchange(expected, new, Ordering::AcqRel, Ordering::Acquire).is_ok()
     }
 
-    pub fn set_port(&self, port: u16) {
-        *self.port.lock().unwrap_or_else(|e| e.into_inner()) = port;
+    pub fn port(&self) -> u16 {
+        self.inner.lock().unwrap_or_else(|e| e.into_inner()).port
     }
 
     pub fn api_key(&self) -> String {
-        self.api_key.lock().unwrap_or_else(|e| e.into_inner()).clone()
-    }
-
-    pub fn set_api_key(&self, key: String) {
-        *self.api_key.lock().unwrap_or_else(|e| e.into_inner()) = key;
+        self.inner.lock().unwrap_or_else(|e| e.into_inner()).api_key.clone()
     }
 
     pub fn model_path(&self) -> String {
-        self.model_path.lock().unwrap_or_else(|e| e.into_inner()).clone()
-    }
-
-    pub fn set_model_path(&self, path: String) {
-        *self.model_path.lock().unwrap_or_else(|e| e.into_inner()) = path;
+        self.inner.lock().unwrap_or_else(|e| e.into_inner()).model_path.clone()
     }
 
     pub fn pid(&self) -> u32 {
-        *self.pid.lock().unwrap_or_else(|e| e.into_inner())
+        self.inner.lock().unwrap_or_else(|e| e.into_inner()).pid
     }
 
-    pub fn set_pid(&self, pid: u32) {
-        *self.pid.lock().unwrap_or_else(|e| e.into_inner()) = pid;
+    /// Set all mutable fields atomically under one lock.
+    pub fn configure(&self, port: u16, api_key: String, model_path: String, pid: u32) {
+        let mut inner = self.inner.lock().unwrap_or_else(|e| e.into_inner());
+        inner.port = port;
+        inner.api_key = api_key;
+        inner.model_path = model_path;
+        inner.pid = pid;
+    }
+
+    /// Clear all fields on stop.
+    pub fn clear(&self) {
+        self.configure(0, String::new(), String::new(), 0);
+    }
+
+    /// Direct access to inner fields for commands that need to update PID after spawn.
+    pub fn inner_lock(&self) -> std::sync::MutexGuard<'_, SidecarInner> {
+        self.inner.lock().unwrap_or_else(|e| e.into_inner())
     }
 
     pub fn is_running(&self) -> bool {
@@ -139,9 +158,9 @@ pub fn find_available_port() -> u16 {
 }
 
 
-/// Generate a random API key for sidecar auth using UUID v7 (OS entropy).
+/// Generate a random API key for sidecar auth using UUID v4 (122 bits of randomness).
 pub fn generate_session_key() -> String {
-    let key = uuid::Uuid::now_v7();
+    let key = uuid::Uuid::new_v4();
     format!("nbl-{}", key.simple())
 }
 
@@ -153,10 +172,8 @@ pub fn build_sidecar_args(port: u16, model_path: &str) -> Vec<String> {
         port.to_string(),
         "-m".to_string(),
         model_path.to_string(),
-        /* Context window: 2048 tokens is reasonable for 3B models on 8GB RAM */
         "-c".to_string(),
         "2048".to_string(),
-        /* Threads: use half of available cores */
         "-t".to_string(),
         (num_cpus().max(2) / 2).to_string(),
     ]
@@ -170,13 +187,8 @@ pub fn api_key_env_var() -> &'static str {
 
 
 /// Check if llama-server is healthy by probing /health.
-pub fn check_health(port: u16) -> bool {
+pub fn check_health_with_client(client: &reqwest::blocking::Client, port: u16) -> bool {
     let url = format!("http://127.0.0.1:{port}/health");
-    let client = reqwest::blocking::Client::builder()
-        .timeout(std::time::Duration::from_secs(2))
-        .build()
-        .unwrap_or_else(|_| reqwest::blocking::Client::new());
-
     match client.get(&url).send() {
         Ok(resp) => resp.status().is_success(),
         Err(_) => false,
@@ -184,14 +196,26 @@ pub fn check_health(port: u16) -> bool {
 }
 
 
-/// Poll /health until the server is ready or timeout expires.
-/// Returns true if server became ready within the timeout.
-pub fn wait_for_ready(port: u16, timeout_secs: u64) -> bool {
+/// Poll /health until the server is ready, cancelled, or timeout expires.
+/// The `cancelled` flag is set by the stdout-reader thread when the process exits,
+/// so the poller aborts immediately instead of waiting the full timeout.
+pub fn wait_for_ready(port: u16, timeout_secs: u64, cancelled: &AtomicBool) -> bool {
     let start = std::time::Instant::now();
     let timeout = std::time::Duration::from_secs(timeout_secs);
 
+    let client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(2))
+        .build()
+        .unwrap_or_else(|_| reqwest::blocking::Client::new());
+
     while start.elapsed() < timeout {
-        if check_health(port) {
+        /* Abort early if the process has already exited */
+        if cancelled.load(Ordering::Acquire) {
+            tracing::debug!("Health poll aborted: process exited");
+            return false;
+        }
+
+        if check_health_with_client(&client, port) {
             return true;
         }
         std::thread::sleep(std::time::Duration::from_millis(500));
@@ -213,9 +237,25 @@ pub fn find_model_files(models_dir: &std::path::Path) -> Vec<std::path::PathBuf>
         }
     }
 
-    /* Sort smallest first so free-tier models are preferred */
     models.sort_by_key(|p| std::fs::metadata(p).map(|m| m.len()).unwrap_or(u64::MAX));
     models
+}
+
+
+/// Validate that a model path is within the allowed models directory.
+/// Prevents path traversal attacks via user-supplied model_path.
+pub fn validate_model_path(model: &std::path::Path, allowed_dir: &std::path::Path) -> bool {
+    /* Canonicalize both paths to resolve symlinks and ../ components */
+    let canonical_model = match std::fs::canonicalize(model) {
+        Ok(p) => p,
+        Err(_) => return false,
+    };
+    let canonical_dir = match std::fs::canonicalize(allowed_dir) {
+        Ok(p) => p,
+        Err(_) => return false,
+    };
+
+    canonical_model.starts_with(canonical_dir)
 }
 
 
