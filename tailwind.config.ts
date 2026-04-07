@@ -14,6 +14,16 @@ export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
 
   theme: {
+    /* Top-level overrides: replace Tailwind's default font stacks entirely.
+       This ensures Play is the base UI font everywhere, not system-ui. */
+    fontFamily: {
+      sans: ['"Play"', "sans-serif"],
+      display: ['"Play"', "sans-serif"],
+      body: ['"Source Serif 4"', "serif"],
+      serif: ['"Source Serif 4"', "serif"],
+      mono: ['"JetBrains Mono"', "monospace"],
+    },
+
     extend: {
 
       colors: {
@@ -31,12 +41,6 @@ export default {
         "accent-dim": "var(--color-accent-dim)",
         mark: "var(--color-mark)",
         error: "var(--color-error)",
-      },
-
-      fontFamily: {
-        display: ['"Play"', "sans-serif"],
-        body: ['"Source Serif 4"', "serif"],
-        mono: ['"JetBrains Mono"', "monospace"],
       },
 
       fontSize: {
