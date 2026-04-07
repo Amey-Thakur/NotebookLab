@@ -22,6 +22,17 @@
       "identifier": "fs:allow-mkdir",
       "allow": [{ "path": "$APPDATA/com.notebooklab.app/**" }]
     },
-    "updater:default"
+    "updater:default",
+    "shell:allow-spawn",
+    "shell:allow-stdin-write",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "llama-server",
+          "sidecar": true
+        }
+      ]
+    }
   ]
 }
