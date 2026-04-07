@@ -38,7 +38,7 @@ impl SidecarStatus {
     }
 
     pub fn base_url(&self) -> String {
-        let port = self.port.load(Ordering::Relaxed);
+        let port = self.port.load(Ordering::Acquire);
         format!("http://127.0.0.1:{port}")
     }
 }
@@ -54,26 +54,24 @@ pub fn find_available_port() -> u16 {
 }
 
 
-/// Generate a random API key for sidecar auth (hex-encoded 16 bytes).
+/// Generate a random API key for sidecar auth using UUID v7 (OS entropy).
 pub fn generate_session_key() -> String {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let seed = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos();
-    format!("nbl-{seed:x}")
+    /* UUID v7 uses OS-level randomness via getrandom internally.
+       Two UUIDs give us 128 bits of entropy, which is plenty for localhost auth. */
+    let key = uuid::Uuid::now_v7();
+    format!("nbl-{}", key.simple())
 }
 
 
 /// Build the argument list for llama-server.
-pub fn build_sidecar_args(port: u16, model_path: &str, api_key: &str) -> Vec<String> {
+/// Note: API key should be passed via LLAMA_API_KEY env var, not CLI args
+/// (CLI args are visible to other processes via `ps` or Task Manager).
+pub fn build_sidecar_args(port: u16, model_path: &str) -> Vec<String> {
     vec![
         "--port".to_string(),
         port.to_string(),
         "-m".to_string(),
         model_path.to_string(),
-        "--api-key".to_string(),
-        api_key.to_string(),
         /* Context window: 2048 tokens is reasonable for 3B models on 8GB RAM */
         "-c".to_string(),
         "2048".to_string(),
@@ -81,6 +79,11 @@ pub fn build_sidecar_args(port: u16, model_path: &str, api_key: &str) -> Vec<Str
         "-t".to_string(),
         (num_cpus().max(2) / 2).to_string(),
     ]
+}
+
+/// Get the environment variable key for passing the API key to llama-server.
+pub fn api_key_env_var() -> &'static str {
+    "LLAMA_API_KEY"
 }
 
 
