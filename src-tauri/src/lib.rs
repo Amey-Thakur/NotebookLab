@@ -52,6 +52,11 @@ pub fn run() {
                 services::first_run_service::ensure_sample_notebook(&conn).ok();
             }
 
+            /* Auto-detect local LLM providers (Ollama, LM Studio, llama.cpp) */
+            if let Ok(mut providers) = app_state.provider() {
+                services::auto_setup_service::auto_detect_providers(&mut providers);
+            }
+
             /* Start the local REST API server with its own read-only DB connection */
             let data_dir = app.path().app_data_dir()
                 .map_err(|e| format!("Failed to resolve data dir: {e}"))?;
