@@ -10,15 +10,15 @@
 /* Allow dead code for future-use functions and re-exports during MVP */
 #![allow(dead_code)]
 
-mod api;
-mod commands;
-mod database;
-mod error;
-mod parsers;
-mod providers;
-mod services;
-mod state;
-mod utils;
+pub mod api;
+pub mod commands;
+pub mod database;
+pub mod error;
+pub mod parsers;
+pub mod providers;
+pub mod services;
+pub mod state;
+pub mod utils;
 
 use tauri::Manager;
 
