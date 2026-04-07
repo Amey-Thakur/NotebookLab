@@ -11,15 +11,11 @@ import { open } from "@tauri-apps/plugin-dialog";
 
 import { tauriInvoke } from "@/services/tauri-client";
 import { SUPPORTED_FILE_TYPES } from "@/lib/constants";
-import type { Document, Chunk } from "@/types/models";
+import type { Document as AppDocument, Chunk } from "@/types/models";
 
 
-export function listDocuments(notebookId: string): Promise<Document[]> {
-  return tauriInvoke<Document[]>("list_documents", { notebook_id: notebookId });
-}
-
-export function getDocument(id: string): Promise<Document> {
-  return tauriInvoke<Document>("get_document", { id });
+export function listDocuments(notebookId: string): Promise<AppDocument[]> {
+  return tauriInvoke<AppDocument[]>("list_documents", { notebook_id: notebookId });
 }
 
 export function importDocument(notebookId: string, filePath: string): Promise<string> {
@@ -33,11 +29,6 @@ export function deleteDocument(id: string): Promise<void> {
 export function getDocumentChunks(documentId: string): Promise<Chunk[]> {
   return tauriInvoke<Chunk[]>("get_document_chunks", { document_id: documentId });
 }
-
-export function getChunkCount(): Promise<number> {
-  return tauriInvoke<number>("get_chunk_count");
-}
-
 
 /**
  * Open a native file picker dialog filtered to supported document types.

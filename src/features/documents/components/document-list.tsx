@@ -31,6 +31,8 @@ export function DocumentList({ documents, selectedId, onSelect, onDelete, isDele
       setConfirmDeleteId(null);
     } else {
       setConfirmDeleteId(id);
+      /* Auto-reset confirm state after 3 seconds to prevent accidental deletion */
+      setTimeout(() => setConfirmDeleteId((prev) => prev === id ? null : prev), 3000);
     }
   };
 
@@ -47,12 +49,15 @@ export function DocumentList({ documents, selectedId, onSelect, onDelete, isDele
       {documents.map((doc) => (
         <div
           key={doc.id}
+          role="button"
+          tabIndex={0}
           className={`flex items-center justify-between p-3 border cursor-pointer transition-colors ${
             selectedId === doc.id
               ? "border-accent-dim bg-surface-2"
               : "border-border hover:border-accent-dim"
           }`}
           onClick={() => onSelect(doc.id)}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onSelect(doc.id); }}
         >
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -69,6 +74,7 @@ export function DocumentList({ documents, selectedId, onSelect, onDelete, isDele
 
           <button
             type="button"
+            aria-label={`Delete ${doc.title}`}
             onClick={(e) => {
               e.stopPropagation();
               handleDelete(doc.id);
