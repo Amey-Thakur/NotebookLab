@@ -21,7 +21,8 @@ const LOCAL_PROVIDERS: &[(&str, &str, &str)] = &[
 
 
 /// Probe local endpoints and auto-register any responding provider.
-/// Called once during app startup. Non-blocking: if nothing responds, returns silently.
+/// Called once during app startup. Blocks briefly (up to ~1.5s if no providers respond).
+/// Skips providers that are already registered to avoid duplicates on restart.
 pub fn auto_detect_providers(router: &mut ProviderRouter) {
     let client = reqwest::blocking::Client::builder()
         .timeout(std::time::Duration::from_secs(2))
@@ -29,7 +30,20 @@ pub fn auto_detect_providers(router: &mut ProviderRouter) {
         .build()
         .unwrap_or_else(|_| reqwest::blocking::Client::new());
 
+    /* Get existing provider names to skip duplicates across restarts */
+    let existing_names: Vec<String> = router
+        .list_providers()
+        .iter()
+        .map(|p| p.name.clone())
+        .collect();
+
     for (name, url, default_model) in LOCAL_PROVIDERS {
+        /* Skip if already registered (prevents duplicates on restart) */
+        if existing_names.iter().any(|n| n == name) {
+            tracing::debug!("Provider {name} already registered, skipping");
+            continue;
+        }
+
         let health_url = format!("{url}/v1/models");
 
         match client.get(&health_url).send() {
@@ -66,9 +80,12 @@ pub fn auto_detect_providers(router: &mut ProviderRouter) {
 }
 
 
-/// Try to extract the first model name from a /v1/models response.
+/// Placeholder: returns fallback model name.
+/// TODO: Parse /v1/models response body to get actual loaded model name.
+/// Currently the response is consumed by reqwest before this is called,
+/// so we always use the hardcoded default. This means if the user has
+/// a different model loaded (e.g. mistral:7b), requests will specify
+/// the wrong model name. Fix by reading body text before calling this.
 fn extract_model_name(_resp: &reqwest::blocking::Response, fallback: &str) -> String {
-    /* Ollama's /v1/models returns {"models": [{"id": "llama3.2:3b", ...}]} */
-    /* We can't consume the response body here since it's borrowed, use fallback */
     fallback.to_string()
 }
