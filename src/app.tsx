@@ -19,6 +19,7 @@ import { ThinkingPartnerPage } from "./features/thinking-partner/pages/thinking-
 import { DocumentsPage } from "./features/documents/pages/documents-page";
 import { TransformsPage } from "./features/content-transformations/pages/transforms-page";
 import { ModelManagerPage } from "./features/model-manager/pages/model-manager-page";
+import { PodcastPage } from "./features/podcasts/pages/podcast-page";
 import { SettingsPage } from "./features/settings/pages/settings-page";
 
 
@@ -35,7 +36,7 @@ export function App() {
         <Route path={ROUTES.CHAT} element={<ChatPage />} />
         <Route path={ROUTES.THINKING_PARTNER} element={<ThinkingPartnerPage />} />
         <Route path={ROUTES.TRANSFORMS} element={<TransformsPage />} />
-        <Route path={ROUTES.PODCASTS} element={<ComingSoonPage feature="Podcasts" />} />
+        <Route path={ROUTES.PODCASTS} element={<PodcastPage />} />
         <Route path={ROUTES.MODELS} element={<ModelManagerPage />} />
         <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
         <Route path="*" element={<ComingSoonPage feature="Page not found" />} />
