@@ -1,0 +1,210 @@
+/*
+ * Title: podcast-page.tsx
+ * Tech Stack: React 19, TanStack Query, Web Speech API, Tailwind CSS
+ * Description: Podcast generation and playback page. The LLM generates a conversation
+ *   script, and the browser's SpeechSynthesis API reads it aloud with distinct voices.
+ * Important Details: Uses Web Speech API for TTS (offline, zero-config, cross-platform).
+ *   Two different voices are assigned to Speaker A and Speaker B. The script is stored
+ *   in component state (not persisted to disk). Audio quality depends on OS voices.
+ *   Can be upgraded to Piper/Kokoro TTS later for better quality.
+ */
+
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useMutation } from "@tanstack/react-query";
+
+import { tauriInvoke } from "@/services/tauri-client";
+import { useNotebookStore } from "@/stores/notebook-store";
+
+
+interface PodcastTurn {
+  speaker: string;
+  text: string;
+}
+
+interface PodcastScript {
+  title: string;
+  turns: PodcastTurn[];
+}
+
+
+export function PodcastPage() {
+  const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
+  const [topic, setTopic] = useState("");
+  const [script, setScript] = useState<PodcastScript | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTurn, setCurrentTurn] = useState(-1);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const synthRef = useRef(window.speechSynthesis);
+
+  /* Load available voices */
+  useEffect(() => {
+    const loadVoices = () => {
+      const available = synthRef.current.getVoices();
+      if (available.length > 0) setVoices(available);
+    };
+    loadVoices();
+    speechSynthesis.addEventListener("voiceschanged", loadVoices);
+    return () => speechSynthesis.removeEventListener("voiceschanged", loadVoices);
+  }, []);
+
+  const generate = useMutation({
+    mutationFn: () => tauriInvoke<PodcastScript>("generate_podcast", {
+      notebook_id: activeNotebookId,
+      topic: topic || null,
+    }),
+    onSuccess: (result) => {
+      setScript(result);
+      setCurrentTurn(-1);
+    },
+  });
+
+  /* Pick two distinct voices for the speakers */
+  const getVoiceForSpeaker = useCallback((speaker: string): SpeechSynthesisVoice | null => {
+    const englishVoices = voices.filter((v) => v.lang.startsWith("en"));
+    if (englishVoices.length === 0) return voices[0] ?? null;
+
+    if (speaker === "A") {
+      /* Try to find a female voice for Speaker A */
+      return englishVoices.find((v) => /female|zira|samantha|karen|fiona/i.test(v.name))
+        ?? englishVoices[0];
+    } else {
+      /* Try to find a male voice for Speaker B */
+      return englishVoices.find((v) => /male|david|daniel|james|mark/i.test(v.name))
+        ?? englishVoices[Math.min(1, englishVoices.length - 1)];
+    }
+  }, [voices]);
+
+  const playScript = useCallback(() => {
+    if (!script || isPlaying) return;
+
+    setIsPlaying(true);
+    setCurrentTurn(0);
+
+    const speakTurn = (index: number) => {
+      if (index >= script.turns.length) {
+        setIsPlaying(false);
+        setCurrentTurn(-1);
+        return;
+      }
+
+      const turn = script.turns[index];
+      const utterance = new SpeechSynthesisUtterance(turn.text);
+      const voice = getVoiceForSpeaker(turn.speaker);
+      if (voice) utterance.voice = voice;
+
+      utterance.rate = 1.0;
+      utterance.pitch = turn.speaker === "A" ? 1.1 : 0.9;
+
+      utterance.onstart = () => setCurrentTurn(index);
+      utterance.onend = () => speakTurn(index + 1);
+      utterance.onerror = () => speakTurn(index + 1);
+
+      synthRef.current.speak(utterance);
+    };
+
+    speakTurn(0);
+  }, [script, isPlaying, getVoiceForSpeaker]);
+
+  const stopPlayback = () => {
+    synthRef.current.cancel();
+    setIsPlaying(false);
+    setCurrentTurn(-1);
+  };
+
+  if (!activeNotebookId) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-text-3 p-8">
+        <p className="text-lg font-display font-bold mb-2">Podcasts</p>
+        <p className="text-sm text-text-4">Select a notebook first to generate a podcast.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-8 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-display font-bold text-text-1 mb-2">Podcasts</h1>
+      <p className="text-sm text-text-3 mb-6">
+        Generate AI conversations from your notebook documents.
+      </p>
+
+      {/* Generation form */}
+      <div className="border border-border bg-surface-2 p-4 mb-6">
+        <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-3">
+          Generate Podcast
+        </h2>
+        <div className="flex gap-2 mb-3">
+          <input
+            type="text"
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            placeholder="Topic (optional)"
+            className="flex-1 px-3 py-2 text-sm bg-surface border border-border text-text-1
+                       placeholder:text-text-4 outline-none focus:border-accent-dim"
+          />
+          <button
+            type="button"
+            onClick={() => generate.mutate()}
+            disabled={generate.isPending}
+            className="px-4 py-2 text-sm font-mono bg-accent-dim text-text-1
+                       hover:bg-accent transition-colors disabled:opacity-50"
+          >
+            {generate.isPending ? "Writing script..." : "Generate"}
+          </button>
+        </div>
+        {generate.isError && (
+          <p className="text-xs text-error">{String(generate.error)}</p>
+        )}
+      </div>
+
+      {/* Script display + playback */}
+      {script && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xs font-mono tracking-widest uppercase text-text-4">
+              {script.title} ({script.turns.length} turns)
+            </h2>
+            <div className="flex gap-2">
+              {!isPlaying ? (
+                <button
+                  type="button"
+                  onClick={playScript}
+                  className="px-3 py-1 text-xs font-mono bg-accent-dim text-text-1"
+                >
+                  Play
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={stopPlayback}
+                  className="px-3 py-1 text-xs font-mono border border-error text-error"
+                >
+                  Stop
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {script.turns.map((turn, i) => (
+              <div
+                key={i}
+                className={`p-3 border transition-colors ${
+                  currentTurn === i
+                    ? "border-accent-dim bg-surface-2"
+                    : "border-border"
+                }`}
+              >
+                <span className={`text-xs font-mono font-bold mr-2 ${
+                  turn.speaker === "A" ? "text-accent" : "text-mark"
+                }`}>
+                  Speaker {turn.speaker}
+                </span>
+                <span className="text-sm text-text-2">{turn.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
