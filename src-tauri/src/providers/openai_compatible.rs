@@ -174,6 +174,44 @@ impl LlmProvider for OpenAiCompatibleProvider {
             }),
         })
     }
+
+    /// Generate an embedding vector via the /v1/embeddings endpoint.
+    /// Supported by Ollama, llama.cpp, and OpenAI. Returns None if unavailable.
+    fn embed(&self, text: &str) -> Result<Option<Vec<f32>>, ProviderError> {
+        let url = format!("{}/v1/embeddings", self.base_url);
+
+        let body = serde_json::json!({
+            "model": self.model,
+            "input": text,
+        });
+
+        let mut req = self.client.post(&url).json(&body);
+        if let Some(ref key) = self.api_key {
+            req = req.bearer_auth(key);
+        }
+
+        match req.send() {
+            Ok(resp) if resp.status().is_success() => {
+                let json: serde_json::Value = resp.json()
+                    .map_err(|e| ProviderError::InvalidResponse(e.to_string()))?;
+
+                let embedding = json
+                    .get("data")
+                    .and_then(|d| d.get(0))
+                    .and_then(|d| d.get("embedding"))
+                    .and_then(|e| e.as_array())
+                    .map(|arr| {
+                        arr.iter()
+                            .filter_map(|v| v.as_f64().map(|f| f as f32))
+                            .collect::<Vec<f32>>()
+                    });
+
+                Ok(embedding)
+            }
+            Ok(_) => Ok(None),
+            Err(_) => Ok(None),
+        }
+    }
 }
 
 

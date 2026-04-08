@@ -1,0 +1,176 @@
+/*
+ * Title: embedding_service.rs
+ * Tech Stack: Rust, rusqlite
+ * Description: Embedding storage and vector similarity search. Stores embeddings
+ *   as BLOB-encoded float32 arrays and computes cosine similarity in Rust.
+ * Important Details: This is a brute-force approach that works well up to ~50K chunks.
+ *   For larger corpora, swap to sqlite-vec or HNSW index. Embeddings are generated
+ *   by the active LLM provider via /v1/embeddings (Ollama, llama.cpp, OpenAI all support it).
+ */
+
+use rusqlite::{params, Connection};
+
+use crate::error::AppResult;
+
+
+/// Store an embedding vector for a chunk.
+pub fn store_embedding(
+    conn: &Connection,
+    chunk_id: &str,
+    vector: &[f32],
+) -> AppResult<()> {
+    let blob = floats_to_blob(vector);
+    let dims = vector.len() as i32;
+
+    conn.execute(
+        "INSERT OR REPLACE INTO embeddings (chunk_id, vector, dimensions) VALUES (?1, ?2, ?3)",
+        params![chunk_id, blob, dims],
+    )?;
+
+    Ok(())
+}
+
+
+/// Find the top-k most similar chunks by cosine similarity.
+/// Returns (chunk_id, similarity_score) pairs sorted by descending similarity.
+pub fn search_similar(
+    conn: &Connection,
+    query_vector: &[f32],
+    notebook_id: &str,
+    limit: usize,
+) -> AppResult<Vec<(String, f64)>> {
+    /* Fetch all embeddings for chunks in this notebook's documents */
+    let mut stmt = conn.prepare(
+        "SELECT e.chunk_id, e.vector, e.dimensions
+         FROM embeddings e
+         INNER JOIN chunks c ON e.chunk_id = c.id
+         INNER JOIN documents d ON c.document_id = d.id
+         WHERE d.notebook_id = ?1"
+    )?;
+
+    let rows = stmt.query_map(params![notebook_id], |row| {
+        let chunk_id: String = row.get(0)?;
+        let blob: Vec<u8> = row.get(1)?;
+        let dims: i32 = row.get(2)?;
+        Ok((chunk_id, blob, dims))
+    })?;
+
+    /* Compute cosine similarity for each embedding */
+    let mut scored: Vec<(String, f64)> = Vec::new();
+
+    for row in rows {
+        let (chunk_id, blob, dims) = row?;
+        let stored_vector = blob_to_floats(&blob, dims as usize);
+
+        if stored_vector.len() == query_vector.len() {
+            let similarity = cosine_similarity(query_vector, &stored_vector);
+            scored.push((chunk_id, similarity));
+        }
+    }
+
+    /* Sort by similarity descending, take top-k */
+    scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+    scored.truncate(limit);
+
+    Ok(scored)
+}
+
+
+/// Check if embeddings exist for any chunks in a notebook.
+pub fn has_embeddings(conn: &Connection, notebook_id: &str) -> AppResult<bool> {
+    let count: i64 = conn.query_row(
+        "SELECT COUNT(*)
+         FROM embeddings e
+         INNER JOIN chunks c ON e.chunk_id = c.id
+         INNER JOIN documents d ON c.document_id = d.id
+         WHERE d.notebook_id = ?1",
+        params![notebook_id],
+        |row| row.get(0),
+    )?;
+    Ok(count > 0)
+}
+
+
+/// Cosine similarity between two vectors. Returns value in [-1, 1].
+fn cosine_similarity(a: &[f32], b: &[f32]) -> f64 {
+    let mut dot = 0.0f64;
+    let mut norm_a = 0.0f64;
+    let mut norm_b = 0.0f64;
+
+    for (x, y) in a.iter().zip(b.iter()) {
+        let x = *x as f64;
+        let y = *y as f64;
+        dot += x * y;
+        norm_a += x * x;
+        norm_b += y * y;
+    }
+
+    let denominator = norm_a.sqrt() * norm_b.sqrt();
+    if denominator == 0.0 { 0.0 } else { dot / denominator }
+}
+
+
+/// Convert a float32 slice to a byte blob for SQLite storage.
+fn floats_to_blob(floats: &[f32]) -> Vec<u8> {
+    let mut bytes = Vec::with_capacity(floats.len() * 4);
+    for f in floats {
+        bytes.extend_from_slice(&f.to_le_bytes());
+    }
+    bytes
+}
+
+
+/// Convert a byte blob back to float32 values.
+fn blob_to_floats(blob: &[u8], expected_dims: usize) -> Vec<f32> {
+    let mut floats = Vec::with_capacity(expected_dims);
+    for chunk in blob.chunks_exact(4) {
+        let bytes: [u8; 4] = chunk.try_into().unwrap_or([0; 4]);
+        floats.push(f32::from_le_bytes(bytes));
+    }
+    floats
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cosine_similarity_identical_vectors() {
+        let v = vec![1.0, 2.0, 3.0];
+        let sim = cosine_similarity(&v, &v);
+        assert!((sim - 1.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn cosine_similarity_orthogonal_vectors() {
+        let a = vec![1.0, 0.0, 0.0];
+        let b = vec![0.0, 1.0, 0.0];
+        let sim = cosine_similarity(&a, &b);
+        assert!(sim.abs() < 1e-10);
+    }
+
+    #[test]
+    fn cosine_similarity_opposite_vectors() {
+        let a = vec![1.0, 0.0];
+        let b = vec![-1.0, 0.0];
+        let sim = cosine_similarity(&a, &b);
+        assert!((sim - (-1.0)).abs() < 1e-10);
+    }
+
+    #[test]
+    fn blob_roundtrip() {
+        let original = vec![1.0f32, -2.5, 3.14, 0.0];
+        let blob = floats_to_blob(&original);
+        let restored = blob_to_floats(&blob, original.len());
+        assert_eq!(original, restored);
+    }
+
+    #[test]
+    fn blob_empty() {
+        let empty: Vec<f32> = vec![];
+        let blob = floats_to_blob(&empty);
+        let restored = blob_to_floats(&blob, 0);
+        assert!(restored.is_empty());
+    }
+}
