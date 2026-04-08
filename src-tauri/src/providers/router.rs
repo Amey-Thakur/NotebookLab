@@ -81,6 +81,19 @@ impl ProviderRouter {
         provider.chat_completion(request)
     }
 
+    /// Generate an embedding vector using the active provider.
+    pub fn embed(&self, text: &str) -> Result<Option<Vec<f32>>, ProviderError> {
+        let active = self.active_index.read().map_err(|_| {
+            ProviderError::NotAvailable("Provider router lock poisoned".into())
+        })?;
+
+        let idx = active.ok_or_else(|| {
+            ProviderError::NotAvailable("No active provider. Select a model first.".into())
+        })?;
+
+        self.providers[idx].embed(text)
+    }
+
     /// List all registered providers with their availability status.
     pub fn list_providers(&self) -> Vec<ProviderInfo> {
         let active_idx = self.active_index.read().ok().and_then(|a| *a);

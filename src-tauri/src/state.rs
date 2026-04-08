@@ -80,6 +80,7 @@ impl AppState {
             include_str!("../resources/migrations/001_initial_schema.sql"),
             include_str!("../resources/migrations/002_chat_tables.sql"),
             include_str!("../resources/migrations/003_fts5_search.sql"),
+            include_str!("../resources/migrations/004_embeddings.sql"),
         ];
 
         for sql in &migrations {
