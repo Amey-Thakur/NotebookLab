@@ -116,6 +116,7 @@ pub fn run() {
             commands::model_commands::set_active_provider,
             commands::model_commands::get_active_provider_name,
             commands::model_commands::get_model_registry,
+            commands::podcast_commands::generate_podcast,
             commands::download_commands::download_default_model,
             commands::download_commands::download_model,
             commands::download_commands::has_local_model,
