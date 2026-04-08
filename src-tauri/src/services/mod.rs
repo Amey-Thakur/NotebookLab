@@ -9,6 +9,7 @@
 
 pub mod auto_setup_service;
 pub mod chunking_service;
+pub mod embedding_service;
 pub mod first_run_service;
 pub mod ingestion_service;
 pub mod rag_service;
