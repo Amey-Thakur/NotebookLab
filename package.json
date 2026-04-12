@@ -12,7 +12,7 @@
     "tauri": "tauri",
     "test": "vitest run",
     "test:watch": "vitest",
-    "sidecar:download": "node scripts/download-sidecar.js"
+    "sidecar:download": "node scripts/download-sidecar.cjs"
   },
   "dependencies": {
     "@milkdown/core": "^7.20.0",
