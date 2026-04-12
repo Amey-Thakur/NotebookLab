@@ -46,7 +46,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDRBN0QzM0JDNTE3NDJEMDIKUldRQ0xYUlJ2RE45U3YvYlc3MmVwcjhYNVIwWmdGdlcreTJpaHVhS0tuT0tNdUNGMWhqZm40MysK",
       "endpoints": [
         "https://github.com/Amey-Thakur/NotebookLab/releases/latest/download/latest.json"
       ]
