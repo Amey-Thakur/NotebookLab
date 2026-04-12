@@ -27,7 +27,7 @@ pub fn ensure_sample_notebook(conn: &Connection) -> AppResult<()> {
 
     let notebook = notebook_repository::create(conn, CreateNotebook {
         name: "Getting Started".to_string(),
-        description: Some("Welcome to NotebookLab! Explore this sample notebook to learn the basics.".to_string()),
+        description: Some("2 sample notes inside. Click to open, then click a note to read it.".to_string()),
         color: Some("#4A70A9".to_string()),
     })?;
 
