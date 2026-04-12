@@ -45,11 +45,7 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
-        /* Updater disabled until signing key is generated and pubkey committed.
-           Generate: npx @tauri-apps/cli signer generate -w ~/.tauri/notebooklab.key
-           Then: set pubkey in tauri.conf.json, store private key in GitHub Secrets,
-           and uncomment this line. */
-        // .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let app_state = AppState::initialize(app.handle())?;
 
