@@ -42,6 +42,7 @@ jobs:
           - platform: linux
             runner: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
+            args: --bundles deb,rpm
 
     steps:
       - uses: actions/checkout@v4
@@ -92,7 +93,7 @@ jobs:
             | Windows | `.msi` installer |
             | macOS (Intel) | `.dmg` disk image |
             | macOS (Apple Silicon) | `.dmg` disk image |
-            | Linux | `.AppImage` or `.deb` |
+            | Linux | `.deb` or `.rpm` |
           releaseDraft: true
           prerelease: false
-          args: --target ${{ matrix.target }}
+          args: --target ${{ matrix.target }} ${{ matrix.args }}
