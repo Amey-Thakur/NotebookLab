@@ -92,47 +92,8 @@ export function NotebookDetailPage() {
         </div>
       </div>
 
-      {/* Document import */}
-      <div className="mb-8 flex items-center gap-3">
-        <button
-          type="button"
-          onClick={handleImport}
-          disabled={importDoc.isPending}
-          className="px-3 py-1.5 text-xs font-mono bg-accent-dim text-text-1 disabled:opacity-50"
-        >
-          {importDoc.isPending ? "Importing..." : "+ Import Document"}
-        </button>
-        {importDoc.isError && (
-          <p className="text-xs text-error">{String(importDoc.error)}</p>
-        )}
-      </div>
-
-      {/* Documents list */}
+      {/* Notes list — shown first since notes are the primary content */}
       <div className="mb-8">
-        <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-3">
-          Documents ({documents?.length || 0})
-        </h2>
-        {documents?.length === 0 && (
-          <p className="text-sm text-text-4">No documents imported yet.</p>
-        )}
-        {documents?.map((doc) => (
-          <div key={doc.id} className="flex items-center justify-between p-3 border border-border mb-1">
-            <div>
-              <span className="text-sm text-text-1 font-medium">{doc.title}</span>
-              <span className="text-xs font-mono text-text-4 ml-2">.{doc.file_type}</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-mono text-text-4">{formatBytes(doc.file_size)}</span>
-              <span className={`text-xs font-mono ${doc.status === "processed" ? "text-mark" : doc.status === "error" ? "text-error" : "text-text-4"}`}>
-                {doc.status}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Notes list */}
-      <div>
         <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-3">
           Notes ({notes?.length || 0})
         </h2>
@@ -149,6 +110,43 @@ export function NotebookDetailPage() {
             <span className="text-xs font-mono text-text-4 ml-2">
               {new Date(note.updated_at).toLocaleDateString()}
             </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Documents section */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-mono tracking-widest uppercase text-text-4">
+            Documents ({documents?.length || 0})
+          </h2>
+          <button
+            type="button"
+            onClick={handleImport}
+            disabled={importDoc.isPending}
+            className="px-3 py-1.5 text-xs font-mono bg-accent-dim text-text-1 disabled:opacity-50"
+          >
+            {importDoc.isPending ? "Importing..." : "+ Import Document"}
+          </button>
+        </div>
+        {importDoc.isError && (
+          <p className="text-xs text-error mb-2">{String(importDoc.error)}</p>
+        )}
+        {documents?.length === 0 && (
+          <p className="text-sm text-text-4">No documents imported yet. Import a PDF, TXT, or Markdown file.</p>
+        )}
+        {documents?.map((doc) => (
+          <div key={doc.id} className="flex items-center justify-between p-3 border border-border mb-1">
+            <div>
+              <span className="text-sm text-text-1 font-medium">{doc.title}</span>
+              <span className="text-xs font-mono text-text-4 ml-2">.{doc.file_type}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-mono text-text-4">{formatBytes(doc.file_size)}</span>
+              <span className={`text-xs font-mono ${doc.status === "processed" ? "text-mark" : doc.status === "error" ? "text-error" : "text-text-4"}`}>
+                {doc.status}
+              </span>
+            </div>
           </div>
         ))}
       </div>
