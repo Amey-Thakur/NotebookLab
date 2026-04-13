@@ -58,7 +58,7 @@ pub fn run() {
             let data_dir = app.path().app_data_dir()
                 .map_err(|e| format!("Failed to resolve data dir: {e}"))?;
             let db_path = data_dir.join("notebooklab.db");
-            api::server::start_api_server(db_path);
+            let _api_token = api::server::start_api_server(db_path);
 
             app.manage(app_state);
             app.manage(SidecarManager::new());
