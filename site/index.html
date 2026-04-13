@@ -8,26 +8,39 @@
   <meta property="og:title" content="NotebookLab">
   <meta property="og:description" content="Your thinking partner, on your machine.">
   <meta property="og:type" content="website">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='6' y='8' width='20' height='20' rx='2' fill='none' stroke='%23c8b891' stroke-width='2'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Play:wght@400;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <style>
+    /* ── Reset ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* ── Tokens (8pt grid) ── */
     :root {
       --bg: #0a0a0a;
+      --surface: #111;
+      --rule: #1a1a1a;
       --text: #EFECE3;
       --dim: #8a857e;
-      --faint: #1a1a1a;
-      --rule: #1f1f1f;
+      --muted: #4a4a4a;
       --gold: #c8b891;
-      --cream: #EFECE3;
+      --radius: 4px;   /* one radius, everywhere */
+      --space-xs: 8px;
+      --space-s: 16px;
+      --space-m: 24px;
+      --space-l: 40px;
+      --space-xl: 64px;
+      --space-2xl: 96px;
+      --max-w: 720px;
     }
 
     html { scroll-behavior: smooth; }
 
     body {
       font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 17px;
+      line-height: 1.65;
       background: var(--bg);
       color: var(--text);
       -webkit-font-smoothing: antialiased;
@@ -35,53 +48,64 @@
     }
 
     a { color: inherit; }
-    .wrap { max-width: 660px; margin: 0 auto; padding: 0 28px; }
+
+    .wrap {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: 0 var(--space-m);
+    }
 
 
-    /* ═══ AMBIENT GLOW ═══ */
+    /* ── Ambient glow (CSS only) ── */
 
     .glow {
       position: fixed;
-      top: -30%;
-      left: -10%;
-      width: 70%;
-      height: 70%;
-      background: radial-gradient(ellipse, rgba(200, 184, 145, 0.04) 0%, transparent 70%);
+      inset: 0;
       pointer-events: none;
-      animation: drift 20s ease-in-out infinite alternate;
       z-index: 0;
+      overflow: hidden;
     }
 
-    .glow-2 {
-      position: fixed;
-      bottom: -20%;
-      right: -15%;
-      width: 60%;
-      height: 60%;
-      background: radial-gradient(ellipse, rgba(74, 112, 169, 0.03) 0%, transparent 70%);
-      pointer-events: none;
-      animation: drift2 25s ease-in-out infinite alternate;
-      z-index: 0;
+    .glow::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      left: -20%;
+      width: 80%;
+      height: 80%;
+      background: radial-gradient(ellipse, rgba(200, 184, 145, 0.035) 0%, transparent 70%);
+      animation: drift 22s ease-in-out infinite alternate;
+    }
+
+    .glow::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      right: -20%;
+      width: 70%;
+      height: 70%;
+      background: radial-gradient(ellipse, rgba(74, 112, 169, 0.025) 0%, transparent 70%);
+      animation: drift2 28s ease-in-out infinite alternate;
     }
 
     @keyframes drift {
-      0% { transform: translate(0, 0) scale(1); }
-      100% { transform: translate(8%, 12%) scale(1.1); }
+      from { transform: translate(0, 0); }
+      to { transform: translate(6%, 10%); }
     }
 
     @keyframes drift2 {
-      0% { transform: translate(0, 0) scale(1); }
-      100% { transform: translate(-6%, -8%) scale(1.05); }
+      from { transform: translate(0, 0); }
+      to { transform: translate(-5%, -7%); }
     }
 
 
-    /* ═══ SCROLL REVEAL ═══ */
+    /* ── Scroll reveal ── */
 
     .reveal {
       opacity: 0;
-      transform: translateY(24px);
-      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-                  transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      transform: translateY(var(--space-s));
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .reveal.visible {
@@ -90,33 +114,34 @@
     }
 
 
-    /* ═══ HERO ═══ */
+    /* ── Hero ── */
 
     .hero {
       position: relative;
       z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       min-height: 100vh;
       min-height: 100svh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 80px 0;
+      text-align: center;
+      padding: var(--space-xl) 0;
     }
 
     .hero-mark {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 52px;
+      gap: var(--space-xs);
+      margin-bottom: var(--space-l);
       opacity: 0;
-      animation: fadeIn 1s 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: fadeIn 0.8s 0.2s ease forwards;
     }
 
-    .hero-mark svg { width: 36px; height: 36px; flex-shrink: 0; }
+    .hero-mark svg { width: 32px; height: 32px; }
 
     .hero-mark span {
       font-family: 'Play', sans-serif;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
       color: var(--dim);
       letter-spacing: 0.5px;
@@ -124,13 +149,13 @@
 
     .hero h1 {
       font-family: 'Play', sans-serif;
-      font-size: clamp(38px, 7vw, 64px);
+      font-size: clamp(32px, 6vw, 56px);
       font-weight: 700;
-      line-height: 1.05;
-      letter-spacing: -1.5px;
-      margin-bottom: 32px;
+      line-height: 1.1;
+      letter-spacing: -1px;
+      margin-bottom: var(--space-m);
       opacity: 0;
-      animation: fadeUp 1s 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: fadeUp 0.8s 0.35s ease forwards;
     }
 
     .hero h1 em {
@@ -139,37 +164,35 @@
     }
 
     .hero-body {
-      font-size: 18px;
-      line-height: 1.7;
-      color: var(--dim);
       max-width: 480px;
-      margin-bottom: 48px;
+      margin: 0 auto var(--space-l);
+      color: var(--dim);
       opacity: 0;
-      animation: fadeUp 1s 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: fadeUp 0.8s 0.5s ease forwards;
     }
 
     .hero-actions {
       display: flex;
-      gap: 14px;
-      align-items: center;
+      gap: var(--space-s);
+      justify-content: center;
       flex-wrap: wrap;
       opacity: 0;
-      animation: fadeUp 1s 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: fadeUp 0.8s 0.65s ease forwards;
     }
 
     .btn {
-      display: inline-block;
       font-family: 'Play', sans-serif;
       font-size: 13px;
       font-weight: 700;
       text-decoration: none;
-      padding: 12px 28px;
-      letter-spacing: 0.3px;
-      transition: all 0.2s;
+      padding: 12px var(--space-m);
+      border-radius: var(--radius);
+      transition: all 0.15s ease;
+      display: inline-block;
     }
 
     .btn-primary {
-      background: var(--cream);
+      background: var(--text);
       color: var(--bg);
     }
     .btn-primary:hover {
@@ -178,231 +201,219 @@
     }
 
     .btn-ghost {
-      border: 1px solid #2a2a2a;
+      border: 1px solid var(--rule);
       color: var(--dim);
     }
     .btn-ghost:hover {
       border-color: var(--gold);
-      color: var(--cream);
+      color: var(--text);
     }
 
     .hero-meta {
-      margin-top: 24px;
+      margin-top: var(--space-m);
       font-family: 'Play', sans-serif;
       font-size: 11px;
-      color: #3a3a3a;
+      color: var(--muted);
       letter-spacing: 0.5px;
       opacity: 0;
-      animation: fadeIn 1s 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: fadeIn 0.8s 0.8s ease forwards;
     }
 
 
-    /* ═══ SECTIONS ═══ */
+    /* ── Shared section ── */
 
     section { position: relative; z-index: 1; }
 
     .rule {
       border: none;
       height: 1px;
-      background: linear-gradient(90deg, transparent, var(--rule), transparent);
+      background: var(--rule);
       margin: 0;
     }
 
-
-    /* ═══ WHAT ═══ */
-
-    .what { padding: 80px 0; }
-
-    .what-lead {
+    .section-head {
       font-family: 'Play', sans-serif;
-      font-size: clamp(22px, 3.5vw, 30px);
+      font-size: 11px;
       font-weight: 700;
-      line-height: 1.3;
-      margin-bottom: 48px;
-      max-width: 500px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: var(--space-l);
     }
 
-    .what-list { list-style: none; }
 
-    .what-list li {
-      padding: 22px 0;
+    /* ── Features ── */
+
+    .features { padding: var(--space-2xl) 0; }
+
+    .features-list {
+      list-style: none;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    .features-list li {
+      padding: var(--space-s) 0;
       border-bottom: 1px solid var(--rule);
       display: grid;
-      grid-template-columns: 120px 1fr;
-      gap: 24px;
+      grid-template-columns: 96px 1fr;
+      gap: var(--space-s);
       align-items: baseline;
     }
 
-    .what-list li:first-child { border-top: 1px solid var(--rule); }
+    .features-list li:first-child { border-top: 1px solid var(--rule); }
 
-    .what-label {
+    .f-label {
       font-family: 'Play', sans-serif;
       font-size: 12px;
       font-weight: 700;
       color: var(--gold);
-      letter-spacing: 1px;
-      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
-    .what-desc {
-      font-size: 16px;
-      line-height: 1.6;
+    .f-desc {
+      font-size: 15px;
+      line-height: 1.55;
       color: var(--dim);
     }
 
 
-    /* ═══ HOW ═══ */
+    /* ── Steps ── */
 
-    .how { padding: 80px 0; }
+    .steps { padding: var(--space-2xl) 0; }
 
-    .how-label {
-      font-family: 'Play', sans-serif;
-      font-size: 11px;
-      font-weight: 700;
-      color: #3a3a3a;
-      letter-spacing: 2.5px;
-      text-transform: uppercase;
-      margin-bottom: 40px;
-    }
-
-    .how-steps {
+    .steps-list {
       list-style: none;
       counter-reset: step;
+      max-width: 480px;
+      margin: 0 auto;
     }
 
-    .how-steps li {
+    .steps-list li {
       counter-increment: step;
-      padding: 28px 0;
+      padding: var(--space-m) 0;
       border-bottom: 1px solid var(--rule);
       display: flex;
-      gap: 24px;
+      gap: var(--space-s);
       align-items: baseline;
     }
 
-    .how-steps li:first-child { border-top: 1px solid var(--rule); }
+    .steps-list li:first-child { border-top: 1px solid var(--rule); }
 
-    .how-steps li::before {
+    .steps-list li::before {
       content: counter(step);
       font-family: 'Play', sans-serif;
-      font-size: 36px;
+      font-size: 28px;
       font-weight: 700;
-      color: var(--faint);
-      min-width: 44px;
+      color: var(--rule);
+      min-width: 32px;
       line-height: 1;
     }
 
-    .how-steps strong {
+    .steps-list strong {
       font-family: 'Play', sans-serif;
-      color: var(--cream);
-      font-size: 17px;
+      font-size: 15px;
+      color: var(--text);
       display: block;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
-    .how-steps p {
-      font-size: 15px;
-      line-height: 1.6;
+    .steps-list p {
+      font-size: 14px;
+      line-height: 1.55;
       color: var(--dim);
     }
 
 
-    /* ═══ DOWNLOAD ═══ */
+    /* ── Download ── */
 
     .dl {
-      padding: 100px 0 80px;
+      padding: var(--space-2xl) 0 var(--space-xl);
       text-align: center;
     }
 
     .dl h2 {
       font-family: 'Play', sans-serif;
-      font-size: clamp(28px, 5vw, 40px);
+      font-size: clamp(24px, 4vw, 36px);
       font-weight: 700;
-      margin-bottom: 10px;
+      margin-bottom: var(--space-xs);
       letter-spacing: -0.5px;
     }
 
     .dl-sub {
-      font-size: 16px;
+      font-size: 15px;
       color: var(--dim);
-      margin-bottom: 40px;
+      margin-bottom: var(--space-l);
     }
 
     .dl-grid {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
+      display: inline-flex;
+      gap: var(--space-xs);
       flex-wrap: wrap;
+      justify-content: center;
     }
 
     .dl-grid a {
       display: block;
-      padding: 18px 36px;
+      padding: var(--space-s) var(--space-m);
       border: 1px solid var(--rule);
+      border-radius: var(--radius);
       text-decoration: none;
-      transition: all 0.2s;
+      transition: all 0.15s ease;
+      min-width: 140px;
     }
 
     .dl-grid a:hover {
       border-color: var(--gold);
-      transform: translateY(-2px);
+      transform: translateY(-1px);
     }
 
     .dl-grid .os {
       font-family: 'Play', sans-serif;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 700;
-      color: var(--cream);
+      color: var(--text);
     }
 
     .dl-grid .fmt {
       font-size: 11px;
       color: var(--dim);
-      margin-top: 3px;
+      margin-top: 2px;
     }
 
 
-    /* ═══ FOOTER ═══ */
+    /* ── Footer ── */
 
     footer {
-      padding: 56px 0;
+      padding: var(--space-l) 0;
+      text-align: center;
       font-family: 'Play', sans-serif;
       font-size: 12px;
-      color: #333;
-      text-align: center;
-      letter-spacing: 0.3px;
+      color: var(--muted);
     }
 
-    footer a { text-decoration: none; transition: color 0.2s; }
+    footer a { text-decoration: none; transition: color 0.15s; }
     footer a:hover { color: var(--gold); }
 
 
-    /* ═══ ANIMATIONS ═══ */
+    /* ── Keyframes ── */
 
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 
 
-    /* ═══ RESPONSIVE ═══ */
+    /* ── Responsive ── */
 
     @media (max-width: 600px) {
-      .hero { min-height: auto; padding: 48px 0 36px; }
-      .hero-body { font-size: 16px; }
-      .what-list li { grid-template-columns: 1fr; gap: 6px; }
-      .how-steps li { flex-direction: column; gap: 8px; }
-      .how-steps li::before { font-size: 28px; }
-      .dl { padding: 64px 0; }
+      .hero { min-height: auto; padding: var(--space-xl) 0 var(--space-l); }
+      .features-list li { grid-template-columns: 1fr; gap: 4px; }
+      .steps-list li { flex-direction: column; gap: var(--space-xs); }
+      .dl { padding: var(--space-xl) 0; }
     }
 
-    /* Reduce motion for accessibility */
     @media (prefers-reduced-motion: reduce) {
-      .glow, .glow-2 { animation: none; }
+      .glow::before, .glow::after { animation: none; }
       .reveal { opacity: 1; transform: none; transition: none; }
       .hero-mark, .hero h1, .hero-body, .hero-actions, .hero-meta {
         opacity: 1; animation: none;
@@ -412,160 +423,108 @@
 </head>
 <body>
 
-  <!-- Ambient glow (CSS only, no JS) -->
   <div class="glow"></div>
-  <div class="glow-2"></div>
 
-  <!-- Hero -->
   <section class="hero">
     <div class="wrap">
-
       <div class="hero-mark">
         <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="29.2" y="5.6" width="44" height="57.6" rx="2" stroke="#8FABD4" stroke-width="1.3" opacity="0.22"/>
-          <rect x="23.6" y="11.2" width="44" height="57.6" rx="2" stroke="#8FABD4" stroke-width="1.6" opacity="0.42"/>
+          <rect x="29.2" y="5.6" width="44" height="57.6" rx="2" stroke="#c8b891" stroke-width="1.3" opacity=".2"/>
+          <rect x="23.6" y="11.2" width="44" height="57.6" rx="2" stroke="#c8b891" stroke-width="1.6" opacity=".4"/>
           <rect x="18" y="16.8" width="44" height="57.6" rx="2" stroke="#c8b891" stroke-width="2.2"/>
-          <line x1="26" y1="29.6" x2="50.2" y2="29.6" stroke="#c8b891" stroke-width="1.3" opacity="0.28" stroke-linecap="round"/>
-          <line x1="26" y1="37.6" x2="56.74" y2="37.6" stroke="#c8b891" stroke-width="1.3" opacity="0.28" stroke-linecap="round"/>
-          <line x1="26" y1="45.6" x2="48.51" y2="45.6" stroke="#c8b891" stroke-width="1.3" opacity="0.28" stroke-linecap="round"/>
-          <line x1="26" y1="53.6" x2="44.09" y2="53.6" stroke="#c8b891" stroke-width="1.3" opacity="0.28" stroke-linecap="round"/>
-          <path d="M55.4,10.96 Q50.14,22.68 49.68,33.76" stroke="#c8b891" stroke-width="1.2" opacity="0.3"/>
-          <path d="M49.68,40.16 Q44.64,46.46 44.4,51.57" stroke="#c8b891" stroke-width="1.2" opacity="0.4"/>
-          <circle cx="55.4" cy="8.4" r="2.56" fill="#c8b891" opacity="0.35"/>
-          <circle cx="49.68" cy="36.96" r="3.2" fill="#c8b891" opacity="0.55"/>
-          <circle cx="44.4" cy="55.97" r="4.4" fill="#c8b891" opacity="0.85"/>
-          <circle cx="44.4" cy="55.97" r="1.98" fill="#0a0a0a"/>
+          <line x1="26" y1="29.6" x2="50" y2="29.6" stroke="#c8b891" stroke-width="1.3" opacity=".25" stroke-linecap="round"/>
+          <line x1="26" y1="37.6" x2="57" y2="37.6" stroke="#c8b891" stroke-width="1.3" opacity=".25" stroke-linecap="round"/>
+          <line x1="26" y1="45.6" x2="49" y2="45.6" stroke="#c8b891" stroke-width="1.3" opacity=".25" stroke-linecap="round"/>
+          <line x1="26" y1="53.6" x2="44" y2="53.6" stroke="#c8b891" stroke-width="1.3" opacity=".25" stroke-linecap="round"/>
+          <circle cx="55" cy="9" r="2.5" fill="#c8b891" opacity=".3"/>
+          <circle cx="50" cy="37" r="3" fill="#c8b891" opacity=".5"/>
+          <circle cx="44" cy="56" r="4" fill="#c8b891" opacity=".8"/>
+          <circle cx="44" cy="56" r="1.8" fill="#0a0a0a"/>
         </svg>
         <span>NotebookLab</span>
       </div>
 
-      <h1>Your thinking<br>partner, <em>on your<br>machine.</em></h1>
+      <h1>Your thinking partner,<br><em>on your machine.</em></h1>
 
       <p class="hero-body">
-        Drop in your research. Ask questions. Get answers
-        with exact citations. An AI knowledge workspace
-        that runs entirely on your computer.
+        Drop in your research. Ask questions.
+        Get answers with exact citations.
+        Runs entirely on your computer.
+        No cloud. No API keys. Yours.
       </p>
 
       <div class="hero-actions">
-        <a href="https://github.com/Amey-Thakur/NotebookLab/releases/latest" class="btn btn-primary">Download</a>
-        <a href="https://github.com/Amey-Thakur/NotebookLab" class="btn btn-ghost">Source</a>
+        <a href="https://github.com/Amey-Thakur/NotebookLab/releases/latest" class="btn btn-primary">Download for free</a>
+        <a href="https://github.com/Amey-Thakur/NotebookLab" class="btn btn-ghost">View source</a>
       </div>
 
-      <p class="hero-meta">v0.1.0 pre-release &middot; Windows, macOS, Linux &middot; Free &amp; open source</p>
-
+      <p class="hero-meta">v0.1.0 pre-release &middot; Windows, macOS, Linux</p>
     </div>
   </section>
 
   <hr class="rule">
 
-  <!-- What -->
-  <section class="what">
+  <section class="features">
     <div class="wrap">
-      <p class="what-lead reveal">Everything you need to think deeply with your documents.</p>
-
-      <ul class="what-list">
-        <li class="reveal">
-          <span class="what-label">Chat</span>
-          <span class="what-desc">Ask questions. Answers cite the exact page, paragraph, and source file.</span>
-        </li>
-        <li class="reveal">
-          <span class="what-label">Write</span>
-          <span class="what-desc">Markdown editor with [[wiki-links]] and auto-save. Notes link to each other.</span>
-        </li>
-        <li class="reveal">
-          <span class="what-label">Search</span>
-          <span class="what-desc">Full-text search across everything. BM25 ranking. Milliseconds.</span>
-        </li>
-        <li class="reveal">
-          <span class="what-label">Think</span>
-          <span class="what-desc">AI mind maps. Socratic questions. Connections you didn't see.</span>
-        </li>
-        <li class="reveal">
-          <span class="what-label">Listen</span>
-          <span class="what-desc">Turn documents into a two-speaker podcast conversation.</span>
-        </li>
-        <li class="reveal">
-          <span class="what-label">Own</span>
-          <span class="what-desc">Local models. No API keys. No accounts. No internet required.</span>
-        </li>
+      <p class="section-head reveal">What you get</p>
+      <ul class="features-list">
+        <li class="reveal"><span class="f-label">Chat</span><span class="f-desc">Ask questions. Answers cite the exact page and source.</span></li>
+        <li class="reveal"><span class="f-label">Write</span><span class="f-desc">Markdown editor with [[wiki-links]] and auto-save.</span></li>
+        <li class="reveal"><span class="f-label">Search</span><span class="f-desc">Full-text search with BM25 ranking. Milliseconds.</span></li>
+        <li class="reveal"><span class="f-label">Think</span><span class="f-desc">AI mind maps and Socratic questions.</span></li>
+        <li class="reveal"><span class="f-label">Listen</span><span class="f-desc">Two-speaker AI podcast from your documents.</span></li>
+        <li class="reveal"><span class="f-label">Own</span><span class="f-desc">Local models. No API keys. No internet required.</span></li>
       </ul>
     </div>
   </section>
 
   <hr class="rule">
 
-  <!-- How -->
-  <section class="how">
+  <section class="steps">
     <div class="wrap">
-      <p class="how-label reveal">How it works</p>
-
-      <ol class="how-steps">
-        <li class="reveal">
-          <div>
-            <strong>Install</strong>
-            <p>Download one file. Double-click. No Docker, no terminal, no setup.</p>
-          </div>
-        </li>
-        <li class="reveal">
-          <div>
-            <strong>Import</strong>
-            <p>Drop in PDFs, text files, Markdown. Indexed automatically.</p>
-          </div>
-        </li>
-        <li class="reveal">
-          <div>
-            <strong>Think</strong>
-            <p>Chat, search, mind maps, transforms. Everything local.</p>
-          </div>
-        </li>
+      <p class="section-head reveal">How it works</p>
+      <ol class="steps-list">
+        <li class="reveal"><div><strong>Install</strong><p>Download one file. Double-click. Done.</p></div></li>
+        <li class="reveal"><div><strong>Import</strong><p>Drop in PDFs, text files, or Markdown.</p></div></li>
+        <li class="reveal"><div><strong>Think</strong><p>Chat, search, mind maps. All local.</p></div></li>
       </ol>
     </div>
   </section>
 
   <hr class="rule">
 
-  <!-- Download -->
   <section class="dl reveal">
     <div class="wrap">
       <h2>Get NotebookLab</h2>
-      <p class="dl-sub">Free. Open source. Runs offline.</p>
-
+      <p class="dl-sub">Free, open source, runs offline.</p>
       <div class="dl-grid">
         <a href="https://github.com/Amey-Thakur/NotebookLab/releases/latest/download/NotebookLab_0.1.0_x64-setup.exe">
-          <div class="os">Windows</div>
-          <div class="fmt">.exe installer</div>
+          <div class="os">Windows</div><div class="fmt">.exe installer</div>
         </a>
         <a href="https://github.com/Amey-Thakur/NotebookLab/releases/latest/download/NotebookLab_0.1.0_aarch64.dmg">
-          <div class="os">macOS</div>
-          <div class="fmt">.dmg (Apple Silicon)</div>
+          <div class="os">macOS</div><div class="fmt">.dmg</div>
         </a>
         <a href="https://github.com/Amey-Thakur/NotebookLab/releases/latest/download/NotebookLab_0.1.0_amd64.deb">
-          <div class="os">Linux</div>
-          <div class="fmt">.deb package</div>
+          <div class="os">Linux</div><div class="fmt">.deb</div>
         </a>
       </div>
     </div>
   </section>
 
-  <!-- Footer -->
   <footer>
-    <div class="wrap">
-      <p>
-        Built by <a href="https://github.com/Amey-Thakur">Amey Thakur</a> &amp;
-        <a href="https://github.com/architkonde">Archit Konde</a>
-        &nbsp;&middot;&nbsp;
-        <a href="https://github.com/Amey-Thakur/NotebookLab">GitHub</a>
-        &nbsp;&middot;&nbsp;
-        <a href="https://github.com/Amey-Thakur/NotebookLab/releases">Releases</a>
-      </p>
-    </div>
+    <p>
+      <a href="https://github.com/Amey-Thakur">Amey Thakur</a> &amp;
+      <a href="https://github.com/architkonde">Archit Konde</a>
+      &nbsp;&middot;&nbsp;
+      <a href="https://github.com/Amey-Thakur/NotebookLab">GitHub</a>
+      &nbsp;&middot;&nbsp;
+      <a href="https://github.com/Amey-Thakur/NotebookLab/releases">Releases</a>
+    </p>
   </footer>
 
-  <!-- Scroll reveal (tiny, progressive enhancement) -->
   <script>
-    const o = new IntersectionObserver((entries) => {
-      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); o.unobserve(e.target); } });
+    const o = new IntersectionObserver(es => {
+      es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); o.unobserve(e.target); }});
     }, { threshold: 0.15 });
     document.querySelectorAll('.reveal').forEach(el => o.observe(el));
   </script>
