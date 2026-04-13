@@ -55,7 +55,7 @@ sha2 = "0.10"
 
 
 # PDF text extraction
-pdf-extract = "0.7"
+pdf-extract = "0.10"
 
 # Local REST API server for automation
 tiny_http = "0.12"
