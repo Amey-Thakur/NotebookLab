@@ -113,7 +113,7 @@ src-tauri/              Rust backend
 
 ## Contributing
 
-See the commit format in [CLAUDE.md](CLAUDE.md). Every file starts with a header block. Comments explain "why" not "what".
+See the commit format in [CLAUDE.md](CLAUDE.md). Every file starts with a header block. Comments explain "why" not "what". 
 
 ## License
 
