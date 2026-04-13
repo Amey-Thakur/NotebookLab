@@ -22,8 +22,13 @@ const CONTENT_TYPE_JSON: &str = "application/json";
 
 /// Start the REST API server in a background thread.
 /// Opens its own read-only database connection (WAL mode allows concurrent readers).
-pub fn start_api_server(db_path: PathBuf) {
+/// Returns the session token required for API auth.
+pub fn start_api_server(db_path: PathBuf) -> String {
+    let api_token = format!("nbl-api-{}", uuid::Uuid::new_v4().simple());
+    let token_for_thread = api_token.clone();
+
     thread::spawn(move || {
+        let expected_auth = format!("Bearer {}", token_for_thread);
         let conn = match Connection::open_with_flags(
             &db_path,
             rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY | rusqlite::OpenFlags::SQLITE_OPEN_NO_MUTEX,
@@ -48,6 +53,24 @@ pub fn start_api_server(db_path: PathBuf) {
         };
 
         for request in server.incoming_requests() {
+            /* Verify bearer token (skip for /api/health which is public) */
+            let path = request.url().split('?').next().unwrap_or("/");
+            if path != "/api/health" {
+                let auth_ok = request.headers().iter().any(|h| {
+                    h.field.as_str() == "Authorization"
+                        && h.value.as_str() == expected_auth
+                });
+                if !auth_ok {
+                    let header = Header::from_bytes("Content-Type", CONTENT_TYPE_JSON).unwrap();
+                    let body = serde_json::json!({"error": "Unauthorized"}).to_string();
+                    let r = Response::from_string(body)
+                        .with_status_code(401)
+                        .with_header(header);
+                    request.respond(r).ok();
+                    continue;
+                }
+            }
+
             let response = handle_request(&request, &conn);
 
             let header = Header::from_bytes("Content-Type", CONTENT_TYPE_JSON).unwrap();
@@ -67,6 +90,8 @@ pub fn start_api_server(db_path: PathBuf) {
             }
         }
     });
+
+    api_token
 }
 
 

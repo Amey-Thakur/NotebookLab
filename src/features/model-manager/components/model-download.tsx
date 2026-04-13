@@ -13,6 +13,7 @@ import { listen } from "@tauri-apps/api/event";
 import { useMutation } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
+import { formatBytes } from "@/lib/utils";
 
 
 interface DownloadProgress {
@@ -59,12 +60,6 @@ export function ModelDownload({ onComplete }: ModelDownloadProps) {
   const isDownloading = progress?.status === "downloading";
   const isComplete = progress?.status === "complete";
   const isError = progress?.status?.startsWith("error");
-
-  const formatBytes = (bytes: number) => {
-    if (bytes >= 1_073_741_824) return `${(bytes / 1_073_741_824).toFixed(1)} GB`;
-    if (bytes >= 1_048_576) return `${(bytes / 1_048_576).toFixed(0)} MB`;
-    return `${(bytes / 1024).toFixed(0)} KB`;
-  };
 
   return (
     <div className="border border-border bg-surface-2 p-6 mb-6">

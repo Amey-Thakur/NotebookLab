@@ -39,18 +39,18 @@ export function App() {
         <Route path={ROUTES.PODCASTS} element={<PodcastPage />} />
         <Route path={ROUTES.MODELS} element={<ModelManagerPage />} />
         <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
-        <Route path="*" element={<ComingSoonPage feature="Page not found" />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </AppShell>
   );
 }
 
 
-function ComingSoonPage({ feature }: { feature: string }) {
+function NotFoundPage() {
   return (
     <div className="flex flex-col items-center justify-center h-full text-text-3 p-8">
-      <p className="text-lg font-display font-bold mb-2">{feature}</p>
-      <p className="text-sm text-text-4">Coming soon. This feature is in development.</p>
+      <p className="text-lg font-display font-bold mb-2">Page not found</p>
+      <p className="text-sm text-text-4">This page does not exist. Use the sidebar to navigate.</p>
     </div>
   );
 }
