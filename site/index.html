@@ -15,12 +15,11 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0e0e0e;
+      --bg: #0a0a0a;
       --text: #EFECE3;
-      --dim: #9a958e;
-      --faint: #1e1e1e;
-      --accent: #EFECE3;
-      --accent-light: #d4cfc5;
+      --dim: #8a857e;
+      --faint: #1a1a1a;
+      --rule: #1f1f1f;
       --gold: #c8b891;
       --cream: #EFECE3;
     }
@@ -32,17 +31,72 @@
       background: var(--bg);
       color: var(--text);
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
 
     a { color: inherit; }
+    .wrap { max-width: 660px; margin: 0 auto; padding: 0 28px; }
 
-    .wrap { max-width: 680px; margin: 0 auto; padding: 0 28px; }
+
+    /* ═══ AMBIENT GLOW ═══ */
+
+    .glow {
+      position: fixed;
+      top: -30%;
+      left: -10%;
+      width: 70%;
+      height: 70%;
+      background: radial-gradient(ellipse, rgba(200, 184, 145, 0.04) 0%, transparent 70%);
+      pointer-events: none;
+      animation: drift 20s ease-in-out infinite alternate;
+      z-index: 0;
+    }
+
+    .glow-2 {
+      position: fixed;
+      bottom: -20%;
+      right: -15%;
+      width: 60%;
+      height: 60%;
+      background: radial-gradient(ellipse, rgba(74, 112, 169, 0.03) 0%, transparent 70%);
+      pointer-events: none;
+      animation: drift2 25s ease-in-out infinite alternate;
+      z-index: 0;
+    }
+
+    @keyframes drift {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(8%, 12%) scale(1.1); }
+    }
+
+    @keyframes drift2 {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(-6%, -8%) scale(1.05); }
+    }
+
+
+    /* ═══ SCROLL REVEAL ═══ */
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
 
 
     /* ═══ HERO ═══ */
 
     .hero {
+      position: relative;
+      z-index: 1;
       min-height: 100vh;
+      min-height: 100svh;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -52,15 +106,17 @@
     .hero-mark {
       display: flex;
       align-items: center;
-      gap: 14px;
-      margin-bottom: 48px;
+      gap: 12px;
+      margin-bottom: 52px;
+      opacity: 0;
+      animation: fadeIn 1s 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    .hero-mark svg { width: 40px; height: 40px; flex-shrink: 0; }
+    .hero-mark svg { width: 36px; height: 36px; flex-shrink: 0; }
 
     .hero-mark span {
       font-family: 'Play', sans-serif;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 700;
       color: var(--dim);
       letter-spacing: 0.5px;
@@ -68,11 +124,13 @@
 
     .hero h1 {
       font-family: 'Play', sans-serif;
-      font-size: clamp(36px, 6vw, 56px);
+      font-size: clamp(38px, 7vw, 64px);
       font-weight: 700;
-      line-height: 1.08;
-      letter-spacing: -1px;
-      margin-bottom: 28px;
+      line-height: 1.05;
+      letter-spacing: -1.5px;
+      margin-bottom: 32px;
+      opacity: 0;
+      animation: fadeUp 1s 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     .hero h1 em {
@@ -81,112 +139,130 @@
     }
 
     .hero-body {
-      font-size: 19px;
-      line-height: 1.65;
+      font-size: 18px;
+      line-height: 1.7;
       color: var(--dim);
-      max-width: 520px;
-      margin-bottom: 44px;
+      max-width: 480px;
+      margin-bottom: 48px;
+      opacity: 0;
+      animation: fadeUp 1s 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    .hero-actions { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+      opacity: 0;
+      animation: fadeUp 1s 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
 
     .btn {
       display: inline-block;
       font-family: 'Play', sans-serif;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
       text-decoration: none;
-      padding: 13px 28px;
-      transition: all 0.15s;
+      padding: 12px 28px;
+      letter-spacing: 0.3px;
+      transition: all 0.2s;
     }
 
     .btn-primary {
       background: var(--cream);
-      color: #0e0e0e;
+      color: var(--bg);
     }
-    .btn-primary:hover { background: var(--gold); }
+    .btn-primary:hover {
+      background: var(--gold);
+      transform: translateY(-1px);
+    }
 
     .btn-ghost {
-      border: 1px solid #333;
+      border: 1px solid #2a2a2a;
       color: var(--dim);
     }
-    .btn-ghost:hover { border-color: var(--gold); color: var(--cream); }
+    .btn-ghost:hover {
+      border-color: var(--gold);
+      color: var(--cream);
+    }
 
     .hero-meta {
-      margin-top: 20px;
+      margin-top: 24px;
       font-family: 'Play', sans-serif;
-      font-size: 12px;
-      color: #44403c;
-      letter-spacing: 0.3px;
+      font-size: 11px;
+      color: #3a3a3a;
+      letter-spacing: 0.5px;
+      opacity: 0;
+      animation: fadeIn 1s 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
 
-    /* ═══ DIVIDER ═══ */
+    /* ═══ SECTIONS ═══ */
 
-    .divider {
+    section { position: relative; z-index: 1; }
+
+    .rule {
       border: none;
-      border-top: 1px solid var(--faint);
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--rule), transparent);
       margin: 0;
     }
 
 
     /* ═══ WHAT ═══ */
 
-    .what { padding: 72px 0; }
+    .what { padding: 80px 0; }
 
     .what-lead {
       font-family: 'Play', sans-serif;
-      font-size: clamp(24px, 4vw, 32px);
+      font-size: clamp(22px, 3.5vw, 30px);
       font-weight: 700;
-      line-height: 1.25;
-      margin-bottom: 40px;
-      max-width: 560px;
+      line-height: 1.3;
+      margin-bottom: 48px;
+      max-width: 500px;
     }
 
-    .what-list {
-      list-style: none;
-      display: grid;
-      gap: 0;
-    }
+    .what-list { list-style: none; }
 
     .what-list li {
-      padding: 20px 0;
-      border-bottom: 1px solid var(--faint);
+      padding: 22px 0;
+      border-bottom: 1px solid var(--rule);
       display: grid;
-      grid-template-columns: 140px 1fr;
-      gap: 20px;
+      grid-template-columns: 120px 1fr;
+      gap: 24px;
       align-items: baseline;
     }
 
-    .what-list li:first-child { border-top: 1px solid var(--faint); }
+    .what-list li:first-child { border-top: 1px solid var(--rule); }
 
     .what-label {
       font-family: 'Play', sans-serif;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       color: var(--gold);
-      letter-spacing: 0.3px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
     }
 
     .what-desc {
       font-size: 16px;
-      line-height: 1.55;
+      line-height: 1.6;
       color: var(--dim);
     }
 
 
     /* ═══ HOW ═══ */
 
-    .how { padding: 72px 0; }
+    .how { padding: 80px 0; }
 
-    .how h2 {
+    .how-label {
       font-family: 'Play', sans-serif;
-      font-size: 13px;
+      font-size: 11px;
       font-weight: 700;
-      color: #44403c;
-      letter-spacing: 2px;
+      color: #3a3a3a;
+      letter-spacing: 2.5px;
       text-transform: uppercase;
-      margin-bottom: 36px;
+      margin-bottom: 40px;
     }
 
     .how-steps {
@@ -196,113 +272,151 @@
 
     .how-steps li {
       counter-increment: step;
-      padding: 24px 0;
-      border-bottom: 1px solid var(--faint);
+      padding: 28px 0;
+      border-bottom: 1px solid var(--rule);
       display: flex;
-      gap: 20px;
+      gap: 24px;
       align-items: baseline;
     }
 
-    .how-steps li:first-child { border-top: 1px solid var(--faint); }
+    .how-steps li:first-child { border-top: 1px solid var(--rule); }
 
     .how-steps li::before {
       content: counter(step);
       font-family: 'Play', sans-serif;
-      font-size: 32px;
+      font-size: 36px;
       font-weight: 700;
       color: var(--faint);
-      min-width: 40px;
+      min-width: 44px;
+      line-height: 1;
     }
 
     .how-steps strong {
       font-family: 'Play', sans-serif;
-      color: var(--text);
+      color: var(--cream);
+      font-size: 17px;
       display: block;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
     }
 
     .how-steps p {
       font-size: 15px;
-      line-height: 1.55;
+      line-height: 1.6;
       color: var(--dim);
     }
 
 
     /* ═══ DOWNLOAD ═══ */
 
-    .dl { padding: 72px 0; text-align: center; }
+    .dl {
+      padding: 100px 0 80px;
+      text-align: center;
+    }
 
     .dl h2 {
       font-family: 'Play', sans-serif;
-      font-size: clamp(24px, 4vw, 32px);
+      font-size: clamp(28px, 5vw, 40px);
       font-weight: 700;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
+      letter-spacing: -0.5px;
     }
 
     .dl-sub {
       font-size: 16px;
       color: var(--dim);
-      margin-bottom: 36px;
+      margin-bottom: 40px;
     }
 
     .dl-grid {
       display: flex;
       justify-content: center;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
     }
 
     .dl-grid a {
       display: block;
-      padding: 16px 32px;
-      border: 1px solid var(--faint);
+      padding: 18px 36px;
+      border: 1px solid var(--rule);
       text-decoration: none;
-      transition: border-color 0.15s;
+      transition: all 0.2s;
     }
 
-    .dl-grid a:hover { border-color: var(--gold); }
+    .dl-grid a:hover {
+      border-color: var(--gold);
+      transform: translateY(-2px);
+    }
 
     .dl-grid .os {
       font-family: 'Play', sans-serif;
       font-size: 15px;
       font-weight: 700;
-      color: var(--text);
+      color: var(--cream);
     }
 
     .dl-grid .fmt {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--dim);
-      margin-top: 2px;
+      margin-top: 3px;
     }
 
 
     /* ═══ FOOTER ═══ */
 
     footer {
-      padding: 48px 0;
+      padding: 56px 0;
       font-family: 'Play', sans-serif;
-      font-size: 13px;
-      color: #44403c;
+      font-size: 12px;
+      color: #333;
       text-align: center;
+      letter-spacing: 0.3px;
     }
 
-    footer a { text-decoration: none; }
+    footer a { text-decoration: none; transition: color 0.2s; }
     footer a:hover { color: var(--gold); }
+
+
+    /* ═══ ANIMATIONS ═══ */
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
 
     /* ═══ RESPONSIVE ═══ */
 
     @media (max-width: 600px) {
-      .hero { min-height: auto; padding: 56px 0 40px; }
-      .hero-body { font-size: 17px; }
-      .what-list li { grid-template-columns: 1fr; gap: 4px; }
-      .how-steps li { flex-direction: column; gap: 4px; }
-      .how-steps li::before { font-size: 24px; }
+      .hero { min-height: auto; padding: 48px 0 36px; }
+      .hero-body { font-size: 16px; }
+      .what-list li { grid-template-columns: 1fr; gap: 6px; }
+      .how-steps li { flex-direction: column; gap: 8px; }
+      .how-steps li::before { font-size: 28px; }
+      .dl { padding: 64px 0; }
+    }
+
+    /* Reduce motion for accessibility */
+    @media (prefers-reduced-motion: reduce) {
+      .glow, .glow-2 { animation: none; }
+      .reveal { opacity: 1; transform: none; transition: none; }
+      .hero-mark, .hero h1, .hero-body, .hero-actions, .hero-meta {
+        opacity: 1; animation: none;
+      }
     }
   </style>
 </head>
 <body>
 
+  <!-- Ambient glow (CSS only, no JS) -->
+  <div class="glow"></div>
+  <div class="glow-2"></div>
+
+  <!-- Hero -->
   <section class="hero">
     <div class="wrap">
 
@@ -310,112 +424,110 @@
         <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="29.2" y="5.6" width="44" height="57.6" rx="2" stroke="#8FABD4" stroke-width="1.3" opacity="0.22"/>
           <rect x="23.6" y="11.2" width="44" height="57.6" rx="2" stroke="#8FABD4" stroke-width="1.6" opacity="0.42"/>
-          <rect x="18" y="16.8" width="44" height="57.6" rx="2" stroke="#8FABD4" stroke-width="2.2"/>
-          <line x1="26" y1="29.6" x2="50.2" y2="29.6" stroke="#8FABD4" stroke-width="1.3" opacity="0.28" stroke-linecap="round"/>
-          <line x1="26" y1="37.6" x2="56.74" y2="37.6" stroke="#8FABD4" stroke-width="1.3" opacity="0.28" stroke-linecap="round"/>
-          <line x1="26" y1="45.6" x2="48.51" y2="45.6" stroke="#8FABD4" stroke-width="1.3" opacity="0.28" stroke-linecap="round"/>
-          <line x1="26" y1="53.6" x2="44.09" y2="53.6" stroke="#8FABD4" stroke-width="1.3" opacity="0.28" stroke-linecap="round"/>
-          <path d="M55.4,10.96 Q50.14,22.68 49.68,33.76" stroke="#8FABD4" stroke-width="1.2" opacity="0.3"/>
-          <path d="M49.68,40.16 Q44.64,46.46 44.4,51.57" stroke="#4A70A9" stroke-width="1.2" opacity="0.4"/>
-          <circle cx="55.4" cy="8.4" r="2.56" fill="#8FABD4" opacity="0.35"/>
-          <circle cx="49.68" cy="36.96" r="3.2" fill="#8FABD4" opacity="0.55"/>
-          <circle cx="44.4" cy="55.97" r="4.4" fill="#4A70A9" opacity="0.85"/>
-          <circle cx="44.4" cy="55.97" r="1.98" fill="#0e0e0e"/>
+          <rect x="18" y="16.8" width="44" height="57.6" rx="2" stroke="#c8b891" stroke-width="2.2"/>
+          <line x1="26" y1="29.6" x2="50.2" y2="29.6" stroke="#c8b891" stroke-width="1.3" opacity="0.28" stroke-linecap="round"/>
+          <line x1="26" y1="37.6" x2="56.74" y2="37.6" stroke="#c8b891" stroke-width="1.3" opacity="0.28" stroke-linecap="round"/>
+          <line x1="26" y1="45.6" x2="48.51" y2="45.6" stroke="#c8b891" stroke-width="1.3" opacity="0.28" stroke-linecap="round"/>
+          <line x1="26" y1="53.6" x2="44.09" y2="53.6" stroke="#c8b891" stroke-width="1.3" opacity="0.28" stroke-linecap="round"/>
+          <path d="M55.4,10.96 Q50.14,22.68 49.68,33.76" stroke="#c8b891" stroke-width="1.2" opacity="0.3"/>
+          <path d="M49.68,40.16 Q44.64,46.46 44.4,51.57" stroke="#c8b891" stroke-width="1.2" opacity="0.4"/>
+          <circle cx="55.4" cy="8.4" r="2.56" fill="#c8b891" opacity="0.35"/>
+          <circle cx="49.68" cy="36.96" r="3.2" fill="#c8b891" opacity="0.55"/>
+          <circle cx="44.4" cy="55.97" r="4.4" fill="#c8b891" opacity="0.85"/>
+          <circle cx="44.4" cy="55.97" r="1.98" fill="#0a0a0a"/>
         </svg>
-        <span style="color: var(--cream);">NotebookLab</span>
+        <span>NotebookLab</span>
       </div>
 
-      <h1>Your thinking partner,<br><em>on your machine.</em></h1>
+      <h1>Your thinking<br>partner, <em>on your<br>machine.</em></h1>
 
       <p class="hero-body">
-        Drop in your research. Ask questions. Get answers with exact citations.
-        NotebookLab is an AI knowledge workspace that runs entirely on your
-        computer. No cloud, no API keys, no data leaves your device.
+        Drop in your research. Ask questions. Get answers
+        with exact citations. An AI knowledge workspace
+        that runs entirely on your computer.
       </p>
 
       <div class="hero-actions">
         <a href="https://github.com/Amey-Thakur/NotebookLab/releases/latest" class="btn btn-primary">Download</a>
-        <a href="https://github.com/Amey-Thakur/NotebookLab" class="btn btn-ghost">Source on GitHub</a>
+        <a href="https://github.com/Amey-Thakur/NotebookLab" class="btn btn-ghost">Source</a>
       </div>
 
-      <p class="hero-meta">v0.1.0 pre-release. Windows, macOS, Linux. Free and open source.</p>
+      <p class="hero-meta">v0.1.0 pre-release &middot; Windows, macOS, Linux &middot; Free &amp; open source</p>
 
     </div>
   </section>
 
-  <hr class="divider">
+  <hr class="rule">
 
+  <!-- What -->
   <section class="what">
     <div class="wrap">
-
-      <p class="what-lead">Everything you need to think deeply with your documents.</p>
+      <p class="what-lead reveal">Everything you need to think deeply with your documents.</p>
 
       <ul class="what-list">
-        <li>
+        <li class="reveal">
           <span class="what-label">Chat</span>
-          <span class="what-desc">Ask questions about your documents. Answers cite the exact page, paragraph, and source file.</span>
+          <span class="what-desc">Ask questions. Answers cite the exact page, paragraph, and source file.</span>
         </li>
-        <li>
+        <li class="reveal">
           <span class="what-label">Write</span>
-          <span class="what-desc">Markdown editor with [[wiki-links]] and auto-save. Your notes link to each other and to your documents.</span>
+          <span class="what-desc">Markdown editor with [[wiki-links]] and auto-save. Notes link to each other.</span>
         </li>
-        <li>
+        <li class="reveal">
           <span class="what-label">Search</span>
-          <span class="what-desc">Full-text search across everything you've imported. BM25 ranking. Results in milliseconds.</span>
+          <span class="what-desc">Full-text search across everything. BM25 ranking. Milliseconds.</span>
         </li>
-        <li>
+        <li class="reveal">
           <span class="what-label">Think</span>
-          <span class="what-desc">AI-generated mind maps. Socratic questions that push your thinking. Connections you didn't see.</span>
+          <span class="what-desc">AI mind maps. Socratic questions. Connections you didn't see.</span>
         </li>
-        <li>
+        <li class="reveal">
           <span class="what-label">Listen</span>
-          <span class="what-desc">Turn your documents into a two-speaker podcast conversation. Listen to your research on the go.</span>
+          <span class="what-desc">Turn documents into a two-speaker podcast conversation.</span>
         </li>
-        <li>
+        <li class="reveal">
           <span class="what-label">Own</span>
-          <span class="what-desc">Local AI models, bundled. No API keys. No accounts. No internet required. Your data stays yours.</span>
+          <span class="what-desc">Local models. No API keys. No accounts. No internet required.</span>
         </li>
       </ul>
-
     </div>
   </section>
 
-  <hr class="divider">
+  <hr class="rule">
 
+  <!-- How -->
   <section class="how">
     <div class="wrap">
-
-      <h2>How it works</h2>
+      <p class="how-label reveal">How it works</p>
 
       <ol class="how-steps">
-        <li>
+        <li class="reveal">
           <div>
             <strong>Install</strong>
-            <p>Download one file. Double-click. No Docker, no terminal, no configuration.</p>
+            <p>Download one file. Double-click. No Docker, no terminal, no setup.</p>
           </div>
         </li>
-        <li>
+        <li class="reveal">
           <div>
             <strong>Import</strong>
-            <p>Drop in PDFs, text files, Markdown notes. NotebookLab indexes them for AI retrieval.</p>
+            <p>Drop in PDFs, text files, Markdown. Indexed automatically.</p>
           </div>
         </li>
-        <li>
+        <li class="reveal">
           <div>
             <strong>Think</strong>
-            <p>Chat, search, generate mind maps, transform your notes. Everything runs locally on your hardware.</p>
+            <p>Chat, search, mind maps, transforms. Everything local.</p>
           </div>
         </li>
       </ol>
-
     </div>
   </section>
 
-  <hr class="divider">
+  <hr class="rule">
 
-  <section class="dl">
+  <!-- Download -->
+  <section class="dl reveal">
     <div class="wrap">
-
       <h2>Get NotebookLab</h2>
       <p class="dl-sub">Free. Open source. Runs offline.</p>
 
@@ -433,10 +545,10 @@
           <div class="fmt">.deb package</div>
         </a>
       </div>
-
     </div>
   </section>
 
+  <!-- Footer -->
   <footer>
     <div class="wrap">
       <p>
@@ -449,6 +561,14 @@
       </p>
     </div>
   </footer>
+
+  <!-- Scroll reveal (tiny, progressive enhancement) -->
+  <script>
+    const o = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); o.unobserve(e.target); } });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.reveal').forEach(el => o.observe(el));
+  </script>
 
 </body>
 </html>
