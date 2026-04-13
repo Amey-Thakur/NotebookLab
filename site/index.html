@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NotebookLab - Your thinking partner, on your machine</title>
+  <meta name="description" content="Offline-first AI knowledge workspace. Import documents, chat with AI, get citations. 100% local. No cloud required.">
+  <meta property="og:title" content="NotebookLab">
+  <meta property="og:description" content="Your thinking partner, on your machine. Offline-first AI knowledge workspace.">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Play:wght@400;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #111111;
+      --surface: #161616;
+      --surface-2: #1c1c1c;
+      --border: #2a2a2a;
+      --text-1: #e6e2dc;
+      --text-2: #a8a29e;
+      --text-3: #6b6560;
+      --accent: #8FABD4;
+      --accent-dim: #4A70A9;
+      --cream: #EFECE3;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Play', sans-serif;
+      background: var(--bg);
+      color: var(--text-1);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Layout */
+    .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+    .section { padding: 56px 0; }
+    .section-border { border-top: 1px solid var(--border); }
+
+    /* Typography */
+    h1 { font-size: 48px; font-weight: 700; line-height: 1.1; letter-spacing: -0.5px; }
+    h2 { font-size: 28px; font-weight: 700; line-height: 1.2; margin-bottom: 16px; }
+    h3 { font-size: 18px; font-weight: 700; line-height: 1.3; }
+    .body-text { font-family: 'Source Serif 4', serif; font-size: 17px; color: var(--text-2); }
+    .mono { font-family: monospace; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-3); }
+
+    /* Hero */
+    .hero { padding: 80px 0 40px; text-align: center; }
+    .hero-logo { display: inline-block; width: 340px; max-width: 80vw; margin-bottom: 32px; }
+    .hero-tagline { font-size: 22px; color: var(--text-2); margin-bottom: 12px; }
+    .hero-desc { font-family: 'Source Serif 4', serif; font-size: 18px; color: var(--text-3); max-width: 540px; margin: 0 auto 40px; }
+    .hero-cta { display: inline-flex; align-items: center; gap: 8px; padding: 14px 32px; background: var(--accent-dim); color: var(--cream); font-size: 16px; font-weight: 700; font-family: 'Play', sans-serif; text-decoration: none; transition: background 0.2s; }
+    .hero-cta:hover { background: var(--accent); }
+    .hero-cta-secondary { display: inline-flex; align-items: center; gap: 6px; padding: 14px 24px; border: 1px solid var(--border); color: var(--text-2); font-size: 14px; font-family: 'Play', sans-serif; text-decoration: none; transition: border-color 0.2s, color 0.2s; }
+    .hero-cta-secondary:hover { border-color: var(--accent-dim); color: var(--text-1); }
+    .hero-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .hero-version { font-size: 12px; color: var(--text-3); margin-top: 16px; }
+
+    /* Platform downloads */
+    .downloads { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 24px; }
+    .download-card { display: block; padding: 16px; border: 1px solid var(--border); text-decoration: none; color: var(--text-1); transition: border-color 0.2s; }
+    .download-card:hover { border-color: var(--accent-dim); }
+    .download-card .platform { font-size: 15px; font-weight: 700; }
+    .download-card .format { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+
+    /* Features */
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 32px; margin-top: 40px; }
+    .feature { padding: 24px; border: 1px solid var(--border); }
+    .feature-icon { font-size: 24px; margin-bottom: 12px; display: block; color: var(--accent); }
+    .feature h3 { margin-bottom: 8px; }
+    .feature p { font-family: 'Source Serif 4', serif; font-size: 15px; color: var(--text-2); line-height: 1.5; }
+
+    /* Steps */
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 32px; margin-top: 40px; }
+    .step-number { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; font-size: 16px; font-weight: 700; background: var(--accent-dim); color: var(--cream); margin-bottom: 16px; }
+    .step h3 { margin-bottom: 8px; }
+    .step p { font-family: 'Source Serif 4', serif; font-size: 15px; color: var(--text-2); }
+
+    /* Open source */
+    .oss { text-align: center; }
+    .oss-link { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border: 1px solid var(--border); color: var(--text-2); font-size: 14px; text-decoration: none; transition: border-color 0.2s, color 0.2s; margin-top: 20px; }
+    .oss-link:hover { border-color: var(--accent-dim); color: var(--text-1); }
+
+    /* Footer */
+    footer { padding: 40px 0; border-top: 1px solid var(--border); text-align: center; }
+    footer p { font-size: 13px; color: var(--text-3); }
+    footer a { color: var(--text-2); text-decoration: none; }
+    footer a:hover { color: var(--accent); }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      h1 { font-size: 32px; }
+      .hero { padding: 60px 0 40px; }
+      .hero-tagline { font-size: 18px; }
+      .section { padding: 48px 0; }
+      .hero-logo { width: 260px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 100" role="img" aria-label="NotebookLab Logo">
+          <g id="icon" transform="translate(8, 10)">
+            <rect x="29.2" y="5.6" width="44" height="57.6" rx="2" fill="none" stroke="#8FABD4" stroke-width="1.3" opacity="0.22" />
+            <rect x="23.6" y="11.2" width="44" height="57.6" rx="2" fill="none" stroke="#8FABD4" stroke-width="1.6" opacity="0.42" />
+            <rect x="18" y="16.8" width="44" height="57.6" rx="2" fill="none" stroke="#8FABD4" stroke-width="2.2" opacity="1" />
+            <line x1="26" y1="29.6" x2="50.2" y2="29.6" stroke="#8FABD4" stroke-width="1.3" opacity="0.28" stroke-linecap="round" />
+            <line x1="26" y1="37.6" x2="56.74" y2="37.6" stroke="#8FABD4" stroke-width="1.3" opacity="0.28" stroke-linecap="round" />
+            <line x1="26" y1="45.6" x2="48.51" y2="45.6" stroke="#8FABD4" stroke-width="1.3" opacity="0.28" stroke-linecap="round" />
+            <line x1="26" y1="53.6" x2="44.09" y2="53.6" stroke="#8FABD4" stroke-width="1.3" opacity="0.28" stroke-linecap="round" />
+            <path d="M55.4,10.96 Q50.14,22.68 49.68,33.76" fill="none" stroke="#8FABD4" stroke-width="1.2" opacity="0.3" />
+            <path d="M49.68,40.16 Q44.64,46.46 44.4,51.57" fill="none" stroke="#4A70A9" stroke-width="1.2" opacity="0.4" />
+            <circle cx="55.4" cy="8.4" r="2.56" fill="#8FABD4" opacity="0.35" />
+            <circle cx="49.68" cy="36.96" r="3.2" fill="#8FABD4" opacity="0.55" />
+            <circle cx="44.4" cy="55.97" r="4.4" fill="#4A70A9" opacity="0.85" />
+            <circle cx="44.4" cy="55.97" r="1.98" fill="#111111" />
+            <circle cx="66.8" cy="20.8" r="1.44" fill="#8FABD4" opacity="0.25" />
+            <circle cx="57.6" cy="65.76" r="1.6" fill="#8FABD4" opacity="0.2" />
+          </g>
+          <g id="wordmark">
+            <text x="100" y="54" font-family="Play, sans-serif" font-size="38" font-weight="700" fill="#EFECE3">Notebook</text>
+            <text x="322" y="54" font-family="Play, sans-serif" font-size="38" font-weight="700" fill="#8FABD4">Lab</text>
+            <text x="102" y="74" font-family="Play, sans-serif" font-size="9.5" font-weight="400" fill="#8FABD4" letter-spacing="2.5" opacity="0.6">YOUR THINKING PARTNER</text>
+          </g>
+        </svg>
+      </div>
+
+      <p class="hero-tagline">Your thinking partner, on your machine.</p>
+      <p class="hero-desc">
+        Import your documents. Ask questions. Get answers with citations.
+        AI-powered notebooks that run 100% locally. No cloud. No API keys. No data leaves your device.
+      </p>
+
+      <div class="hero-buttons">
+        <a href="https://github.com/Amey-Thakur/NotebookLab/releases/latest" class="hero-cta">
+          Download NotebookLab
+        </a>
+        <a href="https://github.com/Amey-Thakur/NotebookLab" class="hero-cta-secondary">
+          View on GitHub
+        </a>
+      </div>
+      <p class="hero-version">v0.1.0 &middot; Windows, macOS, Linux &middot; Free and open source</p>
+    </div>
+  </section>
+
+  <!-- Downloads -->
+  <section class="section section-border" id="download">
+    <div class="container">
+      <p class="mono">Download</p>
+      <h2>Pick your platform</h2>
+      <div class="downloads">
+        <a href="https://github.com/Amey-Thakur/NotebookLab/releases/latest/download/NotebookLab_0.1.0_x64-setup.exe" class="download-card">
+          <div class="platform">Windows</div>
+          <div class="format">.exe installer (x64)</div>
+        </a>
+        <a href="https://github.com/Amey-Thakur/NotebookLab/releases/latest/download/NotebookLab_0.1.0_aarch64.dmg" class="download-card">
+          <div class="platform">macOS</div>
+          <div class="format">.dmg (Apple Silicon)</div>
+        </a>
+        <a href="https://github.com/Amey-Thakur/NotebookLab/releases/latest/download/NotebookLab_0.1.0_amd64.deb" class="download-card">
+          <div class="platform">Linux</div>
+          <div class="format">.deb package (x64)</div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section section-border" id="features">
+    <div class="container">
+      <p class="mono">Features</p>
+      <h2>Everything runs on your machine</h2>
+
+      <div class="features-grid">
+        <div class="feature">
+          <span class="feature-icon">&para;</span>
+          <h3>RAG Chat with Citations</h3>
+          <p>Ask questions about your documents. Get answers with exact source references, page numbers, and passages.</p>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">&#9998;</span>
+          <h3>Markdown Editor</h3>
+          <p>WYSIWYG editor with wiki-links, auto-save, and full Markdown support. Link ideas across notes with [[backlinks]].</p>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">&#128270;</span>
+          <h3>Full-Text Search</h3>
+          <p>Instant keyword search across all documents and notes with BM25 relevance ranking.</p>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">&#9733;</span>
+          <h3>Thinking Partner</h3>
+          <p>AI-generated mind maps and Socratic questions that push your thinking deeper into the material.</p>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">&#127911;</span>
+          <h3>AI Podcasts</h3>
+          <p>Generate two-speaker conversations from your documents. Listen to your research discussed like a podcast.</p>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">&#128274;</span>
+          <h3>100% Local AI</h3>
+          <p>Built-in model download. No API keys required. Your data never leaves your machine. Bring your own cloud provider if you want.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="section section-border" id="how">
+    <div class="container">
+      <p class="mono">How it works</p>
+      <h2>Three steps to start thinking</h2>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h3>Install</h3>
+          <p>Download the installer for your platform. Double-click. Done. No Docker, no terminal, no configuration.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h3>Import</h3>
+          <p>Drag in your PDFs, text files, and Markdown notes. NotebookLab indexes them automatically for AI search.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h3>Think</h3>
+          <p>Chat with your documents. Generate mind maps. Get Socratic questions. Transform notes into summaries. All locally.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Open source -->
+  <section class="section section-border">
+    <div class="container oss">
+      <p class="mono">Open Source</p>
+      <h2>Built in the open</h2>
+      <p class="body-text" style="max-width: 480px; margin: 0 auto;">
+        NotebookLab is free and open source. Built with Rust, React, and SQLite.
+        63 tests. CI on 3 platforms. Contributions welcome.
+      </p>
+      <a href="https://github.com/Amey-Thakur/NotebookLab" class="oss-link">
+        GitHub &rarr; Amey-Thakur/NotebookLab
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p>
+        Built by <a href="https://github.com/Amey-Thakur">Amey Thakur</a> and <a href="https://github.com/architkonde">Archit Konde</a>
+        &middot; <a href="https://github.com/Amey-Thakur/NotebookLab">Source</a>
+        &middot; <a href="https://github.com/Amey-Thakur/NotebookLab/releases">Releases</a>
+      </p>
+    </div>
+  </footer>
+
+</body>
+</html>
