@@ -48,12 +48,19 @@ pub fn search_chunks(
 
 
 /// FTS5-based search with BM25 relevance ranking.
+/// Query is sanitized to prevent FTS5 syntax injection (AND, OR, NEAR, etc).
 fn search_fts5(
     conn: &Connection,
     notebook_id: &str,
     query: &str,
     limit: usize,
 ) -> AppResult<Vec<SearchResult>> {
+    /* Sanitize: quote each word to force literal matching, strip FTS5 operators */
+    let safe_query = sanitize_fts5_query(query);
+    if safe_query.is_empty() {
+        return Ok(Vec::new());
+    }
+
     let mut stmt = conn.prepare(
         "SELECT c.id, c.document_id, c.content, c.heading_context, c.page_number,
                 bm25(chunks_fts) as rank
@@ -66,7 +73,7 @@ fn search_fts5(
     )?;
 
     let results = stmt
-        .query_map(params![query, notebook_id, limit as i64], |row| {
+        .query_map(params![safe_query, notebook_id, limit as i64], |row| {
             Ok(SearchResult {
                 chunk_id: row.get(0)?,
                 document_id: row.get(1)?,
@@ -79,6 +86,25 @@ fn search_fts5(
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(results)
+}
+
+
+/// Sanitize a user query for safe use with FTS5 MATCH.
+/// Wraps each word in double quotes to force literal matching, preventing
+/// injection of FTS5 operators (AND, OR, NOT, NEAR, *, ^, etc).
+fn sanitize_fts5_query(query: &str) -> String {
+    query
+        .split_whitespace()
+        .map(|word| {
+            /* Strip quotes and FTS5 special chars, then wrap in quotes */
+            let clean: String = word.chars()
+                .filter(|c| !matches!(c, '"' | '*' | '^' | '{' | '}' | '(' | ')'))
+                .collect();
+            if clean.is_empty() { String::new() } else { format!("\"{clean}\"") }
+        })
+        .filter(|s| !s.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 

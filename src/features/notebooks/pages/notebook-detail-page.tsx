@@ -103,8 +103,11 @@ export function NotebookDetailPage() {
         {notes?.map((note) => (
           <div
             key={note.id}
+            role="button"
+            tabIndex={0}
             className="p-3 border border-border mb-1 cursor-pointer hover:border-accent-dim transition-colors"
             onClick={() => navigate(`/editor/${note.id}`)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate(`/editor/${note.id}`); }}
           >
             <span className="text-sm text-text-1 font-medium">{note.title}</span>
             <span className="text-xs font-mono text-text-4 ml-2">

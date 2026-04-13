@@ -9,6 +9,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { QUERY_KEYS } from "@/lib/constants";
+import { useNotebookStore } from "@/stores/notebook-store";
 import {
   listNotebooks,
   createNotebook,
@@ -39,11 +40,17 @@ export function useCreateNotebook() {
 
 export function useDeleteNotebook() {
   const queryClient = useQueryClient();
+  const activeId = useNotebookStore((s) => s.activeNotebookId);
+  const setActive = useNotebookStore((s) => s.setActiveNotebook);
 
   return useMutation({
     mutationFn: (id: string) => deleteNotebook(id),
-    onSuccess: () => {
+    onSuccess: (_data, deletedId) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.NOTEBOOKS] });
+      /* Clear active notebook if it was the one deleted */
+      if (activeId === deletedId) {
+        setActive(null);
+      }
     },
   });
 }

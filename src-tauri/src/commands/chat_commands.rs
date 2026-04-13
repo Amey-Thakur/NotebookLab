@@ -45,6 +45,10 @@ pub fn send_chat_message(
         return Err(AppError::InvalidInput("Message cannot be empty".into()));
     }
 
+    if message.len() > 50_000 {
+        return Err(AppError::InvalidInput("Message too long (max 50,000 characters)".into()));
+    }
+
     /* Phase 1: DB read (search + history). Lock released after this block. */
     let rag_context = {
         let conn = state.conn()?;
