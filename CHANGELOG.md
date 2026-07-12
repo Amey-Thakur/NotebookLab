@@ -51,7 +51,7 @@ All notable changes to NotebookLab will be documented in this file.
 - Wiki-links now navigate: clicking `[[a note]]` opens it, creating it first
   if needed. A backlinks panel shows which notes link to the open one.
 - Local AI server controls on the Models page: start, stop, restart after a
-  crash, with live status. The bundled server now serves embeddings too.
+  crash, with live status.
 - Keyboard shortcuts, for real this time: Ctrl+K search, Ctrl+N new note,
   Ctrl+S save now. The header search button works.
 - "Check for providers" actually re-probes local endpoints.
