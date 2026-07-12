@@ -1,0 +1,30 @@
+# Name: .gitattributes
+# Purpose: Line ending normalization and file classification for Git.
+# Description: Every text file is stored and checked out with LF endings so
+#   Windows, macOS, and Linux contributors produce identical diffs. Binary
+#   assets are marked so Git never tries to normalize or diff them, and
+#   lockfiles are flagged as generated so pull request views collapse them.
+# Tech Stack: Git
+# License: MIT
+# Authors: Amey Thakur (https://github.com/Amey-Thakur)
+#          Archit Konde (https://github.com/Archit-Konde)
+# Date: 2026-07-12
+
+# Every text file: LF in the repository and in the working tree
+* text=auto eol=lf
+
+# Windows-specific scripts would need CRLF; none exist today, kept for safety
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary assets: never normalized, never text-diffed
+*.png binary
+*.ico binary
+*.icns binary
+*.ttf binary
+*.gguf binary
+
+# Generated lockfiles: collapsed in pull request diffs, excluded from stats
+package-lock.json linguist-generated=true
+src-tauri/Cargo.lock linguist-generated=true
