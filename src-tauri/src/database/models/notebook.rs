@@ -1,10 +1,15 @@
 /*
- * Title: notebook.rs
+ * Name: notebook.rs
+ * Purpose: Notebook domain model.
+ * Description: A notebook is the top-level organizer for documents and notes
+ *   within a project workspace. UUID v7 primary keys provide
+ *   chronological ordering by default. All timestamps are ISO 8601
+ *   UTC strings stored in SQLite TEXT columns.
  * Tech Stack: Rust, serde, rusqlite
- * Description: Notebook domain model. A notebook is the top-level organizer for
- *   documents and notes within a project workspace.
- * Important Details: UUID v7 primary keys provide chronological ordering by default.
- *   All timestamps are ISO 8601 UTC strings stored in SQLite TEXT columns.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use rusqlite::Row;

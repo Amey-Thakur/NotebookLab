@@ -1,10 +1,16 @@
 /*
- * Title: lib.rs
+ * Name: lib.rs
+ * Purpose: Application builder.
+ * Description: Registers all plugins, managed state, and command handlers.
+ *   This is the central wiring point for the entire backend. Every
+ *   module is registered here. State (database pool, model
+ *   handles) is injected via app.manage(). Commands are registered
+ *   via invoke_handler(). Plugins extend Tauri's capabilities.
  * Tech Stack: Rust, Tauri v2, SQLite
- * Description: Application builder. Registers all plugins, managed state, and command handlers.
- * Important Details: This is the central wiring point for the entire backend. Every module
- *   is registered here. State (database pool, model handles) is injected via app.manage().
- *   Commands are registered via invoke_handler(). Plugins extend Tauri's capabilities.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 pub mod api;

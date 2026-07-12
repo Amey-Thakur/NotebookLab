@@ -1,12 +1,17 @@
 /*
- * Title: note_repository.rs
+ * Name: note_repository.rs
+ * Purpose: Data access layer for notes.
+ * Description: Handles CRUD, wiki-link extraction, and backlink queries.
+ *   [[wiki-links]] are parsed from note content on every save and
+ *   mirrored into the links table. Backlinks are resolved by
+ *   querying links where the target matches this note's ID; that
+ *   powers the editor's backlinks panel. Unresolved link titles
+ *   are ignored until a matching note exists.
  * Tech Stack: Rust, rusqlite
- * Description: Data access layer for notes. Handles CRUD, wiki-link extraction,
- *   and backlink queries.
- * Important Details: [[wiki-links]] are parsed from note content on every save
- *   and mirrored into the links table. Backlinks are resolved by querying links
- *   where the target matches this note's ID; that powers the editor's backlinks
- *   panel. Unresolved link titles are ignored until a matching note exists.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use rusqlite::{params, Connection};

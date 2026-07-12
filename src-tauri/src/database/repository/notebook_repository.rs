@@ -1,10 +1,16 @@
 /*
- * Title: notebook_repository.rs
+ * Name: notebook_repository.rs
+ * Purpose: Data access layer for notebooks.
+ * Description: Pure SQL queries, no business logic. All queries use
+ *   parameterized statements to prevent SQL injection. UUID v7 IDs
+ *   are generated at the application layer, not the database.
+ *   Timestamps use ISO 8601 UTC format with 'Z' suffix for
+ *   unambiguous parsing.
  * Tech Stack: Rust, rusqlite
- * Description: Data access layer for notebooks. Pure SQL queries, no business logic.
- * Important Details: All queries use parameterized statements to prevent SQL injection.
- *   UUID v7 IDs are generated at the application layer, not the database.
- *   Timestamps use ISO 8601 UTC format with 'Z' suffix for unambiguous parsing.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use rusqlite::{params, Connection};

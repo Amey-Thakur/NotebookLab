@@ -1,9 +1,13 @@
 /*
- * Title: theme-context.ts
+ * Name: theme-context.ts
+ * Purpose: Theme context definition and consumer hook.
+ * Description: Lives apart from the provider component so the provider file
+ *   exports only a component, keeping React Fast Refresh reliable.
  * Tech Stack: React 19
- * Description: Theme context definition and consumer hook.
- * Important Details: Lives apart from the provider component so the provider
- *   file exports only a component, keeping React Fast Refresh reliable.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { createContext, useContext } from "react";

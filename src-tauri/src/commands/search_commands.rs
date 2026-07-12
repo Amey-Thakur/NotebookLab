@@ -1,10 +1,15 @@
 /*
- * Title: search_commands.rs
+ * Name: search_commands.rs
+ * Purpose: Tauri command handlers for search operations across notebooks.
+ * Description: Async on a blocking worker because embedding the query is an
+ *   HTTP call. Blends FTS5 keyword ranking with vector similarity
+ *   when the active provider supports embeddings; otherwise
+ *   keyword search alone.
  * Tech Stack: Rust, Tauri v2
- * Description: Tauri command handlers for search operations across notebooks.
- * Important Details: Async on a blocking worker because embedding the query is
- *   an HTTP call. Blends FTS5 keyword ranking with vector similarity when the
- *   active provider supports embeddings; otherwise keyword search alone.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use tauri::{Manager, State};

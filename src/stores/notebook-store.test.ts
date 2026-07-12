@@ -1,8 +1,13 @@
 /*
- * Title: notebook-store.test.ts
+ * Name: notebook-store.test.ts
+ * Purpose: Tests for the notebook Zustand store.
+ * Description: Verifies state management for active notebook selection and
+ *   persistence.
  * Tech Stack: Vitest, Zustand
- * Description: Tests for the notebook Zustand store. Verifies state management
- *   for active notebook selection and persistence.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { describe, it, expect, beforeEach } from "vitest";

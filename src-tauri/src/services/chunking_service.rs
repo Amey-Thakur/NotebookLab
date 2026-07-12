@@ -1,11 +1,17 @@
 /*
- * Title: chunking_service.rs
+ * Name: chunking_service.rs
+ * Purpose: Text chunking for RAG.
+ * Description: Splits parsed document pages into overlapping chunks suitable
+ *   for embedding and retrieval. Uses paragraph-aware splitting
+ *   that respects sentence boundaries. Target ~400 tokens per
+ *   chunk with 50-token overlap. Token count is approximated by
+ *   word count * 1.3 (reasonable for English, conservative for
+ *   CJK).
  * Tech Stack: Rust
- * Description: Text chunking for RAG. Splits parsed document pages into overlapping
- *   chunks suitable for embedding and retrieval.
- * Important Details: Uses paragraph-aware splitting that respects sentence boundaries.
- *   Target ~400 tokens per chunk with 50-token overlap. Token count is approximated
- *   by word count * 1.3 (reasonable for English, conservative for CJK).
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use crate::database::models::CreateChunk;

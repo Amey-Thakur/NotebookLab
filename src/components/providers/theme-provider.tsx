@@ -1,11 +1,16 @@
 /*
- * Title: theme-provider.tsx
+ * Name: theme-provider.tsx
+ * Purpose: Theme context provider supporting light, dark, and system
+ *   preference modes.
+ * Description: Persists theme choice to localStorage. System mode uses the
+ *   prefers-color-scheme media query. Sets a data-theme attribute
+ *   on <html> so Tailwind CSS custom properties resolve correctly.
+ *   The context and useTheme hook live in theme-context.ts.
  * Tech Stack: React 19
- * Description: Theme context provider supporting light, dark, and system preference modes.
- * Important Details: Persists theme choice to localStorage. System mode uses the
- *   prefers-color-scheme media query. Sets a data-theme attribute on <html> so
- *   Tailwind CSS custom properties resolve correctly. The context and useTheme
- *   hook live in theme-context.ts.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";

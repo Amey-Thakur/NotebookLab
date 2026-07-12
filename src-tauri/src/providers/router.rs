@@ -1,10 +1,16 @@
 /*
- * Title: router.rs
+ * Name: router.rs
+ * Purpose: Provider router that dispatches LLM requests to the active
+ *   provider.
+ * Description: The router holds a registry of configured providers and tracks
+ *   which one is currently active. Switching providers is a single
+ *   method call. Thread-safe via interior mutability (RwLock on
+ *   active provider index).
  * Tech Stack: Rust
- * Description: Provider router that dispatches LLM requests to the active provider.
- * Important Details: The router holds a registry of configured providers and tracks
- *   which one is currently active. Switching providers is a single method call.
- *   Thread-safe via interior mutability (RwLock on active provider index).
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use std::sync::RwLock;

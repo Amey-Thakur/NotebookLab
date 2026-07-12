@@ -1,14 +1,19 @@
 /*
- * Title: editor-page.tsx
- * Tech Stack: React 19, React Router, Milkdown, TanStack Query
- * Description: Full editor view for a single note: title, Milkdown editor,
+ * Name: editor-page.tsx
+ * Purpose: Full editor view for a single note: title, Milkdown editor,
  *   save-status indicator, and a backlinks panel.
- * Important Details: Auto-save runs debounced and flushes on unmount so the
- *   last edit is never dropped. Every successful save writes the fresh note
- *   back into the query cache; without that, the 5-minute staleTime could
- *   resurrect old content and silently overwrite newer edits. Save failures
- *   surface in the status indicator instead of dying in the console.
- *   Clicking a [[wiki-link]] resolves (or creates) the target note.
+ * Description: Auto-save runs debounced and flushes on unmount so the last
+ *   edit is never dropped. Every successful save writes the fresh
+ *   note back into the query cache; without that, the 5-minute
+ *   staleTime could resurrect old content and silently overwrite
+ *   newer edits. Save failures surface in the status indicator
+ *   instead of dying in the console. Clicking a [[wiki-link]]
+ *   resolves (or creates) the target note.
+ * Tech Stack: React 19, React Router, Milkdown, TanStack Query
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";

@@ -1,11 +1,16 @@
 /*
- * Title: note_commands.rs
+ * Name: note_commands.rs
+ * Purpose: Tauri command handlers for note CRUD, wiki-link resolution, and
+ *   backlink queries.
+ * Description: resolve_wiki_link finds a note by exact title or creates it,
+ *   so clicking a [[link]] in the editor always lands somewhere
+ *   useful. get_backlinks powers the backlinks panel under the
+ *   editor.
  * Tech Stack: Rust, Tauri v2
- * Description: Tauri command handlers for note CRUD, wiki-link resolution,
- *   and backlink queries.
- * Important Details: resolve_wiki_link finds a note by exact title or creates
- *   it, so clicking a [[link]] in the editor always lands somewhere useful.
- *   get_backlinks powers the backlinks panel under the editor.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use tauri::State;

@@ -1,11 +1,17 @@
 /*
- * Title: chunk_repository.rs
+ * Name: chunk_repository.rs
+ * Purpose: Data access layer for document chunks.
+ * Description: Handles bulk insertion during ingestion and retrieval for RAG
+ *   context assembly. Chunks are created in batches during
+ *   document ingestion. The bulk_create function uses a
+ *   transaction for atomicity. Chunks are always queried by
+ *   document_id (indexed) for document viewer and by position for
+ *   ordered display.
  * Tech Stack: Rust, rusqlite
- * Description: Data access layer for document chunks. Handles bulk insertion during
- *   ingestion and retrieval for RAG context assembly.
- * Important Details: Chunks are created in batches during document ingestion. The
- *   bulk_create function uses a transaction for atomicity. Chunks are always queried
- *   by document_id (indexed) for document viewer and by position for ordered display.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use rusqlite::{params, Connection};

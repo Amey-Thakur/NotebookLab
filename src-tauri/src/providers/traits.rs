@@ -1,10 +1,16 @@
 /*
- * Title: traits.rs
+ * Name: traits.rs
+ * Purpose: Core trait defining the interface all LLM providers must
+ *   implement.
+ * Description: Uses synchronous signatures because Tauri v2 commands are sync
+ *   by default. Providers handle their own HTTP/process
+ *   communication internally. The trait is object-safe to enable
+ *   dynamic dispatch via Box<dyn LlmProvider>.
  * Tech Stack: Rust, async-trait pattern
- * Description: Core trait defining the interface all LLM providers must implement.
- * Important Details: Uses synchronous signatures because Tauri v2 commands are sync
- *   by default. Providers handle their own HTTP/process communication internally.
- *   The trait is object-safe to enable dynamic dispatch via Box<dyn LlmProvider>.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use serde::{Deserialize, Serialize};

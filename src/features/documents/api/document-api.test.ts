@@ -1,8 +1,13 @@
 /*
- * Title: document-api.test.ts
+ * Name: document-api.test.ts
+ * Purpose: Tests for document API layer.
+ * Description: Verifies invoke wrappers pass correct command names and
+ *   arguments to Tauri IPC.
  * Tech Stack: Vitest
- * Description: Tests for document API layer. Verifies invoke wrappers pass
- *   correct command names and arguments to Tauri IPC.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";

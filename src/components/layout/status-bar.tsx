@@ -1,12 +1,16 @@
 /*
- * Title: status-bar.tsx
- * Tech Stack: React 19, TanStack Query, Tailwind CSS
- * Description: Bottom status bar showing the active notebook, active LLM
+ * Name: status-bar.tsx
+ * Purpose: Bottom status bar showing the active notebook, active LLM
  *   provider, and indexed chunk count.
- * Important Details: Green dot = provider active. Amber dot = no provider.
- *   The active notebook name gives chat and search results a visible scope.
- *   Polls every 10 seconds; text sizes come from the shared type scale so
- *   browser text-size settings are respected.
+ * Description: Green dot = provider active. Amber dot = no provider. The
+ *   active notebook name gives chat and search results a visible
+ *   scope. Polls every 10 seconds; text sizes come from the shared
+ *   type scale so browser text-size settings are respected.
+ * Tech Stack: React 19, TanStack Query, Tailwind CSS
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useQuery } from "@tanstack/react-query";

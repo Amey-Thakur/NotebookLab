@@ -1,10 +1,15 @@
 /*
- * Title: main.tsx
+ * Name: main.tsx
+ * Purpose: Application entry point.
+ * Description: Assembles the provider tree and mounts the router. Provider
+ *   order matters. QueryClient wraps everything for async data.
+ *   Theme provider persists the choice to localStorage; index.html
+ *   applies it before first paint to avoid a theme flash.
  * Tech Stack: React 19, TanStack Query, React Router, Zustand
- * Description: Application entry point. Assembles the provider tree and mounts the router.
- * Important Details: Provider order matters. QueryClient wraps everything for async data.
- *   Theme provider persists the choice to localStorage; index.html applies it
- *   before first paint to avoid a theme flash.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import React from "react";

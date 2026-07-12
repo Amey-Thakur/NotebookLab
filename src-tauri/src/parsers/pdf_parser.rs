@@ -1,13 +1,18 @@
 /*
- * Title: pdf_parser.rs
+ * Name: pdf_parser.rs
+ * Purpose: Parser for PDF files.
+ * Description: Extracts text content page-by-page with heading detection for
+ *   chunk metadata. Uses pdf-extract for text extraction. Falls
+ *   back gracefully on encrypted or image-only PDFs with a clear
+ *   error message. File size capped at 50MB to prevent memory
+ *   exhaustion. Extraction runs inside catch_unwind because
+ *   pdf-extract panics on some malformed files; a bad import must
+ *   fail with an error, never take down the whole app.
  * Tech Stack: Rust, pdf-extract
- * Description: Parser for PDF files. Extracts text content page-by-page with
- *   heading detection for chunk metadata.
- * Important Details: Uses pdf-extract for text extraction. Falls back gracefully
- *   on encrypted or image-only PDFs with a clear error message. File size capped
- *   at 50MB to prevent memory exhaustion. Extraction runs inside catch_unwind
- *   because pdf-extract panics on some malformed files; a bad import must fail
- *   with an error, never take down the whole app.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use std::path::Path;

@@ -1,13 +1,18 @@
 /*
- * Title: model-manager-page.tsx
+ * Name: model-manager-page.tsx
+ * Purpose: Model manager page with zero-config setup guide.
+ * Description: Shows a 3-step setup guide when no providers are registered,
+ *   one-click model download, and the bundled local server
+ *   controls. Preset buttons cover common local providers (Ollama,
+ *   LM Studio, llama.cpp). Auto-detection runs on app startup; the
+ *   setup guide's "Check for providers" re-runs the same probe on
+ *   demand via detect_providers rather than just refreshing the
+ *   cached list.
  * Tech Stack: React 19, TanStack Query, Tailwind CSS
- * Description: Model manager page with zero-config setup guide. Shows a 3-step
- *   setup guide when no providers are registered, one-click model download,
- *   and the bundled local server controls. Preset buttons cover common local
- *   providers (Ollama, LM Studio, llama.cpp).
- * Important Details: Auto-detection runs on app startup; the setup guide's
- *   "Check for providers" re-runs the same probe on demand via
- *   detect_providers rather than just refreshing the cached list.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useState } from "react";

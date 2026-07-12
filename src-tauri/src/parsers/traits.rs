@@ -1,10 +1,15 @@
 /*
- * Title: traits.rs
+ * Name: traits.rs
+ * Purpose: Parser trait that all document format parsers must implement.
+ * Description: Each parser extracts text from a file and returns structured
+ *   output with positional metadata (page numbers, headings).
+ *   Parsers are stateless and operate on file paths. Adding a new
+ *   format = implement this trait + register.
  * Tech Stack: Rust
- * Description: Parser trait that all document format parsers must implement.
- * Important Details: Each parser extracts text from a file and returns structured
- *   output with positional metadata (page numbers, headings). Parsers are stateless
- *   and operate on file paths. Adding a new format = implement this trait + register.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use crate::error::AppResult;

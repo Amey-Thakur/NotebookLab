@@ -1,9 +1,14 @@
 /*
- * Title: conversation_repository.rs
+ * Name: conversation_repository.rs
+ * Purpose: Data access layer for chat conversations and messages.
+ * Description: Messages are ordered chronologically within a conversation.
+ *   Citations link assistant messages to source chunks for RAG
+ *   attribution.
  * Tech Stack: Rust, rusqlite
- * Description: Data access layer for chat conversations and messages.
- * Important Details: Messages are ordered chronologically within a conversation.
- *   Citations link assistant messages to source chunks for RAG attribution.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use rusqlite::{params, Connection};

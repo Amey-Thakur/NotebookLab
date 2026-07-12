@@ -1,10 +1,16 @@
 /*
- * Title: app-header.tsx
+ * Name: app-header.tsx
+ * Purpose: Top application bar with hamburger toggle, brand, and search
+ *   trigger.
+ * Description: Hamburger button visible only on mobile (<768px). The search
+ *   button navigates to the Search page; the same route is bound
+ *   to Ctrl+K globally in AppShell, so the visible kbd hint is
+ *   real.
  * Tech Stack: React 19, Tailwind CSS, Tauri v2
- * Description: Top application bar with hamburger toggle, brand, and search trigger.
- * Important Details: Hamburger button visible only on mobile (<768px). The
- *   search button navigates to the Search page; the same route is bound to
- *   Ctrl+K globally in AppShell, so the visible kbd hint is real.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useNavigate } from "react-router-dom";

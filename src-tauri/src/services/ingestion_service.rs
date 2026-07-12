@@ -1,11 +1,17 @@
 /*
- * Title: ingestion_service.rs
+ * Name: ingestion_service.rs
+ * Purpose: Document ingestion pipeline.
+ * Description: Orchestrates: parse -> chunk -> store. This is the core value
+ *   proposition pipeline. A file enters as a path, and exits as
+ *   indexed chunks ready for RAG retrieval. Each step is modular:
+ *   parsers handle format extraction, chunking service handles
+ *   splitting, and repositories handle persistence. Embedding step
+ *   will be added when ONNX is integrated.
  * Tech Stack: Rust, rusqlite
- * Description: Document ingestion pipeline. Orchestrates: parse -> chunk -> store.
- * Important Details: This is the core value proposition pipeline. A file enters as
- *   a path, and exits as indexed chunks ready for RAG retrieval. Each step is modular:
- *   parsers handle format extraction, chunking service handles splitting, and
- *   repositories handle persistence. Embedding step will be added when ONNX is integrated.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use std::path::Path;

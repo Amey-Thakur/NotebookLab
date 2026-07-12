@@ -1,8 +1,12 @@
 /*
- * Title: eslint.config.js
+ * Name: eslint.config.js
+ * Purpose: ESLint configuration for the NotebookLab frontend.
+ * Description: Uses flat config format required by ESLint 9+.
  * Tech Stack: ESLint 9 (flat config), TypeScript, React
- * Description: ESLint configuration for the NotebookLab frontend.
- * Important Details: Uses flat config format required by ESLint 9+.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import js from "@eslint/js";

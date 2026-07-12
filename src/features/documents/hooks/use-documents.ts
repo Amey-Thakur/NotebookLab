@@ -1,9 +1,14 @@
 /*
- * Title: use-documents.ts
+ * Name: use-documents.ts
+ * Purpose: React hooks for document data fetching and mutations.
+ * Description: All queries are scoped to the active notebook via notebookId.
+ *   Mutations invalidate related queries on success to keep the UI
+ *   in sync.
  * Tech Stack: React 19, TanStack Query
- * Description: React hooks for document data fetching and mutations.
- * Important Details: All queries are scoped to the active notebook via notebookId.
- *   Mutations invalidate related queries on success to keep the UI in sync.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

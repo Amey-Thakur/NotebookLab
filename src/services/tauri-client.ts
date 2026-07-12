@@ -1,10 +1,15 @@
 /*
- * Title: tauri-client.ts
+ * Name: tauri-client.ts
+ * Purpose: Typed wrapper around Tauri's invoke() for frontend-to-backend IPC.
+ * Description: Centralizes all Tauri invoke calls with error handling. Every
+ *   feature's api/ folder calls through this layer rather than
+ *   importing @tauri-apps/api directly. This enables mocking in
+ *   tests and consistent error handling.
  * Tech Stack: Tauri v2, TypeScript
- * Description: Typed wrapper around Tauri's invoke() for frontend-to-backend IPC.
- * Important Details: Centralizes all Tauri invoke calls with error handling.
- *   Every feature's api/ folder calls through this layer rather than importing
- *   @tauri-apps/api directly. This enables mocking in tests and consistent error handling.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { invoke } from "@tauri-apps/api/core";

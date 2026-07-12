@@ -1,12 +1,17 @@
 /*
- * Title: podcast_commands.rs
+ * Name: podcast_commands.rs
+ * Purpose: Tauri commands for AI podcast script generation.
+ * Description: Uses the active LLM provider to generate a 2-speaker
+ *   discussion script from document context. The Rust backend
+ *   handles script generation only. Audio synthesis is handled by
+ *   the frontend using the browser's SpeechSynthesis API (offline,
+ *   cross-platform, zero-config). This can be upgraded to
+ *   Piper/Kokoro TTS later for higher quality voices.
  * Tech Stack: Rust, Tauri v2
- * Description: Tauri commands for AI podcast script generation. Uses the active LLM
- *   provider to generate a 2-speaker discussion script from document context.
- * Important Details: The Rust backend handles script generation only. Audio synthesis
- *   is handled by the frontend using the browser's SpeechSynthesis API (offline,
- *   cross-platform, zero-config). This can be upgraded to Piper/Kokoro TTS later
- *   for higher quality voices.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use tauri::Manager;

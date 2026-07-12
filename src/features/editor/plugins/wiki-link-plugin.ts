@@ -1,12 +1,19 @@
 /*
- * Title: wiki-link-plugin.ts
+ * Name: wiki-link-plugin.ts
+ * Purpose: Custom Milkdown plugin that detects [[wiki-link]] syntax in the
+ *   editor and renders them as styled inline...
+ * Description: Custom Milkdown plugin that detects [[wiki-link]] syntax in
+ *   the editor and renders them as styled inline links. This is a
+ *   lightweight text-decoration approach. When the user types [[,
+ *   text until ]] is styled as a link and tagged with
+ *   data-note-title. Click navigation is handled by MilkdownEditor
+ *   via event delegation on the editor root, which resolves or
+ *   creates the target note.
  * Tech Stack: TypeScript, ProseMirror, Milkdown
- * Description: Custom Milkdown plugin that detects [[wiki-link]] syntax in the editor
- *   and renders them as styled inline links.
- * Important Details: This is a lightweight text-decoration approach. When the user
- *   types [[, text until ]] is styled as a link and tagged with data-note-title.
- *   Click navigation is handled by MilkdownEditor via event delegation on the
- *   editor root, which resolves or creates the target note.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { Plugin, PluginKey } from "@milkdown/kit/prose/state";

@@ -1,10 +1,16 @@
 /*
- * Title: notebook-detail-page.tsx
+ * Name: notebook-detail-page.tsx
+ * Purpose: Notebook detail page.
+ * Description: Shows documents and notes within a notebook, with actions to
+ *   import documents, create notes, and navigate to the editor.
+ *   Sets the active notebook in the store on mount so search and
+ *   chat know which notebook context to use. Documents can be
+ *   imported via file dialog.
  * Tech Stack: React 19, TanStack Query, Tailwind CSS
- * Description: Notebook detail page. Shows documents and notes within a notebook,
- *   with actions to import documents, create notes, and navigate to the editor.
- * Important Details: Sets the active notebook in the store on mount so search and
- *   chat know which notebook context to use. Documents can be imported via file dialog.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useEffect, useState } from "react";
@@ -97,7 +103,7 @@ export function NotebookDetailPage() {
         </div>
       </div>
 
-      {/* Notes list — shown first since notes are the primary content */}
+      {/* Notes list, shown first since notes are the primary content */}
       <div className="mb-8">
         <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-3">
           Notes ({notes?.length || 0})

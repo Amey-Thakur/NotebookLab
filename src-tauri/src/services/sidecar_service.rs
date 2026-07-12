@@ -1,12 +1,17 @@
 /*
- * Title: sidecar_service.rs
- * Tech Stack: Rust, Tauri v2 Shell Plugin
- * Description: Manages the llama-server sidecar lifecycle. Starts the process on
- *   an available port, monitors health, and provides status to the frontend.
- * Important Details: The sidecar runs as a child process managed by Tauri's shell
- *   plugin. A random port is chosen (OS-assigned) and a per-session API key is
- *   generated for auth. The frontend never contacts llama-server directly;
+ * Name: sidecar_service.rs
+ * Purpose: Manages the llama-server sidecar lifecycle.
+ * Description: Starts the process on an available port, monitors health, and
+ *   provides status to the frontend. The sidecar runs as a child
+ *   process managed by Tauri's shell plugin. A random port is
+ *   chosen (OS-assigned) and a per-session API key is generated
+ *   for auth. The frontend never contacts llama-server directly;
  *   all requests flow through Rust services.
+ * Tech Stack: Rust, Tauri v2 Shell Plugin
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
