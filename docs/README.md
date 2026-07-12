@@ -16,6 +16,26 @@ Everything about NotebookLab, one page away.
 
 <br>
 
+## Repository layout
+
+Every file and folder in the repository root is there because a tool
+resolves it at that exact path. Everything movable has been moved.
+
+| Root entry | Why it is at root |
+|------------|-------------------|
+| `src/`, `src-tauri/` | frontend and backend source; Vite and Tauri locate them by convention |
+| `site/`, `scripts/`, `docs/`, `config/`, `.github/` | landing page, build helpers, guides and brand assets, secondary configs, GitHub metadata |
+| `README.md`, `CHANGELOG.md`, `LICENSE`, `codemeta.json` | project front door, history, license, software metadata; all standard at root |
+| `CLAUDE.md` | AI assistant project instructions, discovered at root |
+| `index.html` | the Vite entry point |
+| `package.json`, `package-lock.json` | npm requires them at root |
+| `tsconfig.json` | TypeScript project root; points into `config/` for the rest |
+| `vite.config.ts` | the single frontend config: bundling, styles, and tests |
+| `eslint.config.js` | flat config, resolved from the project root |
+| `.gitignore` | Git requires it here |
+
+<br>
+
 ## Quick facts
 
 - **Stack:** React 19 + TypeScript frontend, Rust backend, Tauri v2 shell,
