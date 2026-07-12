@@ -147,7 +147,8 @@ src-tauri/      Rust backend
   api/            local REST server on 127.0.0.1:8484
 site/           landing page
 scripts/        build helpers
-docs/           maintainer guides
+config/         secondary build configs
+docs/           guides, architecture, brand assets
 ```
 
 Each module is self-contained and has one purpose. Removing one does not
