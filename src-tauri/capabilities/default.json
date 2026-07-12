@@ -6,22 +6,6 @@
   "permissions": [
     "core:default",
     "dialog:default",
-    {
-      "identifier": "fs:allow-read-file",
-      "allow": [{ "path": "$APPDATA/com.notebooklab.app/**" }]
-    },
-    {
-      "identifier": "fs:allow-write-file",
-      "allow": [{ "path": "$APPDATA/com.notebooklab.app/**" }]
-    },
-    {
-      "identifier": "fs:allow-exists",
-      "allow": [{ "path": "$APPDATA/com.notebooklab.app/**" }]
-    },
-    {
-      "identifier": "fs:allow-mkdir",
-      "allow": [{ "path": "$APPDATA/com.notebooklab.app/**" }]
-    },
     "updater:default",
     {
       "identifier": "shell:allow-execute",

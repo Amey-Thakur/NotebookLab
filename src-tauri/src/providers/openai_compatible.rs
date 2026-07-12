@@ -17,7 +17,6 @@ use super::traits::{
     ChatRequest, ChatResponse, LlmProvider, MessageRole, ProviderError, TokenUsage,
 };
 
-
 pub struct OpenAiCompatibleProvider {
     name: String,
     base_url: String,
@@ -26,7 +25,6 @@ pub struct OpenAiCompatibleProvider {
     is_local: bool,
     client: Client,
 }
-
 
 impl OpenAiCompatibleProvider {
     pub fn new(
@@ -88,7 +86,6 @@ impl OpenAiCompatibleProvider {
     }
 }
 
-
 impl LlmProvider for OpenAiCompatibleProvider {
     fn name(&self) -> &str {
         &self.name
@@ -147,8 +144,7 @@ impl LlmProvider for OpenAiCompatibleProvider {
             let status = response.status();
             /* Truncate error body to avoid leaking provider internals to frontend */
             let text = response.text().unwrap_or_default();
-            /* Use char boundary check to avoid panic on multi-byte UTF-8 */
-            let truncated = text.get(..200).unwrap_or(&text);
+            let truncated = crate::utils::text_utils::truncate_to_char_boundary(&text, 200);
             return Err(ProviderError::RequestFailed(format!(
                 "HTTP {status}: {truncated}"
             )));
@@ -192,7 +188,8 @@ impl LlmProvider for OpenAiCompatibleProvider {
 
         match req.send() {
             Ok(resp) if resp.status().is_success() => {
-                let json: serde_json::Value = resp.json()
+                let json: serde_json::Value = resp
+                    .json()
                     .map_err(|e| ProviderError::InvalidResponse(e.to_string()))?;
 
                 let embedding = json
@@ -213,7 +210,6 @@ impl LlmProvider for OpenAiCompatibleProvider {
         }
     }
 }
-
 
 /* OpenAI API wire format */
 

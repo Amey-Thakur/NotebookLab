@@ -10,7 +10,6 @@
 use rusqlite::Row;
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Notebook {
     pub id: String,
@@ -34,14 +33,12 @@ impl Notebook {
     }
 }
 
-
 #[derive(Debug, Deserialize)]
 pub struct CreateNotebook {
     pub name: String,
     pub description: Option<String>,
     pub color: Option<String>,
 }
-
 
 #[derive(Debug, Deserialize)]
 pub struct UpdateNotebook {

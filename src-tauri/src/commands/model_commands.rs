@@ -13,7 +13,6 @@ use crate::error::{AppError, AppResult};
 use crate::providers::{openai_compatible::OpenAiCompatibleProvider, ProviderInfo};
 use crate::state::AppState;
 
-
 #[derive(serde::Deserialize)]
 pub struct RegisterProviderInput {
     pub name: String,
@@ -23,27 +22,31 @@ pub struct RegisterProviderInput {
     pub is_local: bool,
 }
 
-
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 pub fn list_providers(state: State<'_, AppState>) -> AppResult<Vec<ProviderInfo>> {
-    let providers = state.provider()?;
+    let providers = state.provider_read()?;
     Ok(providers.list_providers())
 }
 
-
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 pub fn register_provider(
     state: State<'_, AppState>,
     input: RegisterProviderInput,
 ) -> AppResult<usize> {
     if input.name.trim().is_empty() || input.name.len() > 200 {
-        return Err(AppError::InvalidInput("Provider name is required (max 200 chars)".into()));
+        return Err(AppError::InvalidInput(
+            "Provider name is required (max 200 chars)".into(),
+        ));
     }
     if input.base_url.trim().is_empty() || input.base_url.len() > 2000 {
-        return Err(AppError::InvalidInput("Base URL is required (max 2000 chars)".into()));
+        return Err(AppError::InvalidInput(
+            "Base URL is required (max 2000 chars)".into(),
+        ));
     }
     if input.model.trim().is_empty() || input.model.len() > 200 {
-        return Err(AppError::InvalidInput("Model name is required (max 200 chars)".into()));
+        return Err(AppError::InvalidInput(
+            "Model name is required (max 200 chars)".into(),
+        ));
     }
 
     /* Validate URL scheme and host to prevent SSRF */
@@ -64,38 +67,45 @@ pub fn register_provider(
         input.is_local,
     );
 
-    let mut providers = state.provider()?;
-    let index = providers.register(Box::new(provider));
+    let mut providers = state.provider_write()?;
+    let index = providers.register_or_replace(Box::new(provider));
 
     tracing::info!("Registered provider at index {index}");
     Ok(index)
 }
 
-
-#[tauri::command]
-pub fn set_active_provider(
-    state: State<'_, AppState>,
-    index: usize,
-) -> AppResult<()> {
-    let providers = state.provider()?;
-    providers.set_active(index).map_err(|e| AppError::Provider(e.to_string()))
+#[tauri::command(rename_all = "snake_case")]
+pub fn set_active_provider(state: State<'_, AppState>, index: usize) -> AppResult<()> {
+    let providers = state.provider_read()?;
+    providers
+        .set_active(index)
+        .map_err(|e| AppError::Provider(e.to_string()))
 }
 
-
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 pub fn get_active_provider_name(state: State<'_, AppState>) -> AppResult<Option<String>> {
-    let providers = state.provider()?;
+    let providers = state.provider_read()?;
     Ok(providers.active_name())
 }
 
-
-#[tauri::command]
-pub fn get_model_registry() -> AppResult<serde_json::Value> {
-    let registry = include_str!("../../resources/model-registry.json");
-    let value: serde_json::Value = serde_json::from_str(registry)?;
-    Ok(value)
+/// Re-run local provider detection on demand. Powers the "Check again" action
+/// in the Models page; startup runs the same probe automatically.
+/// Async because the probes block for up to two seconds per endpoint.
+#[tauri::command(rename_all = "snake_case")]
+pub async fn detect_providers(app: tauri::AppHandle) -> AppResult<Vec<ProviderInfo>> {
+    tauri::async_runtime::spawn_blocking(move || {
+        use tauri::Manager;
+        let state: State<'_, AppState> = app.state();
+        {
+            let mut providers = state.provider_write()?;
+            crate::services::auto_setup_service::auto_detect_providers(&mut providers);
+        }
+        let providers = state.provider_read()?;
+        Ok(providers.list_providers())
+    })
+    .await
+    .map_err(|e| AppError::Internal(format!("Detection task failed: {e}")))?
 }
-
 
 /// Validate provider URL to prevent SSRF attacks.
 /// Local providers: must use loopback addresses only.
@@ -129,10 +139,32 @@ fn validate_provider_url(url: &str, is_local: bool) -> AppResult<()> {
         }
     } else {
         /* Cloud providers must not target private/internal networks */
-        let blocked_prefixes = ["127.", "10.", "192.168.", "172.16.", "172.17.", "172.18.",
-            "172.19.", "172.20.", "172.21.", "172.22.", "172.23.", "172.24.", "172.25.",
-            "172.26.", "172.27.", "172.28.", "172.29.", "172.30.", "172.31.",
-            "169.254.", "0.", "localhost", "::1", "[::1]"];
+        let blocked_prefixes = [
+            "127.",
+            "10.",
+            "192.168.",
+            "172.16.",
+            "172.17.",
+            "172.18.",
+            "172.19.",
+            "172.20.",
+            "172.21.",
+            "172.22.",
+            "172.23.",
+            "172.24.",
+            "172.25.",
+            "172.26.",
+            "172.27.",
+            "172.28.",
+            "172.29.",
+            "172.30.",
+            "172.31.",
+            "169.254.",
+            "0.",
+            "localhost",
+            "::1",
+            "[::1]",
+        ];
 
         for prefix in &blocked_prefixes {
             if host.starts_with(prefix) || host == *prefix {

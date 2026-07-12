@@ -7,7 +7,6 @@
  *   Custom transforms accept a user-provided prompt string.
  */
 
-
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum TransformType {
