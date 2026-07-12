@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import { cn, formatBytes, debounce } from "./utils";
+import { cn, countWords, formatBytes, debounce } from "./utils";
 
 
 describe("cn", () => {
@@ -109,5 +109,28 @@ describe("debounce", () => {
 
     await new Promise((r) => setTimeout(r, 60));
     expect(fn).toHaveBeenCalledWith("hello", 42);
+  });
+});
+
+describe("countWords", () => {
+  it("counts plain words", () => {
+    expect(countWords("three little words")).toBe(3);
+  });
+
+  it("returns zero for empty and whitespace-only text", () => {
+    expect(countWords("")).toBe(0);
+    expect(countWords("   \n\t  ")).toBe(0);
+  });
+
+  it("ignores markdown punctuation tokens", () => {
+    expect(countWords("## Heading\n\n- item one\n- item two\n\n---")).toBe(5);
+  });
+
+  it("counts words separated by any whitespace", () => {
+    expect(countWords("one\ntwo\t three    four")).toBe(4);
+  });
+
+  it("counts numbers and unicode words", () => {
+    expect(countWords("nota 42 café")).toBe(3);
   });
 });

@@ -96,3 +96,21 @@ pub fn resolve_wiki_link(
         },
     )
 }
+
+/// Write a note's Markdown to a path the user picked in the save dialog.
+/// The dialog owns overwrite confirmation, so this write is unconditional.
+#[tauri::command(rename_all = "snake_case")]
+pub fn export_note(state: State<'_, AppState>, id: String, file_path: String) -> AppResult<()> {
+    if file_path.trim().is_empty() {
+        return Err(AppError::InvalidInput("Export path is required".into()));
+    }
+
+    let note = {
+        let conn = state.conn()?;
+        note_repository::get_by_id(&conn, &id)?
+    };
+
+    std::fs::write(&file_path, note.content)?;
+    tracing::info!("Exported note {id} to {file_path}");
+    Ok(())
+}
