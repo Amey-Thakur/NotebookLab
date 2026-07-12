@@ -81,8 +81,9 @@ Download the installer for your platform from the
 The app updates itself on Windows and macOS. Verify any download against the
 `SHA256SUMS` file attached to the release.
 
-macOS builds are not yet notarized with Apple. On first open, right-click the
-app and choose Open, or run
+macOS builds are not yet notarized with Apple; the pipeline is wired for it
+and signs automatically once the maintainers add Apple credentials. Until
+then, on first open right-click the app and choose Open, or run
 `xattr -dr com.apple.quarantine /Applications/NotebookLab.app` once.
 
 <br>
