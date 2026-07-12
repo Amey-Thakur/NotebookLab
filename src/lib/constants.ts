@@ -32,7 +32,6 @@ export const QUERY_KEYS = {
   CHAT: "chat",
   CONVERSATIONS: "conversations",
   CITATIONS: "citations",
-  MODELS: "models",
   SETTINGS: "settings",
   PROVIDERS: "providers",
   ACTIVE_PROVIDER: "active-provider",

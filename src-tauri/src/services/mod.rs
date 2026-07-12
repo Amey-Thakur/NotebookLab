@@ -14,9 +14,7 @@ pub mod first_run_service;
 pub mod ingestion_service;
 pub mod rag_service;
 pub mod search_service;
-
-/* thinking_service and transform_service logic moved into commands
-for proper lock-phase splitting. Service files kept for reference
-but re-exported types only. */
 pub mod sidecar_service;
+/* transform_service holds the TransformType enum and its prompt mapping;
+the orchestration lives in transform_commands for lock-phase splitting. */
 pub mod transform_service;
