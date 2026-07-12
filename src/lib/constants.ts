@@ -21,6 +21,8 @@ export const ROUTES = {
   DOCUMENTS: "/documents",
   TRANSFORMS: "/transforms",
   PODCASTS: "/podcasts",
+  PROMPT_STUDIO: "/prompt-studio",
+  GRAPH: "/graph",
   MODELS: "/models",
   SETTINGS: "/settings",
 } as const;
@@ -41,6 +43,7 @@ export const QUERY_KEYS = {
   ACTIVE_PROVIDER: "active-provider",
   CHUNK_COUNT: "chunk-count",
   SIDECAR: "sidecar",
+  GRAPH: "graph",
 } as const;
 
 

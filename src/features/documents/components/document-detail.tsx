@@ -13,6 +13,7 @@
  */
 
 import { useDocumentChunks } from "../hooks/use-documents";
+import { DocumentOutline } from "./document-outline";
 
 
 interface DocumentDetailProps {
@@ -31,8 +32,14 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
     return <p className="text-sm text-text-4 p-4">No chunks found for this document.</p>;
   }
 
+  const jump = (chunkId: string) => {
+    document.getElementById(`chunk-${chunkId}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <div>
+      <DocumentOutline chunks={chunks} onJump={jump} />
+
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-xs font-mono tracking-widest uppercase text-text-4">
           Passages ({chunks.length})
@@ -44,7 +51,7 @@ export function DocumentDetail({ documentId }: DocumentDetailProps) {
 
       <div className="space-y-2 max-h-[60vh] overflow-y-auto">
         {chunks.map((chunk, i) => (
-          <div key={chunk.id} className="p-3 border border-border bg-surface">
+          <div key={chunk.id} id={`chunk-${chunk.id}`} className="p-3 border border-border bg-surface scroll-mt-2">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-mono text-text-4">
                 #{i + 1}

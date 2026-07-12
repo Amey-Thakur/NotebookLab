@@ -157,25 +157,32 @@ function NoteEditor({ note }: { note: Note }) {
     [note.notebook_id, navigate],
   );
 
-  /* Export the note as a Markdown file wherever the user chooses.
+  /* Export the note wherever the user chooses. The chosen extension decides
+     the format: .rtf becomes a Word-compatible document, .md stays Markdown.
      The native dialog handles location and overwrite confirmation. */
-  const exportNote = useCallback(async () => {
-    try {
-      const filePath = await save({
-        defaultPath: `${title.trim() || "note"}.md`,
-        filters: [{ name: "Markdown", extensions: ["md"] }],
-      });
-      if (!filePath) return;
+  const exportNote = useCallback(
+    async (kind: "md" | "rtf") => {
+      try {
+        const filePath = await save({
+          defaultPath: `${title.trim() || "note"}.${kind}`,
+          filters:
+            kind === "rtf"
+              ? [{ name: "Word document", extensions: ["rtf"] }]
+              : [{ name: "Markdown", extensions: ["md"] }],
+        });
+        if (!filePath) return;
 
-      saveContentRef.current.flush();
-      await tauriInvoke("export_note", { id: note.id, file_path: filePath });
-      setExported(true);
-      setTimeout(() => setExported(false), 1500);
-    } catch (e) {
-      setSaveState("error");
-      setSaveError(formatError(e));
-    }
-  }, [note.id, title]);
+        saveContentRef.current.flush();
+        await tauriInvoke("export_note", { id: note.id, file_path: filePath });
+        setExported(true);
+        setTimeout(() => setExported(false), 1500);
+      } catch (e) {
+        setSaveState("error");
+        setSaveError(formatError(e));
+      }
+    },
+    [note.id, title],
+  );
 
   return (
     <div className="flex flex-col h-full">
@@ -193,14 +200,29 @@ function NoteEditor({ note }: { note: Note }) {
         <span className="text-2xs font-mono text-text-4 shrink-0" aria-label={`${wordCount} words`}>
           {wordCount} {wordCount === 1 ? "word" : "words"}
         </span>
-        <button
-          type="button"
-          onClick={exportNote}
-          className="shrink-0 px-2 py-0.5 text-2xs font-mono border border-border text-text-3
-                     hover:text-text-1 hover:border-accent-dim transition-colors"
-        >
-          {exported ? "Exported" : "Export .md"}
-        </button>
+        {exported ? (
+          <span className="shrink-0 text-2xs font-mono text-text-4">Exported</span>
+        ) : (
+          <span className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => exportNote("md")}
+              className="px-2 py-0.5 text-2xs font-mono border border-border text-text-3
+                         hover:text-text-1 hover:border-accent-dim transition-colors"
+            >
+              .md
+            </button>
+            <button
+              type="button"
+              onClick={() => exportNote("rtf")}
+              title="Export as a Word-compatible document"
+              className="px-2 py-0.5 text-2xs font-mono border border-border text-text-3
+                         hover:text-text-1 hover:border-accent-dim transition-colors"
+            >
+              Word
+            </button>
+          </span>
+        )}
         <SaveIndicator state={saveState} error={saveError} />
       </div>
 

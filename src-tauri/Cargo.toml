@@ -1,8 +1,12 @@
-# Title: Cargo.toml
+# Name: Cargo.toml
+# Purpose: Rust package manifest for the Tauri backend.
+# Description: All dependencies are unconditional; the only feature flag is
+#   Tauri's custom-protocol, used for production webview asset serving.
 # Tech Stack: Rust, Tauri v2, SQLite
-# Description: Rust package manifest for the Tauri backend.
-# Important Details: All dependencies are unconditional; the only feature flag
-#   is Tauri's custom-protocol used for production webview asset serving.
+# License: MIT
+# Authors: Amey Thakur (https://github.com/Amey-Thakur)
+#          Archit Konde (https://github.com/Archit-Konde)
+# Date: 2026-07-12
 
 [package]
 name = "notebooklab"

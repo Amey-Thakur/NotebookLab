@@ -1,10 +1,9 @@
 /*
  * Name: system_commands.rs
- * Purpose: System-level Tauri commands: health check, app version, data
- *   directory.
+ * Purpose: System-level Tauri commands: app version, data directory, REST API
+ *   token, and update restart.
  * Description: These commands are always available regardless of model or
- *   database state. They serve as the baseline for frontend
- *   connectivity verification.
+ *   database state. They back the Settings page and the update flow.
  * Tech Stack: Rust, Tauri v2
  * License: MIT
  * Authors: Amey Thakur (https://github.com/Amey-Thakur)
@@ -43,9 +42,4 @@ pub fn get_api_token(state: tauri::State<'_, crate::state::AppState>) -> String 
 #[tauri::command(rename_all = "snake_case")]
 pub fn restart_app(app: AppHandle) {
     app.restart();
-}
-
-#[tauri::command(rename_all = "snake_case")]
-pub fn health_check() -> &'static str {
-    "ok"
 }

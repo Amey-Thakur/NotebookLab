@@ -22,8 +22,8 @@ commands; the workflow does the rest.
 3. **Commit, tag, and push**:
 
    ```bash
-   git commit -am "Release v0.2.0"
-   git tag v0.2.0
+   git commit -am "Release v0.3.0"
+   git tag v0.3.0
    git push && git push --tags
    ```
 

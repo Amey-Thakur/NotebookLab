@@ -25,6 +25,8 @@ import { DocumentsPage } from "./features/documents/pages/documents-page";
 import { TransformsPage } from "./features/content-transformations/pages/transforms-page";
 import { ModelManagerPage } from "./features/model-manager/pages/model-manager-page";
 import { PodcastPage } from "./features/podcasts/pages/podcast-page";
+import { PromptStudioPage } from "./features/prompt-studio/pages/prompt-studio-page";
+import { GraphPage } from "./features/graph/pages/graph-page";
 import { SettingsPage } from "./features/settings/pages/settings-page";
 
 
@@ -42,6 +44,8 @@ export function App() {
         <Route path={ROUTES.THINKING_PARTNER} element={<ThinkingPartnerPage />} />
         <Route path={ROUTES.TRANSFORMS} element={<TransformsPage />} />
         <Route path={ROUTES.PODCASTS} element={<PodcastPage />} />
+        <Route path={ROUTES.PROMPT_STUDIO} element={<PromptStudioPage />} />
+        <Route path={ROUTES.GRAPH} element={<GraphPage />} />
         <Route path={ROUTES.MODELS} element={<ModelManagerPage />} />
         <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
         <Route path="*" element={<NotFoundPage />} />

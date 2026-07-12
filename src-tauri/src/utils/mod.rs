@@ -10,4 +10,5 @@
  * Date: 2026-07-12
  */
 
+pub mod rtf;
 pub mod text_utils;

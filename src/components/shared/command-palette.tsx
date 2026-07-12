@@ -45,6 +45,8 @@ const PAGES: Array<{ label: string; route: string }> = [
   { label: "Thinking Partner", route: ROUTES.THINKING_PARTNER },
   { label: "Transforms", route: ROUTES.TRANSFORMS },
   { label: "Podcasts", route: ROUTES.PODCASTS },
+  { label: "Prompt Studio", route: ROUTES.PROMPT_STUDIO },
+  { label: "Connections", route: ROUTES.GRAPH },
   { label: "Models", route: ROUTES.MODELS },
   { label: "Settings", route: ROUTES.SETTINGS },
 ];
@@ -149,6 +151,15 @@ function PaletteDialog({ onClose }: { onClose: () => void }) {
       ?.querySelector('[aria-selected="true"]')
       ?.scrollIntoView({ block: "nearest" });
   }, [selected]);
+
+  /* Escape always closes, even if focus has drifted off the input. */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {

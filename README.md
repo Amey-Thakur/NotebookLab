@@ -17,7 +17,7 @@ help you think. Nothing leaves your computer.
 <br>
 
 [![CI](https://github.com/Amey-Thakur/NotebookLab/actions/workflows/ci.yml/badge.svg)](https://github.com/Amey-Thakur/NotebookLab/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/badge/release-v0.2.0-3568c8)](https://github.com/Amey-Thakur/NotebookLab/releases/latest)
+[![Release](https://img.shields.io/badge/release-v0.3.0-3568c8)](https://github.com/Amey-Thakur/NotebookLab/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
 [**Download**](https://github.com/Amey-Thakur/NotebookLab/releases/latest) &nbsp;·&nbsp;
@@ -58,6 +58,12 @@ help you think. Nothing leaves your computer.
   questions that push your thinking further.
 
 - **Transform documents.** Summaries, key points, or any custom instruction.
+
+- **Craft prompts.** Prompt Studio builds a clear prompt from simple parts and
+  can sharpen it with your model.
+
+- **See the shape of things.** A document outline tree and a notes connection
+  map make a large body of work easy to navigate.
 
 - **Listen instead.** Turn a notebook into a two-voice podcast, read aloud
   offline.

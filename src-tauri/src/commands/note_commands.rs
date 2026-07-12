@@ -68,6 +68,16 @@ pub fn list_recent_notes(
     note_repository::list_recent(&conn, (limit as usize).min(20))
 }
 
+/// The wiki-link connection map for a notebook, for the notes graph view.
+#[tauri::command(rename_all = "snake_case")]
+pub fn get_notes_graph(
+    state: State<'_, AppState>,
+    notebook_id: String,
+) -> AppResult<note_repository::NotesGraph> {
+    let conn = state.conn()?;
+    note_repository::notes_graph(&conn, &notebook_id)
+}
+
 /// Resolve a [[wiki-link]] title to a note, creating the note when it does
 /// not exist yet. Clicking a link therefore always navigates somewhere.
 #[tauri::command(rename_all = "snake_case")]
@@ -98,7 +108,8 @@ pub fn resolve_wiki_link(
     )
 }
 
-/// Write a note's Markdown to a path the user picked in the save dialog.
+/// Write a note to a path the user picked in the save dialog. A `.rtf` path
+/// produces a Word-compatible document; anything else writes the raw Markdown.
 /// The dialog owns overwrite confirmation, so this write is unconditional.
 #[tauri::command(rename_all = "snake_case")]
 pub fn export_note(state: State<'_, AppState>, id: String, file_path: String) -> AppResult<()> {
@@ -111,7 +122,19 @@ pub fn export_note(state: State<'_, AppState>, id: String, file_path: String) ->
         note_repository::get_by_id(&conn, &id)?
     };
 
-    std::fs::write(&file_path, note.content)?;
+    let is_rtf = std::path::Path::new(&file_path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.eq_ignore_ascii_case("rtf"))
+        .unwrap_or(false);
+
+    let contents = if is_rtf {
+        crate::utils::rtf::markdown_to_rtf(&note.content)
+    } else {
+        note.content
+    };
+
+    std::fs::write(&file_path, contents)?;
     tracing::info!("Exported note {id} to {file_path}");
     Ok(())
 }
