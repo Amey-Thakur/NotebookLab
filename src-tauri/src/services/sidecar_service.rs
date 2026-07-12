@@ -211,8 +211,10 @@ pub fn generate_session_key() -> String {
 }
 
 /// Build the argument list for llama-server.
-/// --embeddings enables the /v1/embeddings endpoint so the same local model
-/// powers semantic search without any extra download.
+/// Deliberately no --embeddings flag: on this llama.cpp release it restricts
+/// the server to embeddings only, which would break chat. Semantic search
+/// simply falls back to keyword ranking when the active provider has no
+/// /v1/embeddings (Ollama provides both, so it gets hybrid search).
 pub fn build_sidecar_args(port: u16, model_path: &str) -> Vec<String> {
     vec![
         "--port".to_string(),
@@ -223,7 +225,6 @@ pub fn build_sidecar_args(port: u16, model_path: &str) -> Vec<String> {
         "2048".to_string(),
         "-t".to_string(),
         (num_cpus().max(2) / 2).to_string(),
-        "--embeddings".to_string(),
     ]
 }
 
