@@ -1,10 +1,12 @@
 ## Name: ci.yml
 ## Purpose: Continuous integration pipeline.
-## Description: Runs on every push and PR. Backend job builds the frontend
-##   first because Tauri's proc macro validates that frontendDist
-##   exists at compile time. Third-party actions are pinned to
-##   commit SHAs. The vitest suite runs on all three desktop
-##   platforms in the backend job, not just Linux.
+## Description: Runs only when a change can affect the build: source code,
+##   build configs, dependencies, or this workflow itself. Edits to
+##   documentation, the landing page, or repository metadata spend
+##   no Actions minutes. Backend job builds the frontend first
+##   because Tauri's proc macro validates that frontendDist exists
+##   at compile time. Third-party actions are pinned to commit
+##   SHAs. The vitest suite runs on all three desktop platforms.
 ## Tech Stack: GitHub Actions, Node.js, Rust, Tauri v2
 ## License: MIT
 ## Authors: Amey Thakur (https://github.com/Amey-Thakur)
@@ -16,8 +18,24 @@ name: CI
 on:
   push:
     branches: [main]
+    paths:
+      - "src/**"
+      - "src-tauri/**"
+      - "config/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - ".github/workflows/ci.yml"
   pull_request:
     branches: [main]
+    paths:
+      - "src/**"
+      - "src-tauri/**"
+      - "config/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - ".github/workflows/ci.yml"
 
 concurrency:
   group: ci-${{ github.ref }}
