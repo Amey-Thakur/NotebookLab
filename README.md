@@ -1,119 +1,142 @@
+<div align="center">
+
 # NotebookLab
 
-Your thinking partner, on your machine.
+**Your thinking partner, on your machine.**
 
-NotebookLab is an offline-first AI knowledge workspace that combines the best of Google NotebookLM (RAG, citations, AI-powered analysis) with Obsidian (Markdown-first, local storage, bi-directional linking). All AI runs locally by default. Cloud providers optional.
+Import your documents. Ask questions. Get answers with sources.
+All of it runs locally.
 
-## Features
+[![CI](https://github.com/Amey-Thakur/NotebookLab/actions/workflows/ci.yml/badge.svg)](https://github.com/Amey-Thakur/NotebookLab/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Amey-Thakur/NotebookLab?include_prereleases)](https://github.com/Amey-Thakur/NotebookLab/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-- **Document Ingestion** -- Import PDF, TXT, and Markdown files. Auto-chunked and indexed for AI retrieval.
-- **RAG Chat with Citations** -- Ask questions about your documents. Every answer cites specific sources with page numbers.
-- **Markdown Editor** -- WYSIWYG editing with `[[wiki-links]]`, auto-save, and GFM support (tables, task lists).
-- **Thinking Partner** -- Generate mind maps from your research. Get Socratic questions that challenge your thinking.
-- **Content Transforms** -- Summarize, extract key points, or run custom prompts on any document.
-- **Full-Text Search** -- FTS5-powered search with BM25 relevance ranking across all your documents and notes.
-- **Multi-Provider AI** -- Local models (Ollama, llama.cpp, LM Studio) or cloud (OpenAI, Anthropic). Bring your own keys.
-- **Model Manager** -- Register, switch, and manage AI providers from the UI.
-- **REST API** -- Local HTTP API on `localhost:8484` for scripting and automation.
-- **Dark + Light Themes** -- Design system with Play, Source Serif 4, and JetBrains Mono typography.
+[Download](https://github.com/Amey-Thakur/NotebookLab/releases/latest) · [Website](https://amey-thakur.github.io/NotebookLab/) · [Contributing](CONTRIBUTING.md)
 
-## Tech Stack
+<img src="site/screenshots/chat.png" alt="NotebookLab chat answering a question with cited sources" width="720" />
 
-| Layer | Technology |
-|-------|-----------|
-| App Shell | Tauri v2 (Rust backend + WebView) |
-| Frontend | React 19 + TypeScript + Tailwind CSS |
-| Editor | Milkdown (ProseMirror + Remark) |
-| Database | SQLite + FTS5 |
-| LLM | llama.cpp / Ollama / OpenAI-compatible |
-| Embeddings | ONNX Runtime (planned) |
-| Build | Vite + GitHub Actions |
+</div>
 
-## Quick Start
+---
 
-### Prerequisites
+## What it does
 
-- [Node.js](https://nodejs.org/) 22+
-- [Rust](https://rustup.rs/) 1.77+
-- [Ollama](https://ollama.com/) (for local AI)
+NotebookLab combines the research power of an AI notebook with the privacy of
+local software. Your documents never leave your computer.
 
-### Setup
+| | |
+|---|---|
+| **Ask your documents** | RAG chat grounded in your PDFs, notes, and Markdown files. Every answer lists its sources with document, heading, and page. |
+| **Write connected notes** | A WYSIWYG Markdown editor with `[[wiki-links]]`, backlinks, and auto-save. |
+| **Search everything** | Keyword search with BM25 ranking, blended with semantic similarity when embeddings are available. |
+| **Think out loud** | Generate mind maps from your research, or get Socratic questions that push your thinking. |
+| **Transform documents** | Summaries, key points, or any custom instruction, applied to a whole document. |
+| **Listen instead** | Turn a notebook into a two-voice podcast script, read aloud offline. |
+| **Bring any model** | One-click local model download, a bundled llama.cpp server, or connect Ollama, LM Studio, and OpenAI-compatible APIs. |
+
+## Install
+
+Grab the installer for your platform from the
+[latest release](https://github.com/Amey-Thakur/NotebookLab/releases/latest):
+
+| Platform | File |
+|----------|------|
+| Windows | `.msi` or `-setup.exe` |
+| macOS (Apple Silicon) | `aarch64.dmg` |
+| macOS (Intel) | `x64.dmg` |
+| Linux | `.AppImage`, `.deb`, or `.rpm` |
+
+The app checks for updates automatically. Verify downloads with the
+`SHA256SUMS` file attached to each release.
+
+## First run
+
+1. NotebookLab opens with a **Getting Started** notebook and two sample notes.
+2. Open **Models** and either download the bundled model (~2 GB, one time) or
+   connect a provider you already run, like Ollama.
+3. Import a PDF, TXT, or Markdown file into a notebook.
+4. Open **Chat** and ask a question about it.
+
+## Develop
+
+Prerequisites: [Node.js](https://nodejs.org/) 22+, [Rust](https://rustup.rs/) 1.77+.
+On Linux you also need the WebKitGTK stack:
 
 ```bash
-# Clone
+sudo apt-get install libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+```
+
+```bash
 git clone https://github.com/Amey-Thakur/NotebookLab.git
 cd NotebookLab
 
-# Install dependencies
-npm ci
+npm ci                      # frontend dependencies
+npm run sidecar:download    # llama-server binary + libraries (checksum verified)
 
-# Pull a local model (optional, for AI features)
-ollama pull llama3.2:3b
-
-# Run in development
-npx tauri dev
+npx tauri dev               # run the app
 ```
 
-### First Run
+Quality gates, all enforced in CI:
 
-1. The app creates a **Getting Started** notebook with sample notes
-2. Go to **Models** and register Ollama (defaults are pre-filled)
-3. Import a document (PDF, TXT, or Markdown)
-4. Open **Chat** and ask a question about your document
+```bash
+npm run lint                # eslint
+npm test                    # vitest
+npm run build               # typecheck + bundle
+cargo fmt --check           # in src-tauri/
+cargo clippy -- -D warnings # in src-tauri/
+cargo test                  # in src-tauri/
+```
 
 ## Architecture
 
 ```
-React 19 Frontend
+React 19 frontend (src/)
     |
-    Tauri IPC (invoke)
+    Tauri IPC, snake_case arguments
     |
-Rust Backend
-    |--- Commands (thin IPC handlers)
-    |--- Services (business logic)
-    |--- Providers (LLM abstraction)
-    |--- Parsers (PDF, TXT, MD)
-    |--- Repositories (SQLite data access)
-    |--- API (REST server on :8484)
+Rust backend (src-tauri/src/)
+    commands/      thin async IPC handlers
+    services/      RAG, ingestion, search, embeddings, sidecar lifecycle
+    providers/     LLM abstraction (any OpenAI-compatible API)
+    parsers/       PDF, TXT, Markdown
+    database/      SQLite repositories (WAL, FTS5, cascade deletes)
+    api/           local REST server on 127.0.0.1:8484
 ```
 
-Every module is self-contained. Removing one does not break others.
+Every module is self-contained. Removing one does not break the others.
 
-## REST API
+## Local REST API
 
-The app runs a local REST API on `http://127.0.0.1:8484` for external automation.
+The app serves a read-only API for scripts on your machine at
+`http://127.0.0.1:8484`. All endpoints except `/api/health` require the
+session token shown in **Settings**, which changes on every launch.
 
 ```bash
-# Health check
-curl http://127.0.0.1:8484/api/health
-
-# List notebooks
-curl http://127.0.0.1:8484/api/notebooks
-
-# List notes in a notebook
-curl http://127.0.0.1:8484/api/notebooks/{id}/notes
-
-# List documents in a notebook
-curl http://127.0.0.1:8484/api/notebooks/{id}/documents
+curl -H "Authorization: Bearer <token>" http://127.0.0.1:8484/api/notebooks
 ```
 
-## Project Structure
+| Endpoint | Returns |
+|----------|---------|
+| `GET /api/health` | version and status (no auth) |
+| `GET /api/notebooks` | all notebooks |
+| `GET /api/notebooks/{id}/notes` | notes in a notebook |
+| `GET /api/notebooks/{id}/documents` | documents in a notebook |
+| `GET /api/documents/{id}/chunks` | extracted passages of a document |
+| `GET /api/chunks/count` | total indexed chunks |
 
-```
-src/                    React frontend (features, components, stores)
-src-tauri/              Rust backend
-  src/commands/         Tauri IPC handlers
-  src/services/         Business logic (RAG, ingestion, search)
-  src/providers/        LLM provider abstraction
-  src/parsers/          Document format parsers
-  src/database/         SQLite models and repositories
-  src/api/              REST API server
-  resources/            Migrations, prompts, model registry
-```
+## Privacy
+
+- Documents, notes, chats, and embeddings live in a local SQLite database.
+- The bundled model and llama.cpp server run entirely offline.
+- Cloud providers are optional, off by default, and only receive the context
+  for the specific question you ask.
+- The REST API binds to localhost only and requires a per-session token.
 
 ## Contributing
 
-See the commit format in [CLAUDE.md](CLAUDE.md). Every file starts with a header block. Comments explain "why" not "what".
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, conventions, and the pull
+request checklist, and [SECURITY.md](SECURITY.md) for reporting
+vulnerabilities. Release steps live in [RELEASING.md](RELEASING.md).
 
 ## License
 
@@ -122,4 +145,4 @@ See the commit format in [CLAUDE.md](CLAUDE.md). Every file starts with a header
 ## Authors
 
 - [Amey Thakur](https://github.com/Amey-Thakur)
-- [Archit Konde](https://github.com/architkonde19)
+- [Archit Konde](https://github.com/Archit-Konde)
