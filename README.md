@@ -44,7 +44,7 @@ Grab the installer for your platform from the
 | Windows | `.msi` or `-setup.exe` |
 | macOS (Apple Silicon) | `aarch64.dmg` |
 | macOS (Intel) | `x64.dmg` |
-| Linux | `.AppImage`, `.deb`, or `.rpm` |
+| Linux | `.deb` or `.rpm` |
 
 The app checks for updates automatically. Verify downloads with the
 `SHA256SUMS` file attached to each release.

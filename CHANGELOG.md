@@ -66,8 +66,9 @@ All notable changes to NotebookLab will be documented in this file.
   fields, screen reader announcements for chat, reduced motion support, and
   a rem-based type scale that honors system text size.
 - Deeper, richer blue accent palette in both themes.
-- Release pipeline: version guard, SHA256SUMS, automatic publishing, Linux
-  AppImage restored for the updater, all actions pinned to commit SHAs.
+- Release pipeline: version guard, SHA256SUMS, automatic publishing, and all
+  actions pinned to commit SHAs. Auto-update covers Windows and macOS; Linux
+  updates ship through the .deb and .rpm packages.
 - CI: rustfmt gate, frontend tests on all three platforms.
 - Windows and macOS icons are now real multi-resolution assets.
 - Sidecar downloads are verified against pinned SHA256 checksums.
