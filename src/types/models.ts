@@ -67,10 +67,34 @@ export interface Conversation {
 export interface SearchResult {
   chunk_id: string;
   document_id: string;
+  document_title: string;
   content: string;
   heading_context: string;
   page_number: number | null;
   score: number;
+}
+
+export interface CitationSource {
+  chunk_id: string;
+  document_id: string;
+  document_title: string;
+  heading_context: string;
+  page_number: number | null;
+  snippet: string;
+  relevance_score: number;
+}
+
+export interface SidecarStatus {
+  state: "stopped" | "starting" | "ready" | "crashed" | "stopping";
+  port: number;
+  model_path: string;
+  pid: number;
+}
+
+export interface ModelFileInfo {
+  name: string;
+  size_bytes: number;
+  size_display: string;
 }
 
 export interface UnifiedSearchResult {

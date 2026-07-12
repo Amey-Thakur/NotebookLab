@@ -1,8 +1,8 @@
 /*
  * Title: app.tsx
  * Tech Stack: React 19, React Router v7
- * Description: Root application component. All routes have real page implementations
- *   except Podcasts (deferred pending TTS engine decision).
+ * Description: Root application component. Every route maps to a fully
+ *   implemented page, including Podcasts (Web Speech playback).
  * Important Details: Routes use ROUTES constants from lib/constants.ts.
  */
 
@@ -49,7 +49,7 @@ export function App() {
 function NotFoundPage() {
   return (
     <div className="flex flex-col items-center justify-center h-full text-text-3 p-8">
-      <p className="text-lg font-display font-bold mb-2">Page not found</p>
+      <h1 className="text-lg font-display font-bold mb-2">Page not found</h1>
       <p className="text-sm text-text-4">This page does not exist. Use the sidebar to navigate.</p>
     </div>
   );

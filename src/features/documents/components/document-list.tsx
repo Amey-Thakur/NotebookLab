@@ -45,21 +45,32 @@ export function DocumentList({ documents, selectedId, onSelect, onDelete, isDele
   }
 
   return (
-    <div className="space-y-1">
+    <ul className="space-y-1">
       {documents.map((doc) => (
-        <div
+        /* The row itself is a plain list item; the selectable area and the
+           delete button are separate siblings so interactive controls never
+           nest (invalid ARIA that confuses screen reader focus). */
+        <li
           key={doc.id}
-          role="button"
-          tabIndex={0}
-          className={`flex items-center justify-between p-3 border cursor-pointer transition-colors ${
+          className={`flex items-center p-3 border transition-colors ${
             selectedId === doc.id
               ? "border-accent-dim bg-surface-2"
               : "border-border hover:border-accent-dim"
           }`}
-          onClick={() => onSelect(doc.id)}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onSelect(doc.id); }}
         >
-          <div className="min-w-0 flex-1">
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label={`View chunks of ${doc.title}`}
+            className="min-w-0 flex-1 cursor-pointer outline-none"
+            onClick={() => onSelect(doc.id)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onSelect(doc.id);
+              }
+            }}
+          >
             <div className="flex items-center gap-2">
               <span className="text-sm text-text-1 font-medium truncate">{doc.title}</span>
               <span className="text-xs font-mono text-text-4 flex-shrink-0">.{doc.file_type}</span>
@@ -75,10 +86,7 @@ export function DocumentList({ documents, selectedId, onSelect, onDelete, isDele
           <button
             type="button"
             aria-label={`Delete ${doc.title}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDelete(doc.id);
-            }}
+            onClick={() => handleDelete(doc.id)}
             disabled={isDeleting}
             className={`ml-3 px-2 py-1 text-xs font-mono border transition-colors flex-shrink-0 ${
               confirmDeleteId === doc.id
@@ -88,9 +96,9 @@ export function DocumentList({ documents, selectedId, onSelect, onDelete, isDele
           >
             {confirmDeleteId === doc.id ? "Confirm" : "Delete"}
           </button>
-        </div>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }
 

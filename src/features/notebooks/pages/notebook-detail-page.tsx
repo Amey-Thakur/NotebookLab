@@ -7,17 +7,18 @@
  *   chat know which notebook context to use. Documents can be imported via file dialog.
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS } from "@/lib/constants";
+import { formatError } from "@/lib/format-error";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { formatBytes } from "@/lib/utils";
-import type { Notebook, Document, Note } from "@/types/models";
+import type { Notebook, Note } from "@/types/models";
 import { pickDocumentFile } from "@/features/documents/api/document-api";
-import { useImportDocument } from "@/features/documents/hooks/use-documents";
+import { useDocuments, useImportDocument } from "@/features/documents/hooks/use-documents";
 
 
 export function NotebookDetailPage() {
@@ -25,6 +26,7 @@ export function NotebookDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const setActiveNotebook = useNotebookStore((s) => s.setActiveNotebook);
+  const [confirmingNoteDelete, setConfirmingNoteDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) setActiveNotebook(id);
@@ -36,11 +38,7 @@ export function NotebookDetailPage() {
     enabled: !!id,
   });
 
-  const { data: documents } = useQuery({
-    queryKey: [QUERY_KEYS.DOCUMENTS, id],
-    queryFn: () => tauriInvoke<Document[]>("list_documents", { notebook_id: id }),
-    enabled: !!id,
-  });
+  const { data: documents } = useDocuments(id);
 
   const { data: notes } = useQuery({
     queryKey: [QUERY_KEYS.NOTES, id],
@@ -54,6 +52,13 @@ export function NotebookDetailPage() {
     onSuccess: (note) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.NOTES, id] });
       navigate(`/editor/${note.id}`);
+    },
+  });
+
+  const deleteNote = useMutation({
+    mutationFn: (noteId: string) => tauriInvoke<void>("delete_note", { id: noteId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.NOTES, id] });
     },
   });
 
@@ -97,22 +102,68 @@ export function NotebookDetailPage() {
         <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-3">
           Notes ({notes?.length || 0})
         </h2>
+        {createNote.isError && (
+          <p role="alert" className="text-xs text-error mb-2">{formatError(createNote.error)}</p>
+        )}
+        {deleteNote.isError && (
+          <p role="alert" className="text-xs text-error mb-2">{formatError(deleteNote.error)}</p>
+        )}
         {notes?.length === 0 && (
           <p className="text-sm text-text-4">No notes yet. Create one to start writing.</p>
         )}
         {notes?.map((note) => (
-          <div
-            key={note.id}
-            role="button"
-            tabIndex={0}
-            className="p-3 border border-border mb-1 cursor-pointer hover:border-accent-dim transition-colors"
-            onClick={() => navigate(`/editor/${note.id}`)}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate(`/editor/${note.id}`); }}
-          >
-            <span className="text-sm text-text-1 font-medium">{note.title}</span>
-            <span className="text-xs font-mono text-text-4 ml-2">
-              {new Date(note.updated_at).toLocaleDateString()}
-            </span>
+          <div key={note.id} className="group flex items-center gap-2 mb-1">
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label={`Open note ${note.title}`}
+              className="flex-1 p-3 border border-border cursor-pointer outline-none
+                         hover:border-accent-dim focus-visible:border-accent transition-colors"
+              onClick={() => navigate(`/editor/${note.id}`)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  navigate(`/editor/${note.id}`);
+                }
+              }}
+            >
+              <span className="text-sm text-text-1 font-medium">{note.title}</span>
+              <span className="text-xs font-mono text-text-4 ml-2">
+                {new Date(note.updated_at).toLocaleDateString()}
+              </span>
+            </div>
+            {confirmingNoteDelete === note.id ? (
+              <span className="flex items-center gap-2 text-xs shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    deleteNote.mutate(note.id);
+                    setConfirmingNoteDelete(null);
+                  }}
+                  className="font-mono text-error hover:underline"
+                >
+                  Delete
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmingNoteDelete(null)}
+                  className="font-mono text-text-4 hover:text-text-2"
+                >
+                  Keep
+                </button>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmingNoteDelete(note.id)}
+                aria-label={`Delete note ${note.title}`}
+                className="shrink-0 px-2 text-xs font-mono text-text-4 opacity-0
+                           group-hover:opacity-100 focus-visible:opacity-100
+                           hover:text-error transition-opacity"
+              >
+                Delete
+              </button>
+            )}
           </div>
         ))}
       </div>
@@ -133,7 +184,7 @@ export function NotebookDetailPage() {
           </button>
         </div>
         {importDoc.isError && (
-          <p className="text-xs text-error mb-2">{String(importDoc.error)}</p>
+          <p role="alert" className="text-xs text-error mb-2">{formatError(importDoc.error)}</p>
         )}
         {documents?.length === 0 && (
           <p className="text-sm text-text-4">No documents imported yet. Import a PDF, TXT, or Markdown file.</p>

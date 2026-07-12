@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NotebookLab</title>
     <!-- Fonts self-hosted for offline-first operation -->
+    <script>
+      /* Apply the persisted theme before first paint so light-theme users
+         never see a dark flash. Must stay in sync with theme-provider.tsx. */
+      try {
+        var stored = localStorage.getItem("notebooklab-theme");
+        if (stored === "light" || stored === "dark") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (_) { /* storage unavailable: keep default */ }
+    </script>
   </head>
   <body>
     <div id="root"></div>

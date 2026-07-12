@@ -5,16 +5,18 @@
  *   Shows step-by-step instructions for installing Ollama with a single download link.
  * Important Details: Shown on the Models page when no providers are registered.
  *   Provides a direct download link and the exact terminal command to run.
- *   After setup, user clicks "Check again" to auto-detect the running provider.
+ *   "Check for providers" re-runs the real endpoint probe (detect_providers),
+ *   not just a cache refresh, so a freshly started Ollama is found immediately.
  */
 
 
 interface SetupGuideProps {
-  onRefresh: () => void;
+  onDetect: () => void;
+  isDetecting: boolean;
 }
 
 
-export function SetupGuide({ onRefresh }: SetupGuideProps) {
+export function SetupGuide({ onDetect, isDetecting }: SetupGuideProps) {
   return (
     <div className="border border-accent-dim bg-surface-2 p-6 mb-8">
       <h2 className="text-lg font-display font-bold text-text-1 mb-2">
@@ -77,10 +79,12 @@ export function SetupGuide({ onRefresh }: SetupGuideProps) {
 
       <button
         type="button"
-        onClick={onRefresh}
-        className="mt-6 px-4 py-2 text-sm font-mono bg-accent-dim text-text-1"
+        onClick={onDetect}
+        disabled={isDetecting}
+        className="mt-6 px-4 py-2 text-sm font-mono bg-accent-dim text-text-1
+                   hover:bg-accent transition-colors disabled:opacity-50"
       >
-        Check for providers
+        {isDetecting ? "Checking..." : "Check for providers"}
       </button>
     </div>
   );
