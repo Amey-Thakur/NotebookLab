@@ -4,30 +4,14 @@
  * Description: Theme context provider supporting light, dark, and system preference modes.
  * Important Details: Persists theme choice to localStorage. System mode uses the
  *   prefers-color-scheme media query. Sets a data-theme attribute on <html> so
- *   Tailwind CSS custom properties resolve correctly.
+ *   Tailwind CSS custom properties resolve correctly. The context and useTheme
+ *   hook live in theme-context.ts.
  */
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
+import { ThemeCtx, VALID_THEMES, type Theme } from "./theme-context";
 
-type Theme = "light" | "dark" | "system";
-
-const VALID_THEMES: Theme[] = ["light", "dark", "system"];
-
-interface ThemeContext {
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
-  resolvedTheme: "light" | "dark";
-}
-
-const ThemeCtx = createContext<ThemeContext | null>(null);
 
 const STORAGE_KEY = "notebooklab-theme";
 
@@ -78,11 +62,4 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       {children}
     </ThemeCtx.Provider>
   );
-}
-
-
-export function useTheme() {
-  const ctx = useContext(ThemeCtx);
-  if (!ctx) throw new Error("useTheme must be used within ThemeProvider");
-  return ctx;
 }

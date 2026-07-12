@@ -26,12 +26,18 @@ export const QUERY_KEYS = {
   NOTEBOOKS: "notebooks",
   DOCUMENTS: "documents",
   NOTES: "notes",
+  NOTE: "note",
+  BACKLINKS: "backlinks",
   SEARCH: "search",
   CHAT: "chat",
+  CONVERSATIONS: "conversations",
+  CITATIONS: "citations",
   MODELS: "models",
   SETTINGS: "settings",
   PROVIDERS: "providers",
   ACTIVE_PROVIDER: "active-provider",
+  CHUNK_COUNT: "chunk-count",
+  SIDECAR: "sidecar",
 } as const;
 
 
