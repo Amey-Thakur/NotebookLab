@@ -10,12 +10,12 @@
     "url": "https://github.com/Amey-Thakur/NotebookLab.git"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
+    "dev": "vite --config config/vite.config.ts",
+    "build": "tsc -b && vite build --config config/vite.config.ts",
+    "lint": "eslint . --config config/eslint.config.js",
     "tauri": "tauri",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "vitest run --config config/vite.config.ts",
+    "test:watch": "vitest --config config/vite.config.ts",
     "sidecar:download": "node scripts/download-sidecar.cjs"
   },
   "dependencies": {

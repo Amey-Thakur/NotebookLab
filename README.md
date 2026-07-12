@@ -147,7 +147,7 @@ src-tauri/      Rust backend
   api/            local REST server on 127.0.0.1:8484
 site/           landing page
 scripts/        build helpers
-config/         secondary build configs
+config/         build configs (Vite, ESLint, Tailwind, TypeScript)
 docs/           guides, architecture, brand assets
 ```
 
