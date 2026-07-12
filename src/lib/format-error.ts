@@ -1,11 +1,16 @@
 /*
- * Title: format-error.ts
+ * Name: format-error.ts
+ * Purpose: Converts backend and IPC errors into plain-language messages.
+ * Description: Raw errors look like "[send_chat_message] Provider error: HTTP
+ *   500 ..." which reads as noise to users. Known failure shapes
+ *   map to short guidance with a recovery hint; anything unknown
+ *   falls back to the cleaned original text so real detail is
+ *   never hidden.
  * Tech Stack: TypeScript
- * Description: Converts backend and IPC errors into plain-language messages.
- * Important Details: Raw errors look like "[send_chat_message] Provider error:
- *   HTTP 500 ..." which reads as noise to users. Known failure shapes map to
- *   short guidance with a recovery hint; anything unknown falls back to the
- *   cleaned original text so real detail is never hidden.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 interface ErrorHint {

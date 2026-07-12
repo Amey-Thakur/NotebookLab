@@ -1,10 +1,15 @@
 /*
- * Title: model_commands.rs
+ * Name: model_commands.rs
+ * Purpose: Tauri commands for managing LLM providers and models at runtime.
+ * Description: Allows the frontend to register local (llama.cpp, Ollama) and
+ *   cloud (OpenAI, Anthropic) providers dynamically. The active
+ *   provider can be switched without restarting the app. Provider
+ *   state lives in ProviderRouter.
  * Tech Stack: Rust, Tauri v2
- * Description: Tauri commands for managing LLM providers and models at runtime.
- * Important Details: Allows the frontend to register local (llama.cpp, Ollama) and
- *   cloud (OpenAI, Anthropic) providers dynamically. The active provider can be
- *   switched without restarting the app. Provider state lives in ProviderRouter.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use tauri::State;

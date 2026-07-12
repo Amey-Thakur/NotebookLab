@@ -1,11 +1,16 @@
 /*
- * Title: document_commands.rs
- * Tech Stack: Rust, Tauri v2
- * Description: Tauri command handlers for document operations including import,
+ * Name: document_commands.rs
+ * Purpose: Tauri command handlers for document operations including import,
  *   listing, and deletion.
- * Important Details: import_document is async so parsing a large PDF never
- *   blocks the main thread. After ingestion it kicks off a background embedding
- *   pass; failures there degrade search to keyword-only rather than erroring.
+ * Description: import_document is async so parsing a large PDF never blocks
+ *   the main thread. After ingestion it kicks off a background
+ *   embedding pass; failures there degrade search to keyword-only
+ *   rather than erroring.
+ * Tech Stack: Rust, Tauri v2
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use std::path::PathBuf;

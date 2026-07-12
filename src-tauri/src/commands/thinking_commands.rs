@@ -1,10 +1,15 @@
 /*
- * Title: thinking_commands.rs
+ * Name: thinking_commands.rs
+ * Purpose: Tauri commands for the Thinking Partner feature.
+ * Description: Async commands running on blocking worker threads; sync
+ *   commands would hold the main thread through the LLM call. DB
+ *   and LLM phases are split so the database lock is released
+ *   before the HTTP request.
  * Tech Stack: Rust, Tauri v2
- * Description: Tauri commands for the Thinking Partner feature.
- * Important Details: Async commands running on blocking worker threads; sync
- *   commands would hold the main thread through the LLM call. DB and LLM phases
- *   are split so the database lock is released before the HTTP request.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use tauri::{Manager, State};

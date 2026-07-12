@@ -1,14 +1,20 @@
 /*
- * Title: notebooks-page.tsx
+ * Name: notebooks-page.tsx
+ * Purpose: Notebooks overview page.
+ * Description: Shows all notebooks as cards with create and delete
+ *   functionality. This is the default landing page and the only
+ *   route into a notebook, so cards must be fully keyboard
+ *   operable (role=button, Enter and Space). Delete uses a
+ *   two-step inline confirm because window.confirm() is a silent
+ *   no-op in the macOS webview, and the copy warns that notes and
+ *   documents are removed with the notebook. Create and delete
+ *   failures render inline instead of disappearing into the
+ *   console.
  * Tech Stack: React 19, TanStack Query, Tailwind CSS
- * Description: Notebooks overview page. Shows all notebooks as cards with create
- *   and delete functionality.
- * Important Details: This is the default landing page and the only route into a
- *   notebook, so cards must be fully keyboard operable (role=button, Enter and
- *   Space). Delete uses a two-step inline confirm because window.confirm() is a
- *   silent no-op in the macOS webview, and the copy warns that notes and
- *   documents are removed with the notebook. Create and delete failures render
- *   inline instead of disappearing into the console.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useState } from "react";

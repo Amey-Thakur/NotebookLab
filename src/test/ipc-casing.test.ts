@@ -1,12 +1,17 @@
 /*
- * Title: ipc-casing.test.ts
+ * Name: ipc-casing.test.ts
+ * Purpose: Static guard for the IPC argument-casing contract.
+ * Description: Every Rust command declares rename_all = "snake_case"
+ *   (enforced by src-tauri/tests/ipc_casing_tests.rs), so every
+ *   tauriInvoke call site must pass snake_case keys. vitest mocks
+ *   invoke(), which means a camelCase key would pass unit tests
+ *   and fail only at runtime; this scan is the compile-time net.
+ *   Both shorthand and explicit keys are checked.
  * Tech Stack: Vitest, Node fs
- * Description: Static guard for the IPC argument-casing contract.
- * Important Details: Every Rust command declares rename_all = "snake_case"
- *   (enforced by src-tauri/tests/ipc_casing_tests.rs), so every tauriInvoke
- *   call site must pass snake_case keys. vitest mocks invoke(), which means a
- *   camelCase key would pass unit tests and fail only at runtime; this scan
- *   is the compile-time net. Both shorthand and explicit keys are checked.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { describe, expect, it } from "vitest";

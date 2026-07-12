@@ -1,9 +1,13 @@
 /*
- * Title: text_utils.rs
- * Tech Stack: Rust
- * Description: Text processing utilities shared across services and repositories.
- * Important Details: LIKE pattern escaping prevents metacharacters in user input
+ * Name: text_utils.rs
+ * Purpose: Text processing utilities shared across services and repositories.
+ * Description: LIKE pattern escaping prevents metacharacters in user input
  *   from being interpreted as SQL wildcards.
+ * Tech Stack: Rust
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 /// Escape SQL LIKE metacharacters in user input for safe pattern matching.

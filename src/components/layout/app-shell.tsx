@@ -1,12 +1,18 @@
 /*
- * Title: app-shell.tsx
+ * Name: app-shell.tsx
+ * Purpose: Main application chrome.
+ * Description: Renders sidebar, header, and content area. Sidebar collapses
+ *   on mobile (<768px) behind a hamburger toggle; Escape closes it
+ *   and the backdrop is aria-hidden. Global keyboard shortcuts
+ *   live here: Ctrl+K focuses search and Ctrl+N creates a note in
+ *   the active notebook (Cmd on macOS). A persisted
+ *   active-notebook id that no longer exists is cleared so pages
+ *   never query a dangling notebook.
  * Tech Stack: React 19, Tailwind CSS
- * Description: Main application chrome. Renders sidebar, header, and content area.
- * Important Details: Sidebar collapses on mobile (<768px) behind a hamburger
- *   toggle; Escape closes it and the backdrop is aria-hidden. Global keyboard
- *   shortcuts live here: Ctrl+K focuses search and Ctrl+N creates a note in
- *   the active notebook (Cmd on macOS). A persisted active-notebook id that no
- *   longer exists is cleared so pages never query a dangling notebook.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useEffect, useState, type ReactNode } from "react";

@@ -1,13 +1,19 @@
 /*
- * Title: generate-logo.js
+ * Name: generate-logo.js
+ * Purpose: Programmatically generates NotebookLab logo SVGs with precise
+ *   geometry.
+ * Description: Produces horizontal, icon-only, and dark variants in
+ *   logos/final. All coordinates are computed mathematically, not
+ *   hand-placed. Run with: node scripts/generate-logo.js App icons
+ *   are derived separately: rasterize the icon SVG to a 512x512
+ *   src-tauri/icons/icon.png, then run `npx tauri icon
+ *   src-tauri/icons/icon.png` to regenerate the .ico, .icns, and
+ *   PNG set that Tauri bundles.
  * Tech Stack: Node.js
- * Description: Programmatically generates NotebookLab logo SVGs with precise
- *   geometry. Produces horizontal, icon-only, and dark variants in logos/final.
- * Important Details: All coordinates are computed mathematically, not hand-placed.
- *   Run with: node scripts/generate-logo.js
- *   App icons are derived separately: rasterize the icon SVG to a 512x512
- *   src-tauri/icons/icon.png, then run `npx tauri icon src-tauri/icons/icon.png`
- *   to regenerate the .ico, .icns, and PNG set that Tauri bundles.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { writeFileSync, mkdirSync } from "fs";

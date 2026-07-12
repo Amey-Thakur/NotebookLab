@@ -1,12 +1,17 @@
 /*
- * Title: settings-page.tsx
+ * Name: settings-page.tsx
+ * Purpose: Application settings page: theme, app info, data directory, local
+ *   REST API access, and keyboard shortcuts.
+ * Description: Theme preference persists via localStorage. The REST API token
+ *   is generated fresh each session; the copy button hands users a
+ *   ready-to-run curl command. Every shortcut listed here is
+ *   implemented (Ctrl+K and Ctrl+N in AppShell, Ctrl+S in the
+ *   editor page).
  * Tech Stack: React 19, Tailwind CSS
- * Description: Application settings page: theme, app info, data directory,
- *   local REST API access, and keyboard shortcuts.
- * Important Details: Theme preference persists via localStorage. The REST API
- *   token is generated fresh each session; the copy button hands users a
- *   ready-to-run curl command. Every shortcut listed here is implemented
- *   (Ctrl+K and Ctrl+N in AppShell, Ctrl+S in the editor page).
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useState } from "react";

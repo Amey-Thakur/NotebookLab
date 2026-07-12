@@ -1,10 +1,15 @@
 /*
- * Title: error-boundary.tsx
+ * Name: error-boundary.tsx
+ * Purpose: Global error boundary.
+ * Description: Catches unhandled errors in the component tree and renders a
+ *   fallback UI instead of a white screen. Class component
+ *   required because React error boundaries do not support hooks.
+ *   Offers a "Reload" button to recover from transient errors.
  * Tech Stack: React 19
- * Description: Global error boundary. Catches unhandled errors in the component tree
- *   and renders a fallback UI instead of a white screen.
- * Important Details: Class component required because React error boundaries do not
- *   support hooks. Offers a "Reload" button to recover from transient errors.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { Component, type ErrorInfo, type ReactNode } from "react";

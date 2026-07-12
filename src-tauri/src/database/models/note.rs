@@ -1,10 +1,15 @@
 /*
- * Title: note.rs
+ * Name: note.rs
+ * Purpose: Note domain model.
+ * Description: A user-written Markdown document within a notebook. Notes
+ *   support bi-directional linking via [[wiki-link]] syntax. Link
+ *   resolution happens at the application layer, not the database
+ *   layer. Content is stored as raw Markdown text.
  * Tech Stack: Rust, serde, rusqlite
- * Description: Note domain model. A user-written Markdown document within a notebook.
- * Important Details: Notes support bi-directional linking via [[wiki-link]] syntax.
- *   Link resolution happens at the application layer, not the database layer.
- *   Content is stored as raw Markdown text.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use rusqlite::Row;

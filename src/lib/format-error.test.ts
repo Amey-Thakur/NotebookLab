@@ -1,9 +1,13 @@
 /*
- * Title: format-error.test.ts
+ * Name: format-error.test.ts
+ * Purpose: Tests for the user-facing error formatter.
+ * Description: Covers prefix stripping, hint mapping, and fallbacks so IPC
+ *   noise never reaches users unchanged.
  * Tech Stack: Vitest
- * Description: Tests for the user-facing error formatter.
- * Important Details: Covers prefix stripping, hint mapping, and fallbacks so
- *   IPC noise never reaches users unchanged.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { describe, expect, it } from "vitest";

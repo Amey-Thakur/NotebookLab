@@ -1,11 +1,17 @@
 /*
- * Title: error.rs
+ * Name: error.rs
+ * Purpose: Centralized error types for the backend.
+ * Description: All service and repository errors funnel through AppError,
+ *   which implements Serialize for Tauri IPC transmission. Tauri
+ *   requires command return errors to be serializable strings.
+ *   thiserror generates Display impls. The IntoResponse conversion
+ *   serializes the error message as a string that the frontend
+ *   TauriError class can parse.
  * Tech Stack: Rust, thiserror, serde, Tauri v2
- * Description: Centralized error types for the backend. All service and repository errors
- *   funnel through AppError, which implements Serialize for Tauri IPC transmission.
- * Important Details: Tauri requires command return errors to be serializable strings.
- *   thiserror generates Display impls. The IntoResponse conversion serializes the error
- *   message as a string that the frontend TauriError class can parse.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use serde::Serialize;

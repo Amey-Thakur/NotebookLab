@@ -1,9 +1,13 @@
 /*
- * Title: utils.ts
+ * Name: utils.ts
+ * Purpose: General utility functions shared across the application.
+ * Description: cn() merges Tailwind classes safely, resolving conflicts. This
+ *   is the standard pattern used by shadcn/ui components.
  * Tech Stack: TypeScript, clsx, tailwind-merge
- * Description: General utility functions shared across the application.
- * Important Details: cn() merges Tailwind classes safely, resolving conflicts.
- *   This is the standard pattern used by shadcn/ui components.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { type ClassValue, clsx } from "clsx";

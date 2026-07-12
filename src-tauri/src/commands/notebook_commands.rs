@@ -1,10 +1,15 @@
 /*
- * Title: notebook_commands.rs
+ * Name: notebook_commands.rs
+ * Purpose: Tauri command handlers for notebook CRUD operations.
+ * Description: Commands are thin IPC handlers. They acquire the database
+ *   mutex, call the repository function, and return the result.
+ *   All business logic belongs in the services layer (not yet
+ *   implemented for notebooks).
  * Tech Stack: Rust, Tauri v2
- * Description: Tauri command handlers for notebook CRUD operations.
- * Important Details: Commands are thin IPC handlers. They acquire the database mutex,
- *   call the repository function, and return the result. All business logic belongs
- *   in the services layer (not yet implemented for notebooks).
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use tauri::State;

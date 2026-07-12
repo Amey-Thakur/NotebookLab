@@ -1,11 +1,16 @@
 /*
- * Title: chat_commands.rs
+ * Name: chat_commands.rs
+ * Purpose: Tauri command handlers for RAG-powered chat conversations.
+ * Description: send_chat_message is async and runs on a blocking worker
+ *   thread; sync commands execute on the main thread in Tauri v2,
+ *   so a 30-120s LLM call would otherwise freeze every other IPC
+ *   call. The pipeline is split into 3 phases so the DB lock is
+ *   released before the LLM HTTP call.
  * Tech Stack: Rust, Tauri v2
- * Description: Tauri command handlers for RAG-powered chat conversations.
- * Important Details: send_chat_message is async and runs on a blocking worker
- *   thread; sync commands execute on the main thread in Tauri v2, so a 30-120s
- *   LLM call would otherwise freeze every other IPC call. The pipeline is split
- *   into 3 phases so the DB lock is released before the LLM HTTP call.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use tauri::{Manager, State};

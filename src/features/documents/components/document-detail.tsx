@@ -1,10 +1,15 @@
 /*
- * Title: document-detail.tsx
+ * Name: document-detail.tsx
+ * Purpose: Shows the chunks/passages extracted from a selected document.
+ * Description: Displays heading context, page number, and token count for
+ *   each chunk. This is the "source preview" that lets users
+ *   verify what the RAG pipeline actually indexed. Useful for
+ *   debugging poor search results.
  * Tech Stack: React 19, TanStack Query, Tailwind CSS
- * Description: Shows the chunks/passages extracted from a selected document.
- *   Displays heading context, page number, and token count for each chunk.
- * Important Details: This is the "source preview" that lets users verify what
- *   the RAG pipeline actually indexed. Useful for debugging poor search results.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useDocumentChunks } from "../hooks/use-documents";

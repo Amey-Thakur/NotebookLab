@@ -1,10 +1,15 @@
 /*
- * Title: transform_commands.rs
+ * Name: transform_commands.rs
+ * Purpose: Tauri commands for content transformations.
+ * Description: Async command on a blocking worker thread so the LLM call
+ *   never occupies the main thread. Chunks are fetched and capped
+ *   at ~8000 tokens in the DB phase, then the LLM phase runs
+ *   without any database lock.
  * Tech Stack: Rust, Tauri v2
- * Description: Tauri commands for content transformations.
- * Important Details: Async command on a blocking worker thread so the LLM call
- *   never occupies the main thread. Chunks are fetched and capped at ~8000
- *   tokens in the DB phase, then the LLM phase runs without any database lock.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use tauri::{Manager, State};

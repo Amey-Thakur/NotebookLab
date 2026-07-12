@@ -1,12 +1,18 @@
 /*
- * Title: download_commands.rs
+ * Name: download_commands.rs
+ * Purpose: Commands for downloading GGUF model files from HuggingFace Hub.
+ * Description: Reports progress via Tauri events so the frontend can show a
+ *   progress bar. Downloads are streamed to disk in 64KB chunks.
+ *   Progress events are emitted every 1% or every 500ms (whichever
+ *   comes first). The download directory is
+ *   $APP_DATA/models/gguf/. Only huggingface.co URLs are allowed.
+ *   A guard prevents concurrent downloads. Temp files are cleaned
+ *   up on failure.
  * Tech Stack: Rust, Tauri v2, reqwest
- * Description: Commands for downloading GGUF model files from HuggingFace Hub.
- *   Reports progress via Tauri events so the frontend can show a progress bar.
- * Important Details: Downloads are streamed to disk in 64KB chunks. Progress events
- *   are emitted every 1% or every 500ms (whichever comes first). The download
- *   directory is $APP_DATA/models/gguf/. Only huggingface.co URLs are allowed.
- *   A guard prevents concurrent downloads. Temp files are cleaned up on failure.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use std::io::Write;

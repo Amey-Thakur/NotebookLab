@@ -1,11 +1,15 @@
 /*
- * Title: import-button.tsx
+ * Name: import-button.tsx
+ * Purpose: Button that opens the native file picker to import a document.
+ * Description: Uses Tauri's dialog plugin for OS-native file selection
+ *   instead of a manual text input. Filters to supported file
+ *   types (.txt, .md, .pdf). Disabled while an import is in
+ *   progress.
  * Tech Stack: React 19, Tauri Dialog Plugin
- * Description: Button that opens the native file picker to import a document.
- *   Uses Tauri's dialog plugin for OS-native file selection instead of
- *   a manual text input.
- * Important Details: Filters to supported file types (.txt, .md, .pdf).
- *   Disabled while an import is in progress.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { formatError } from "@/lib/format-error";

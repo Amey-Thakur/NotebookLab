@@ -1,9 +1,15 @@
 /*
- * Title: system_commands.rs
+ * Name: system_commands.rs
+ * Purpose: System-level Tauri commands: health check, app version, data
+ *   directory.
+ * Description: These commands are always available regardless of model or
+ *   database state. They serve as the baseline for frontend
+ *   connectivity verification.
  * Tech Stack: Rust, Tauri v2
- * Description: System-level Tauri commands: health check, app version, data directory.
- * Important Details: These commands are always available regardless of model or database
- *   state. They serve as the baseline for frontend connectivity verification.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use tauri::{AppHandle, Manager};

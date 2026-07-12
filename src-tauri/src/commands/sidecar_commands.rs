@@ -1,12 +1,17 @@
 /*
- * Title: sidecar_commands.rs
+ * Name: sidecar_commands.rs
+ * Purpose: Tauri commands for managing the llama-server sidecar process.
+ * Description: Exposes start, stop, and status endpoints to the frontend.
+ *   Uses atomic compare-exchange to prevent double-start races. A
+ *   cancellation flag is shared between the stdout-reader and
+ *   health-poller threads so the poller aborts immediately when
+ *   the process exits. The API key is passed to the provider
+ *   registration so auth works end-to-end.
  * Tech Stack: Rust, Tauri v2 Shell Plugin
- * Description: Tauri commands for managing the llama-server sidecar process.
- *   Exposes start, stop, and status endpoints to the frontend.
- * Important Details: Uses atomic compare-exchange to prevent double-start races.
- *   A cancellation flag is shared between the stdout-reader and health-poller
- *   threads so the poller aborts immediately when the process exits. The API key
- *   is passed to the provider registration so auth works end-to-end.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use std::sync::atomic::Ordering;

@@ -1,9 +1,14 @@
 /*
- * Title: database/models/mod.rs
- * Tech Stack: Rust, serde
- * Description: Database model struct declarations. Each model maps to a database table.
- * Important Details: Models implement Serialize/Deserialize for Tauri IPC transmission.
+ * Name: mod.rs
+ * Purpose: Database model struct declarations.
+ * Description: Each model maps to a database table. Models implement
+ *   Serialize/Deserialize for Tauri IPC transmission.
  *   Create/Update structs use Option fields for partial updates.
+ * Tech Stack: Rust, serde
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 pub mod chunk;

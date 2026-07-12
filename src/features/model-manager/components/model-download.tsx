@@ -1,11 +1,17 @@
 /*
- * Title: model-download.tsx
+ * Name: model-download.tsx
+ * Purpose: Model download component with real-time progress bar.
+ * Description: Listens to Tauri events for download progress and shows
+ *   percentage, size, and status. Uses the
+ *   "model-download-progress" event from the Rust backend. The
+ *   download runs on a background thread so the UI stays
+ *   responsive. Shows estimated download size (~2GB for the
+ *   default model) to set expectations.
  * Tech Stack: React 19, Tauri Events, Tailwind CSS
- * Description: Model download component with real-time progress bar. Listens to
- *   Tauri events for download progress and shows percentage, size, and status.
- * Important Details: Uses the "model-download-progress" event from the Rust backend.
- *   The download runs on a background thread so the UI stays responsive. Shows
- *   estimated download size (~2GB for the default model) to set expectations.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useState, useEffect, useRef } from "react";

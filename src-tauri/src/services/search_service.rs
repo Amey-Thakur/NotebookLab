@@ -1,12 +1,17 @@
 /*
- * Title: search_service.rs
+ * Name: search_service.rs
+ * Purpose: Search across document chunks.
+ * Description: Combines FTS5 keyword ranking with vector similarity when
+ *   embeddings are available (hybrid search). FTS5 with BM25
+ *   handles keyword relevance; the embedding service supplies
+ *   cosine-similarity hits. The two lists are merged with
+ *   reciprocal rank fusion so neither signal dominates. Falls back
+ *   to LIKE-based search if the FTS5 table does not exist yet.
  * Tech Stack: Rust, rusqlite, FTS5
- * Description: Search across document chunks. Combines FTS5 keyword ranking
- *   with vector similarity when embeddings are available (hybrid search).
- * Important Details: FTS5 with BM25 handles keyword relevance; the embedding
- *   service supplies cosine-similarity hits. The two lists are merged with
- *   reciprocal rank fusion so neither signal dominates. Falls back to
- *   LIKE-based search if the FTS5 table does not exist yet.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use rusqlite::{params, Connection};

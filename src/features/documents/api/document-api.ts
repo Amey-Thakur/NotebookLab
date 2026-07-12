@@ -1,10 +1,15 @@
 /*
- * Title: document-api.ts
+ * Name: document-api.ts
+ * Purpose: Tauri invoke wrappers for document commands.
+ * Description: Thin layer between React hooks and the Rust backend. All
+ *   functions map 1:1 to Rust commands in document_commands.rs.
+ *   File dialog import uses @tauri-apps/plugin-dialog for native
+ *   OS file picker.
  * Tech Stack: TypeScript, Tauri IPC
- * Description: Tauri invoke wrappers for document commands. Thin layer between
- *   React hooks and the Rust backend.
- * Important Details: All functions map 1:1 to Rust commands in document_commands.rs.
- *   File dialog import uses @tauri-apps/plugin-dialog for native OS file picker.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { open } from "@tauri-apps/plugin-dialog";

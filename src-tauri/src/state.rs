@@ -1,11 +1,16 @@
 /*
- * Title: state.rs
+ * Name: state.rs
+ * Purpose: Application state managed by Tauri's state system (app.manage()).
+ * Description: WAL mode verified after activation. Foreign keys enabled for
+ *   cascade deletes. Migrations run from bundled SQL files at
+ *   startup. Provider router sits behind an RwLock so long-running
+ *   LLM calls (reads) never block each other; only provider
+ *   registration takes the write lock.
  * Tech Stack: Rust, Tauri v2, SQLite
- * Description: Application state managed by Tauri's state system (app.manage()).
- * Important Details: WAL mode verified after activation. Foreign keys enabled for
- *   cascade deletes. Migrations run from bundled SQL files at startup.
- *   Provider router sits behind an RwLock so long-running LLM calls (reads)
- *   never block each other; only provider registration takes the write lock.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use std::sync::{Mutex, MutexGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};

@@ -1,13 +1,18 @@
 /*
- * Title: globals.css
- * Tech Stack: Tailwind CSS 3.4, CSS Custom Properties
- * Description: Global styles, Tailwind directives, and design token definitions.
- * Important Details: Palette descends from ColorHunt (#EFECE3, #8FABD4, #4A70A9,
- *   #000000) with the blues deepened for presence and every text tier tuned to
- *   pass WCAG AA (4.5:1) on its backgrounds. Dark theme is default; light theme
- *   activates via data-theme="light" on <html>. Play for display, Source Serif 4
- *   for body, JetBrains Mono for code. Reduced-motion users get a global
+ * Name: globals.css
+ * Purpose: Global styles, Tailwind directives, and design token definitions.
+ * Description: Palette descends from ColorHunt (#EFECE3, #8FABD4, #4A70A9,
+ *   #000000) with the blues deepened for presence and every text
+ *   tier tuned to pass WCAG AA (4.5:1) on its backgrounds. Dark
+ *   theme is default; light theme activates via data-theme="light"
+ *   on <html>. Play for display, Source Serif 4 for body,
+ *   JetBrains Mono for code. Reduced-motion users get a global
  *   animation opt-out.
+ * Tech Stack: Tailwind CSS 3.4, CSS Custom Properties
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 @import "./editor.css";

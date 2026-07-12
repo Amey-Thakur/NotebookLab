@@ -1,15 +1,20 @@
 /*
- * Title: ipc_casing_tests.rs
+ * Name: ipc_casing_tests.rs
+ * Purpose: Guards the IPC argument-casing contract between the frontend and
+ *   the Tauri commands.
+ * Description: The frontend sends snake_case argument keys everywhere
+ *   (matching the snake_case wire format of all response models).
+ *   Tauri v2 maps command arguments to camelCase by default, which
+ *   silently breaks every multi-word argument at runtime; CI
+ *   cannot catch that through unit tests because vitest mocks
+ *   invoke() and cargo never runs the webview. This test therefore
+ *   enforces that every #[tauri::command] declares rename_all =
+ *   "snake_case".
  * Tech Stack: Rust, integration tests
- * Description: Guards the IPC argument-casing contract between the frontend
- *   and the Tauri commands.
- * Important Details: The frontend sends snake_case argument keys everywhere
- *   (matching the snake_case wire format of all response models). Tauri v2
- *   maps command arguments to camelCase by default, which silently breaks
- *   every multi-word argument at runtime; CI cannot catch that through unit
- *   tests because vitest mocks invoke() and cargo never runs the webview.
- *   This test therefore enforces that every #[tauri::command] declares
- *   rename_all = "snake_case".
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use std::path::PathBuf;

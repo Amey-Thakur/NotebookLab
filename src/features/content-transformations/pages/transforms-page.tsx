@@ -1,10 +1,15 @@
 /*
- * Title: transforms-page.tsx
+ * Name: transforms-page.tsx
+ * Purpose: Content transformations page.
+ * Description: Apply AI-powered transformations (summarize, extract key
+ *   points, custom prompts) to imported documents. Requires an
+ *   active notebook with processed documents. Results are
+ *   displayed inline and can be copied.
  * Tech Stack: React 19, TanStack Query, Tailwind CSS
- * Description: Content transformations page. Apply AI-powered transformations
- *   (summarize, extract key points, custom prompts) to imported documents.
- * Important Details: Requires an active notebook with processed documents.
- *   Results are displayed inline and can be copied.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useState } from "react";

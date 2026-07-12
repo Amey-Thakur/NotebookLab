@@ -1,7 +1,12 @@
 /*
- * Title: utils.test.ts
- * Tech Stack: Vitest
+ * Name: utils.test.ts
+ * Purpose: Tests for shared utility functions.
  * Description: Tests for shared utility functions.
+ * Tech Stack: Vitest
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { describe, it, expect, vi } from "vitest";

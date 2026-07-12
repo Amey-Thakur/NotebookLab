@@ -1,9 +1,14 @@
 /*
- * Title: chunking_tests.rs
+ * Name: chunking_tests.rs
+ * Purpose: Tests for the text chunking service used in the RAG pipeline.
+ * Description: Verifies chunk sizing, overlap behavior, edge cases (empty
+ *   input, single paragraph, very long text), and metadata
+ *   propagation.
  * Tech Stack: Rust, integration tests
- * Description: Tests for the text chunking service used in the RAG pipeline.
- * Important Details: Verifies chunk sizing, overlap behavior, edge cases
- *   (empty input, single paragraph, very long text), and metadata propagation.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use notebooklab_lib::services::chunking_service::chunk_text;

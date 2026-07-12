@@ -1,11 +1,16 @@
 /*
- * Title: document.rs
+ * Name: document.rs
+ * Purpose: Document domain model.
+ * Description: Represents an ingested file (PDF, DOCX, TXT, MD) within a
+ *   notebook, along with its processing status. The status field
+ *   tracks the ingestion pipeline state. Documents transition:
+ *   pending -> processing -> processed | error. The file_hash
+ *   column enables deduplication detection across notebooks.
  * Tech Stack: Rust, serde, rusqlite
- * Description: Document domain model. Represents an ingested file (PDF, DOCX, TXT, MD)
- *   within a notebook, along with its processing status.
- * Important Details: The status field tracks the ingestion pipeline state. Documents
- *   transition: pending -> processing -> processed | error. The file_hash column
- *   enables deduplication detection across notebooks.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use rusqlite::Row;

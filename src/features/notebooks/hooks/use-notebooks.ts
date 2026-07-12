@@ -1,9 +1,14 @@
 /*
- * Title: use-notebooks.ts
+ * Name: use-notebooks.ts
+ * Purpose: React Query hooks for notebook data fetching and mutations.
+ * Description: Query key uses QUERY_KEYS constant for cache isolation.
+ *   Mutations automatically invalidate the notebooks list after
+ *   success.
  * Tech Stack: React 19, TanStack Query
- * Description: React Query hooks for notebook data fetching and mutations.
- * Important Details: Query key uses QUERY_KEYS constant for cache isolation.
- *   Mutations automatically invalidate the notebooks list after success.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

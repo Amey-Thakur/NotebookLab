@@ -1,13 +1,18 @@
 /*
- * Title: local-server-card.tsx
- * Tech Stack: React 19, TanStack Query, Tailwind CSS
- * Description: Controls for the bundled llama-server. Start and stop the local
- *   AI server, see its state, and pick from downloaded GGUF models.
- * Important Details: This card closes the loop after a model download: without
- *   it the downloaded model could never power chat. Status polls faster while
- *   the server is starting (model load takes seconds to minutes). When the
- *   server reports ready the backend auto-activates it as the provider, so the
+ * Name: local-server-card.tsx
+ * Purpose: Controls for the bundled llama-server.
+ * Description: Start and stop the local AI server, see its state, and pick
+ *   from downloaded GGUF models. This card closes the loop after a
+ *   model download: without it the downloaded model could never
+ *   power chat. Status polls faster while the server is starting
+ *   (model load takes seconds to minutes). When the server reports
+ *   ready the backend auto-activates it as the provider, so the
  *   provider queries are invalidated here.
+ * Tech Stack: React 19, TanStack Query, Tailwind CSS
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useEffect } from "react";
