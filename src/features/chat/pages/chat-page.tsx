@@ -34,6 +34,7 @@ export function ChatPage() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -198,14 +199,35 @@ export function ChatPage() {
           {messages?.map((msg) => (
             <div
               key={msg.id}
-              className={`mb-4 p-4 max-w-[80%] ${
+              className={`group mb-4 p-4 max-w-[80%] ${
                 msg.role === "user"
                   ? "ml-auto bg-surface-2 border border-border"
                   : "mr-auto bg-surface border border-border"
               }`}
             >
-              <div className="text-xs font-mono text-text-4 mb-2">
-                {msg.role === "user" ? "You" : "NotebookLab"}
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-mono text-text-4">
+                  {msg.role === "user" ? "You" : "NotebookLab"}
+                </span>
+                {msg.role === "assistant" && (
+                  <button
+                    type="button"
+                    aria-label="Copy answer"
+                    onClick={() => {
+                      navigator.clipboard.writeText(msg.content).then(
+                        () => {
+                          setCopiedMessageId(msg.id);
+                          setTimeout(() => setCopiedMessageId(null), 1500);
+                        },
+                        () => setCopiedMessageId(null),
+                      );
+                    }}
+                    className="text-2xs font-mono text-text-4 opacity-0 group-hover:opacity-100
+                               focus-visible:opacity-100 hover:text-text-1 transition-opacity"
+                  >
+                    {copiedMessageId === msg.id ? "Copied" : "Copy"}
+                  </button>
+                )}
               </div>
               <div className="text-sm font-body text-text-2 whitespace-pre-wrap leading-relaxed">
                 {msg.content}

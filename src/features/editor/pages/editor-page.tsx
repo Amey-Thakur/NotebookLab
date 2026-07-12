@@ -1,14 +1,15 @@
 /*
  * Name: editor-page.tsx
  * Purpose: Full editor view for a single note: title, Milkdown editor,
- *   save-status indicator, and a backlinks panel.
+ *   live word count, Markdown export, save status, and backlinks.
  * Description: Auto-save runs debounced and flushes on unmount so the last
  *   edit is never dropped. Every successful save writes the fresh
  *   note back into the query cache; without that, the 5-minute
  *   staleTime could resurrect old content and silently overwrite
  *   newer edits. Save failures surface in the status indicator
  *   instead of dying in the console. Clicking a [[wiki-link]]
- *   resolves (or creates) the target note.
+ *   resolves (or creates) the target note. Export writes the
+ *   Markdown to a user-chosen path via the native save dialog.
  * Tech Stack: React 19, React Router, Milkdown, TanStack Query
  * License: MIT
  * Authors: Amey Thakur (https://github.com/Amey-Thakur)
@@ -19,9 +20,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { save } from "@tauri-apps/plugin-dialog";
 
 import { tauriInvoke } from "@/services/tauri-client";
-import { debounce } from "@/lib/utils";
+import { countWords, debounce } from "@/lib/utils";
 import { formatError } from "@/lib/format-error";
 import { EDITOR_AUTOSAVE_MS, QUERY_KEYS } from "@/lib/constants";
 
@@ -66,6 +68,8 @@ function NoteEditor({ note }: { note: Note }) {
   const [title, setTitle] = useState(note.title);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [wordCount, setWordCount] = useState(() => countWords(note.content));
+  const [exported, setExported] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -109,6 +113,7 @@ function NoteEditor({ note }: { note: Note }) {
 
   const handleContentChange = useCallback(
     (markdown: string) => {
+      setWordCount(countWords(markdown));
       saveContent(note.id, markdown);
     },
     [note.id, saveContent],
@@ -152,6 +157,26 @@ function NoteEditor({ note }: { note: Note }) {
     [note.notebook_id, navigate],
   );
 
+  /* Export the note as a Markdown file wherever the user chooses.
+     The native dialog handles location and overwrite confirmation. */
+  const exportNote = useCallback(async () => {
+    try {
+      const filePath = await save({
+        defaultPath: `${title.trim() || "note"}.md`,
+        filters: [{ name: "Markdown", extensions: ["md"] }],
+      });
+      if (!filePath) return;
+
+      saveContentRef.current.flush();
+      await tauriInvoke("export_note", { id: note.id, file_path: filePath });
+      setExported(true);
+      setTimeout(() => setExported(false), 1500);
+    } catch (e) {
+      setSaveState("error");
+      setSaveError(formatError(e));
+    }
+  }, [note.id, title]);
+
   return (
     <div className="flex flex-col h-full">
       <div className="px-8 pt-6 flex items-baseline gap-3">
@@ -165,6 +190,17 @@ function NoteEditor({ note }: { note: Note }) {
                      border-none outline-none focus-visible:underline placeholder:text-text-4"
           placeholder="Untitled"
         />
+        <span className="text-2xs font-mono text-text-4 shrink-0" aria-label={`${wordCount} words`}>
+          {wordCount} {wordCount === 1 ? "word" : "words"}
+        </span>
+        <button
+          type="button"
+          onClick={exportNote}
+          className="shrink-0 px-2 py-0.5 text-2xs font-mono border border-border text-text-3
+                     hover:text-text-1 hover:border-accent-dim transition-colors"
+        >
+          {exported ? "Exported" : "Export .md"}
+        </button>
         <SaveIndicator state={saveState} error={saveError} />
       </div>
 

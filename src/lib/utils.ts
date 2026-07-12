@@ -24,6 +24,16 @@ export function cn(...inputs: ClassValue[]) {
 
 
 /**
+ * Count words in a Markdown string for the editor's live statistics.
+ * Markdown punctuation-only tokens (like ##, ---, *) do not count as words.
+ */
+export function countWords(text: string): number {
+  const tokens = text.split(/\s+/).filter((t) => /[\p{L}\p{N}]/u.test(t));
+  return tokens.length;
+}
+
+
+/**
  * Format byte count into human-readable string.
  */
 export function formatBytes(bytes: number, decimals = 1): string {

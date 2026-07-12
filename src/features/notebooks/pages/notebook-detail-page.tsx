@@ -68,6 +68,22 @@ export function NotebookDetailPage() {
     },
   });
 
+  const renameNotebook = useMutation({
+    mutationFn: (name: string) =>
+      tauriInvoke<Notebook>("update_notebook", { id, input: { name } }),
+    onSuccess: (fresh) => {
+      queryClient.setQueryData([QUERY_KEYS.NOTEBOOKS, id], fresh);
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.NOTEBOOKS] });
+    },
+  });
+
+  const saveNotebookName = (value: string) => {
+    const name = value.trim();
+    if (name && name !== notebook?.name) {
+      renameNotebook.mutate(name);
+    }
+  };
+
   const importDoc = useImportDocument(id);
 
   const handleImport = async () => {
@@ -88,9 +104,23 @@ export function NotebookDetailPage() {
           >
             &larr; All Notebooks
           </button>
-          <h1 className="text-2xl font-display font-bold text-text-1">
-            {notebook?.name || "Notebook"}
-          </h1>
+          {/* The heading is editable in place; blur or Enter saves the name */}
+          <input
+            key={notebook?.name}
+            type="text"
+            defaultValue={notebook?.name ?? ""}
+            aria-label="Notebook name, edit and press Enter to rename"
+            onBlur={(e) => saveNotebookName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+            }}
+            className="w-full text-2xl font-display font-bold text-text-1 bg-transparent
+                       border-none outline-none focus-visible:underline placeholder:text-text-4"
+            placeholder="Notebook"
+          />
+          {renameNotebook.isError && (
+            <p role="alert" className="text-xs text-error mt-1">{formatError(renameNotebook.error)}</p>
+          )}
         </div>
         <div className="flex gap-2">
           <button

@@ -99,6 +99,7 @@ pub fn run() {
             commands::note_commands::search_notes,
             commands::note_commands::get_backlinks,
             commands::note_commands::resolve_wiki_link,
+            commands::note_commands::export_note,
             commands::document_commands::import_document,
             commands::document_commands::list_documents,
             commands::document_commands::get_document,
