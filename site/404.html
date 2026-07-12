@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page not found · NotebookLab</title>
+  <meta name="description" content="This page wandered off the notebook.">
+  <meta name="color-scheme" content="dark light">
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Play:wght@400;700&family=Source+Serif+4:wght@400&display=swap" rel="stylesheet">
+  <script>
+    /* Same theme memory as the rest of the site, applied before first paint */
+    (function () {
+      try {
+        var stored = localStorage.getItem("notebooklab-site-theme");
+        var theme = stored === "light" || stored === "dark"
+          ? stored
+          : (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+        document.documentElement.setAttribute("data-theme", theme);
+      } catch (_) { document.documentElement.setAttribute("data-theme", "dark"); }
+    })();
+  </script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#08090a;--card:#131517;--border:#1e2024;
+      --text:#e6e2dc;--dim:#8a857f;
+      --accent:#3568c8;--accent-light:#8fb5f0;
+      color-scheme:dark
+    }
+    [data-theme="light"]{
+      --bg:#EFECE3;--card:#F5F3EC;--border:#CCC8BC;
+      --text:#141414;--dim:#5d5852;
+      --accent:#2f62b8;--accent-light:#274f96;
+      color-scheme:light
+    }
+    body{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--text);font-family:'Play',sans-serif;-webkit-font-smoothing:antialiased;padding:32px}
+    main{text-align:center;max-width:440px}
+    .mark{width:72px;height:72px;margin:0 auto 28px;opacity:.95}
+    h1{font-size:clamp(56px,14vw,88px);font-weight:700;line-height:1;color:var(--accent-light);letter-spacing:-2px}
+    p{font-family:'Source Serif 4',serif;font-size:17px;line-height:1.6;color:var(--dim);margin:16px 0 32px}
+    .actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+    a{font-size:14px;font-weight:700;text-decoration:none;padding:12px 24px;border-radius:6px;transition:opacity .2s,border-color .2s,color .2s}
+    .home{background:var(--accent);color:#fff}
+    .home:hover{opacity:.88}
+    .gh{border:1px solid var(--border);color:var(--dim)}
+    .gh:hover{border-color:var(--accent);color:var(--text)}
+    @media(prefers-reduced-motion:reduce){*{transition-duration:.01ms !important}}
+  </style>
+</head>
+<body>
+
+<!-- Even our missing pages keep their margins tidy. -->
+
+<main>
+  <svg class="mark" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="nl-page" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#4a7dd6"/>
+        <stop offset="1" stop-color="#2b57a8"/>
+      </linearGradient>
+      <linearGradient id="nl-back" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#8fb5f0"/>
+        <stop offset="1" stop-color="#4a7dd6"/>
+      </linearGradient>
+      <radialGradient id="nl-halo">
+        <stop offset="0" stop-color="#bcd7ff" stop-opacity=".9"/>
+        <stop offset="1" stop-color="#bcd7ff" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect x="18" y="8" width="34" height="46" rx="5" fill="url(#nl-back)" opacity=".45"/>
+    <rect x="12" y="13" width="34" height="46" rx="5" fill="url(#nl-page)"/>
+    <rect x="12" y="13" width="5" height="46" rx="2.5" fill="#ffffff" opacity=".14"/>
+    <rect x="21" y="22" width="18" height="3" rx="1.5" fill="#eaf1ff" opacity=".95"/>
+    <rect x="21" y="29" width="14" height="3" rx="1.5" fill="#eaf1ff" opacity=".75"/>
+    <rect x="21" y="36" width="16" height="3" rx="1.5" fill="#eaf1ff" opacity=".55"/>
+    <circle cx="40" cy="48" r="10" fill="url(#nl-halo)"/>
+    <circle cx="40" cy="48" r="5" fill="#bcd7ff"/>
+    <circle cx="40" cy="48" r="2.2" fill="#1d3f7e"/>
+  </svg>
+
+  <h1>404</h1>
+  <p>This page wandered off the notebook. The good ideas are all still on the front page.</p>
+
+  <div class="actions">
+    <a class="home" href="/NotebookLab/">Back to NotebookLab</a>
+    <a class="gh" href="https://github.com/Amey-Thakur/NotebookLab">View source</a>
+  </div>
+</main>
+
+<script>
+  console.log(
+    '%c404%c Even this page respects your privacy. Nothing was tracked on the way here.\nhttps://github.com/Amey-Thakur/NotebookLab',
+    'font:700 20px Play,sans-serif;color:#4a7dd6','font:13px monospace;color:#8a857f'
+  );
+</script>
+
+</body>
+</html>
