@@ -53,8 +53,9 @@ pub fn download_default_model(app: tauri::AppHandle) -> AppResult<String> {
 /// Download a GGUF model from a URL. If url is None, uses the default model.
 /// Progress is reported via "model-download-progress" Tauri events.
 /// Returns the expected output path (file may not exist yet if download is async).
-#[tauri::command(rename_all = "snake_case")]
-pub fn download_model(
+/// Internal helper behind download_default_model; not exposed over IPC because
+/// no interface offers custom model URLs yet.
+fn download_model(
     app: tauri::AppHandle,
     url: Option<String>,
     filename: Option<String>,

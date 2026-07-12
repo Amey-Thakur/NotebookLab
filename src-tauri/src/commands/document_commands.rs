@@ -68,12 +68,6 @@ pub fn list_documents(state: State<'_, AppState>, notebook_id: String) -> AppRes
 }
 
 #[tauri::command(rename_all = "snake_case")]
-pub fn get_document(state: State<'_, AppState>, id: String) -> AppResult<Document> {
-    let conn = state.conn()?;
-    document_repository::get_by_id(&conn, &id)
-}
-
-#[tauri::command(rename_all = "snake_case")]
 pub fn delete_document(state: State<'_, AppState>, id: String) -> AppResult<()> {
     let conn = state.conn()?;
     document_repository::delete(&conn, &id)
