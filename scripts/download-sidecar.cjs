@@ -1,16 +1,22 @@
 /*
- * Title: download-sidecar.cjs
+ * Name: download-sidecar.cjs
+ * Purpose: Downloads the pre-built llama-server binary and its shared
+ *   libraries for the current platform.
+ * Description: The binary lands in src-tauri/binaries/ with Tauri's
+ *   {name}-{target-triple} naming; the libraries land in
+ *   src-tauri/binaries/libs/ and are bundled as resources. Fetches
+ *   from the official llama.cpp GitHub releases and verifies the
+ *   archive against a pinned SHA256 before extracting. The release
+ *   binaries link against shared libraries shipped in the same
+ *   archive (ggml*.dll / *.dylib / *.so); shipping the binary
+ *   alone leaves the local AI server unable to start. Run before
+ *   `cargo tauri build` or `cargo tauri dev`; skipped
+ *   automatically when files already exist.
  * Tech Stack: Node.js
- * Description: Downloads the pre-built llama-server binary and its shared
- *   libraries for the current platform. The binary lands in src-tauri/binaries/
- *   with Tauri's {name}-{target-triple} naming; the libraries land in
- *   src-tauri/binaries/libs/ and are bundled as resources.
- * Important Details: Fetches from the official llama.cpp GitHub releases and
- *   verifies the archive against a pinned SHA256 before extracting. The
- *   release binaries link against shared libraries shipped in the same
- *   archive (ggml*.dll / *.dylib / *.so); shipping the binary alone leaves
- *   the local AI server unable to start. Run before `cargo tauri build` or
- *   `cargo tauri dev`; skipped automatically when files already exist.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 const crypto = require("crypto");
@@ -57,12 +63,18 @@ const PLATFORM_MAP = {
 /* Shared library files the server binary loads at runtime */
 const LIBRARY_PATTERN = /\.(dll|dylib|so(\.\d+)*)$/;
 
-const platformKey = `${process.platform}-${process.arch}`;
-const config = PLATFORM_MAP[platformKey];
+/* SIDECAR_TRIPLE overrides host detection for cross-compiled builds.
+   Intel macOS installers are built on ARM runners (GitHub retired the
+   Intel fleet), so the build passes the Rust target triple explicitly. */
+const tripleOverride = process.env.SIDECAR_TRIPLE;
+const platformKey = tripleOverride
+  ? Object.keys(PLATFORM_MAP).find((k) => PLATFORM_MAP[k].triple === tripleOverride)
+  : `${process.platform}-${process.arch}`;
+const config = platformKey ? PLATFORM_MAP[platformKey] : undefined;
 
 if (!config) {
-  console.error(`Unsupported platform: ${platformKey}`);
-  console.error(`Supported: ${Object.keys(PLATFORM_MAP).join(", ")}`);
+  console.error(`Unsupported platform: ${tripleOverride || platformKey}`);
+  console.error(`Supported triples: ${Object.values(PLATFORM_MAP).map((p) => p.triple).join(", ")}`);
   process.exit(1);
 }
 
