@@ -39,7 +39,12 @@ pub fn get_api_token(state: tauri::State<'_, crate::state::AppState>) -> String 
 
 /// Relaunch the app so a downloaded update takes effect.
 /// Only offered by the status bar after the updater stages a new version.
+/// The sidecar is stopped explicitly first so the relaunched app never
+/// collides with an orphaned llama-server holding its port.
 #[tauri::command(rename_all = "snake_case")]
 pub fn restart_app(app: AppHandle) {
+    if let Some(sidecar) = app.try_state::<crate::services::sidecar_service::SidecarManager>() {
+        sidecar.shutdown();
+    }
     app.restart();
 }
