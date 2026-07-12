@@ -1,17 +1,21 @@
-##
-## Title: release.yml
+## Name: release.yml
+## Purpose: Release pipeline.
+## Description: Builds signed installers for Windows, macOS, and Linux, then
+##   publishes the release automatically. Triggered by version tags
+##   (v*). A guard job fails fast if the tag does not match the
+##   versions committed in package.json, Cargo.toml, and
+##   tauri.conf.json, which would otherwise ship mislabeled
+##   artifacts and a latest.json the updater ignores. Builds
+##   accumulate on a draft release; the publish job adds SHA256SUMS
+##   and flips the draft live only after every platform succeeds,
+##   so users never see a half-populated release and the updater
+##   endpoint (releases/latest/download/latest.json) always
+##   resolves. Third-party actions are pinned to commit SHAs.
 ## Tech Stack: GitHub Actions, Tauri v2, tauri-action
-## Description: Release pipeline. Builds signed installers for Windows, macOS,
-##   and Linux, then publishes the release automatically.
-## Important Details: Triggered by version tags (v*). A guard job fails fast if
-##   the tag does not match the versions committed in package.json, Cargo.toml,
-##   and tauri.conf.json, which would otherwise ship mislabeled artifacts and a
-##   latest.json the updater ignores. Builds accumulate on a draft release;
-##   the publish job adds SHA256SUMS and flips the draft live only after every
-##   platform succeeds, so users never see a half-populated release and the
-##   updater endpoint (releases/latest/download/latest.json) always resolves.
-##   Third-party actions are pinned to commit SHAs.
-##
+## License: MIT
+## Authors: Amey Thakur (https://github.com/Amey-Thakur)
+##          Archit Konde (https://github.com/Archit-Konde)
+## Date: 2026-07-12
 
 name: Release
 
@@ -45,7 +49,7 @@ jobs:
           if [ "$TAG_VERSION" != "$PKG_VERSION" ] || \
              [ "$TAG_VERSION" != "$CONF_VERSION" ] || \
              [ "$TAG_VERSION" != "$CARGO_VERSION" ]; then
-            echo "::error::Tag $GITHUB_REF_NAME does not match the committed versions. Bump them first (see RELEASING.md)."
+            echo "::error::Tag $GITHUB_REF_NAME does not match the committed versions. Bump them first (see docs/RELEASING.md)."
             exit 1
           fi
 
@@ -61,8 +65,10 @@ jobs:
             runner: windows-latest
             target: x86_64-pc-windows-msvc
 
+          # Intel macOS cross-compiles on the ARM runner; GitHub retired
+          # the macos-13 Intel fleet and those jobs queue forever.
           - platform: macos-intel
-            runner: macos-13
+            runner: macos-latest
             target: x86_64-apple-darwin
 
           - platform: macos-arm
@@ -101,6 +107,8 @@ jobs:
         run: npm ci
 
       - name: Download llama-server sidecar (checksum verified)
+        env:
+          SIDECAR_TRIPLE: ${{ matrix.target }}
         run: npm run sidecar:download
 
       - name: Build Tauri app
