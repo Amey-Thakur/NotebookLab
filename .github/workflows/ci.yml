@@ -2,8 +2,10 @@
 ## Title: ci.yml
 ## Tech Stack: GitHub Actions, Node.js, Rust, Tauri v2
 ## Description: Continuous integration pipeline. Runs on every push and PR.
-## Important Details: Backend job builds the frontend first because Tauri's proc macro
-##   validates that frontendDist exists at compile time.
+## Important Details: Backend job builds the frontend first because Tauri's proc
+##   macro validates that frontendDist exists at compile time. Third-party
+##   actions are pinned to commit SHAs. The vitest suite runs on all three
+##   desktop platforms in the backend job, not just Linux.
 ##
 
 name: CI
@@ -27,9 +29,9 @@ jobs:
     name: Frontend (lint + typecheck + build)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -47,25 +49,26 @@ jobs:
         run: npm run build
 
   backend:
-    name: Backend (check + clippy)
+    name: Backend (fmt + check + clippy + test)
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable
         with:
-          components: clippy
+          toolchain: stable
+          components: clippy, rustfmt
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           workspaces: src-tauri
 
@@ -80,18 +83,26 @@ jobs:
           npm ci
           npm run build
 
+      - name: Frontend tests
+        run: npm test
+
       - name: Create placeholder sidecar binary
         shell: bash
         run: |
-          # Tauri validates sidecar binaries exist at compile time.
-          # Create a placeholder so cargo check passes in CI.
-          mkdir -p src-tauri/binaries
+          # Tauri validates sidecar binaries and resources exist at compile time.
+          # Create placeholders so cargo check passes without the real download.
+          mkdir -p src-tauri/binaries/libs
+          touch src-tauri/binaries/libs/.placeholder
           TARGET=$(rustc --print host-tuple 2>/dev/null || rustc -vV | grep host | awk '{print $2}')
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             touch "src-tauri/binaries/llama-server-${TARGET}.exe"
           else
             touch "src-tauri/binaries/llama-server-${TARGET}"
           fi
+
+      - name: Cargo fmt
+        working-directory: src-tauri
+        run: cargo fmt --all -- --check
 
       - name: Cargo check
         working-directory: src-tauri

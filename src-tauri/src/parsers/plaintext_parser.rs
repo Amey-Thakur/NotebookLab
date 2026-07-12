@@ -14,12 +14,9 @@ use crate::error::{AppError, AppResult};
 
 use super::traits::{DocumentParser, ParsedDocument, ParsedPage};
 
-
 const MAX_FILE_SIZE: u64 = 50 * 1024 * 1024; // 50MB
 
-
 pub struct PlaintextParser;
-
 
 impl DocumentParser for PlaintextParser {
     fn supported_extensions(&self) -> &[&str] {

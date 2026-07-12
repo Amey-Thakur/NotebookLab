@@ -9,9 +9,12 @@
  */
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
+import { ROUTES } from "@/lib/constants";
+import { formatError } from "@/lib/format-error";
 import { useNotebookStore } from "@/stores/notebook-store";
 
 
@@ -44,7 +47,13 @@ export function ThinkingPartnerPage() {
     return (
       <div className="flex flex-col items-center justify-center h-full text-text-3 p-8">
         <p className="text-lg mb-2">No notebook selected</p>
-        <p className="text-sm text-text-4">Open a notebook first to use the Thinking Partner.</p>
+        <p className="text-sm text-text-4 mb-4">Open a notebook first to use the Thinking Partner.</p>
+        <Link
+          to={ROUTES.NOTEBOOKS}
+          className="px-4 py-2 text-sm font-mono border border-border text-text-2 hover:border-accent-dim transition-colors"
+        >
+          Go to Notebooks
+        </Link>
       </div>
     );
   }
@@ -55,16 +64,17 @@ export function ThinkingPartnerPage() {
         <h1 className="text-2xl font-display font-bold text-text-1 mb-4">Thinking Partner</h1>
 
         {/* Mode toggle */}
-        <div className="flex gap-1 mb-4">
+        <div className="flex gap-1 mb-4" role="group" aria-label="Thinking mode">
           {([["mindmap", "Mind Map"], ["socratic", "Socratic"]] as const).map(([m, label]) => (
             <button
               key={m}
               type="button"
+              aria-pressed={mode === m}
               onClick={() => { setMode(m); setResult(null); }}
               className={`px-4 py-2 text-sm font-mono border transition-colors ${
                 mode === m
                   ? "border-accent-dim text-text-1 bg-surface-2"
-                  : "border-border text-text-3"
+                  : "border-border text-text-3 hover:text-text-1"
               }`}
             >
               {label}
@@ -80,6 +90,7 @@ export function ThinkingPartnerPage() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && input.trim() && generate.mutate(input.trim())}
             placeholder={mode === "mindmap" ? "Topic for mind map..." : "Describe your current thinking..."}
+            aria-label={mode === "mindmap" ? "Topic for mind map" : "Describe your current thinking"}
             className="flex-1 px-4 py-3 text-sm bg-surface border border-border text-text-1
                        placeholder:text-text-4 outline-none focus:border-accent-dim"
           />
@@ -97,14 +108,14 @@ export function ThinkingPartnerPage() {
       {/* Results */}
       <div className="flex-1 overflow-auto px-8 py-4">
         {generate.isPending && (
-          <div className="text-sm text-text-3 animate-pulse">
+          <div className="text-sm text-text-3 animate-pulse motion-reduce:animate-none">
             {mode === "mindmap" ? "Generating mind map..." : "Thinking of questions..."}
           </div>
         )}
 
         {generate.isError && (
-          <div className="p-3 border border-error text-xs text-error">
-            {String(generate.error)}
+          <div role="alert" className="p-3 border border-error text-xs text-error">
+            {formatError(generate.error)}
           </div>
         )}
 

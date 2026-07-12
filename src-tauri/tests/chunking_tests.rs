@@ -8,20 +8,20 @@
 
 use notebooklab_lib::services::chunking_service::chunk_text;
 
-
 #[test]
 fn empty_text_produces_no_chunks() {
     let chunks = chunk_text("doc1", "", None, "");
     assert!(chunks.is_empty(), "Empty text should produce no chunks");
 }
 
-
 #[test]
 fn whitespace_only_produces_no_chunks() {
     let chunks = chunk_text("doc1", "   \n\n   \n\n   ", None, "");
-    assert!(chunks.is_empty(), "Whitespace-only text should produce no chunks");
+    assert!(
+        chunks.is_empty(),
+        "Whitespace-only text should produce no chunks"
+    );
 }
-
 
 #[test]
 fn single_short_paragraph_becomes_one_chunk() {
@@ -37,23 +37,28 @@ fn single_short_paragraph_becomes_one_chunk() {
     assert!(chunks[0].token_count > 0);
 }
 
-
 #[test]
 fn long_text_splits_into_multiple_chunks() {
     /* Generate text with multiple paragraphs that exceed the ~400 token target.
-       The chunker splits on double-newlines, so each paragraph must be separated. */
+    The chunker splits on double-newlines, so each paragraph must be separated. */
     let paragraph = "This is a paragraph with enough words to contribute to the token count for testing purposes in the chunking service.";
     let paragraphs: Vec<&str> = (0..50).map(|_| paragraph).collect();
     let text = paragraphs.join("\n\n");
 
     let chunks = chunk_text("doc1", &text, None, "");
 
-    assert!(chunks.len() > 1, "Long text should split into multiple chunks");
+    assert!(
+        chunks.len() > 1,
+        "Long text should split into multiple chunks"
+    );
 
     /* Each chunk should have reasonable token counts */
     for chunk in &chunks {
         assert!(!chunk.content.is_empty(), "No chunk should be empty");
-        assert!(chunk.token_count > 0, "Each chunk should have positive token count");
+        assert!(
+            chunk.token_count > 0,
+            "Each chunk should have positive token count"
+        );
     }
 
     /* Positions should be sequential */
@@ -61,7 +66,6 @@ fn long_text_splits_into_multiple_chunks() {
         assert_eq!(chunk.position, i as i32, "Positions should be sequential");
     }
 }
-
 
 #[test]
 fn chunks_preserve_document_id() {
@@ -73,7 +77,6 @@ fn chunks_preserve_document_id() {
     }
 }
 
-
 #[test]
 fn chunks_preserve_heading_context() {
     let text = "Some content about machine learning.";
@@ -81,7 +84,6 @@ fn chunks_preserve_heading_context() {
 
     assert_eq!(chunks[0].heading_context, "Chapter 1: Intro");
 }
-
 
 #[test]
 fn multiple_paragraphs_within_limit_stay_together() {
@@ -94,7 +96,6 @@ fn multiple_paragraphs_within_limit_stay_together() {
     assert!(chunks[0].content.contains("two"));
     assert!(chunks[0].content.contains("three"));
 }
-
 
 #[test]
 fn page_number_propagates_to_all_chunks() {

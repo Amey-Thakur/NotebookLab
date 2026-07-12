@@ -2,9 +2,12 @@
  * Title: globals.css
  * Tech Stack: Tailwind CSS 3.4, CSS Custom Properties
  * Description: Global styles, Tailwind directives, and design token definitions.
- * Important Details: Color palette from ColorHunt (#EFECE3, #8FABD4, #4A70A9, #000000).
- *   Dark theme is default. Light theme activated via data-theme="light" on <html>.
- *   Uses Play for display, Source Serif 4 for body, JetBrains Mono for code.
+ * Important Details: Palette descends from ColorHunt (#EFECE3, #8FABD4, #4A70A9,
+ *   #000000) with the blues deepened for presence and every text tier tuned to
+ *   pass WCAG AA (4.5:1) on its backgrounds. Dark theme is default; light theme
+ *   activates via data-theme="light" on <html>. Play for display, Source Serif 4
+ *   for body, JetBrains Mono for code. Reduced-motion users get a global
+ *   animation opt-out.
  */
 
 @import "./editor.css";
@@ -75,7 +78,9 @@
 
 @layer base {
 
-  /* ---- DARK THEME (default) ---- */
+  /* ---- DARK THEME (default) ----
+     text-2/3/4 all clear 4.5:1 on bg and surface; text-4 is the floor for
+     informational text (status bar, hints), never below it. */
   :root,
   [data-theme="dark"] {
     --color-bg: #111111;
@@ -84,14 +89,14 @@
     --color-surface-3: #222222;
     --color-border: #2a2a2a;
     --color-border-hover: #3a3a3a;
-    --color-text-1: #e6e2dc;
-    --color-text-2: #a8a29e;
-    --color-text-3: #6b6560;
-    --color-text-4: #44403c;
-    --color-accent: #8FABD4;
-    --color-accent-dim: #4A70A9;
-    --color-mark: #4A70A9;
-    --color-error: #9A4040;
+    --color-text-1: #eae6e0;
+    --color-text-2: #bfb9b2;
+    --color-text-3: #a09a93;
+    --color-text-4: #8a847d;
+    --color-accent: #8ab2ea;
+    --color-accent-dim: #3f6cb5;
+    --color-mark: #5f8ed6;
+    --color-error: #d97f7a;
   }
 
   /* ---- LIGHT THEME ---- */
@@ -104,12 +109,12 @@
     --color-border-hover: #B0ACA0;
     --color-text-1: #000000;
     --color-text-2: #333333;
-    --color-text-3: #6B6660;
-    --color-text-4: #9A958E;
-    --color-accent: #4A70A9;
-    --color-accent-dim: #3A5A8A;
-    --color-mark: #4A70A9;
-    --color-error: #9A4040;
+    --color-text-3: #5d5852;
+    --color-text-4: #6f6a63;
+    --color-accent: #2f62b8;
+    --color-accent-dim: #274f96;
+    --color-mark: #2f62b8;
+    --color-error: #8f3a3a;
   }
 
 
@@ -122,6 +127,24 @@
     font-family: "Play", sans-serif;
     background-color: var(--color-bg);
     color: var(--color-text-1);
+  }
+
+  /* Keyboard focus is always visible, everywhere, without hurting mouse use */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+  }
+
+  /* Respect users who ask the OS for less motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 
   /* Prevent text selection during window drag */

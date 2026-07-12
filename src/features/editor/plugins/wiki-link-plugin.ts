@@ -3,10 +3,10 @@
  * Tech Stack: TypeScript, ProseMirror, Milkdown
  * Description: Custom Milkdown plugin that detects [[wiki-link]] syntax in the editor
  *   and renders them as styled inline links.
- * Important Details: This is a lightweight text-decoration approach. When the user types
- *   [[, text until ]] is styled as a link. Clicking a wiki-link navigates to the
- *   referenced note (or creates it). Full ProseMirror node-based wiki-links would
- *   require a remark plugin for proper AST integration (Phase 2).
+ * Important Details: This is a lightweight text-decoration approach. When the user
+ *   types [[, text until ]] is styled as a link and tagged with data-note-title.
+ *   Click navigation is handled by MilkdownEditor via event delegation on the
+ *   editor root, which resolves or creates the target note.
  */
 
 import { Plugin, PluginKey } from "@milkdown/kit/prose/state";

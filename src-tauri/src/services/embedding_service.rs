@@ -6,19 +6,77 @@
  * Important Details: This is a brute-force approach that works well up to ~50K chunks.
  *   For larger corpora, swap to sqlite-vec or HNSW index. Embeddings are generated
  *   by the active LLM provider via /v1/embeddings (Ollama, llama.cpp, OpenAI all support it).
+ *   The background pass after import is best-effort: without an embedding-capable
+ *   provider the app simply stays on keyword search.
  */
 
 use rusqlite::{params, Connection};
+use tauri::Manager;
 
 use crate::error::AppResult;
 
+/// Embed all chunks of a document on a background thread.
+/// Holds the provider read lock only per chunk and the DB lock only per write,
+/// so chat and search stay responsive while a document is being indexed.
+pub fn spawn_embedding_pass(app: tauri::AppHandle, document_id: String) {
+    std::thread::spawn(move || {
+        let state: tauri::State<'_, crate::state::AppState> = app.state();
+
+        /* Snapshot chunk ids and content under a short DB lock */
+        let chunks: Vec<(String, String)> = {
+            let Ok(conn) = state.conn() else { return };
+            match crate::database::repository::chunk_repository::get_by_document(
+                &conn,
+                &document_id,
+            ) {
+                Ok(rows) => rows.into_iter().map(|c| (c.id, c.content)).collect(),
+                Err(e) => {
+                    tracing::warn!("Embedding pass: could not load chunks: {e}");
+                    return;
+                }
+            }
+        };
+
+        let mut embedded = 0usize;
+        for (chunk_id, content) in &chunks {
+            let vector = {
+                let Ok(providers) = state.provider_read() else {
+                    return;
+                };
+                match providers.embed(content) {
+                    Ok(Some(v)) if !v.is_empty() => v,
+                    /* Provider has no embedding support: stop quietly, keyword
+                    search remains fully functional. */
+                    _ => {
+                        if embedded == 0 {
+                            tracing::info!(
+                                "Embedding pass skipped: active provider has no /v1/embeddings"
+                            );
+                        }
+                        break;
+                    }
+                }
+            };
+
+            let Ok(conn) = state.conn() else { return };
+            if let Err(e) = store_embedding(&conn, chunk_id, &vector) {
+                tracing::warn!("Embedding pass: store failed for chunk {chunk_id}: {e}");
+                break;
+            }
+            embedded += 1;
+        }
+
+        if embedded > 0 {
+            tracing::info!(
+                "Embedded {embedded}/{} chunks for document {document_id}",
+                chunks.len()
+            );
+        }
+    });
+}
 
 /// Store an embedding vector for a chunk.
-pub fn store_embedding(
-    conn: &Connection,
-    chunk_id: &str,
-    vector: &[f32],
-) -> AppResult<()> {
+pub fn store_embedding(conn: &Connection, chunk_id: &str, vector: &[f32]) -> AppResult<()> {
     let blob = floats_to_blob(vector);
     let dims = vector.len() as i32;
 
@@ -29,7 +87,6 @@ pub fn store_embedding(
 
     Ok(())
 }
-
 
 /// Find the top-k most similar chunks by cosine similarity.
 /// Returns (chunk_id, similarity_score) pairs sorted by descending similarity.
@@ -45,7 +102,7 @@ pub fn search_similar(
          FROM embeddings e
          INNER JOIN chunks c ON e.chunk_id = c.id
          INNER JOIN documents d ON c.document_id = d.id
-         WHERE d.notebook_id = ?1"
+         WHERE d.notebook_id = ?1",
     )?;
 
     let rows = stmt.query_map(params![notebook_id], |row| {
@@ -75,7 +132,6 @@ pub fn search_similar(
     Ok(scored)
 }
 
-
 /// Check if embeddings exist for any chunks in a notebook.
 pub fn has_embeddings(conn: &Connection, notebook_id: &str) -> AppResult<bool> {
     let count: i64 = conn.query_row(
@@ -89,7 +145,6 @@ pub fn has_embeddings(conn: &Connection, notebook_id: &str) -> AppResult<bool> {
     )?;
     Ok(count > 0)
 }
-
 
 /// Cosine similarity between two vectors. Returns value in [-1, 1].
 fn cosine_similarity(a: &[f32], b: &[f32]) -> f64 {
@@ -106,9 +161,12 @@ fn cosine_similarity(a: &[f32], b: &[f32]) -> f64 {
     }
 
     let denominator = norm_a.sqrt() * norm_b.sqrt();
-    if denominator == 0.0 { 0.0 } else { dot / denominator }
+    if denominator == 0.0 {
+        0.0
+    } else {
+        dot / denominator
+    }
 }
-
 
 /// Convert a float32 slice to a byte blob for SQLite storage.
 fn floats_to_blob(floats: &[f32]) -> Vec<u8> {
@@ -119,7 +177,6 @@ fn floats_to_blob(floats: &[f32]) -> Vec<u8> {
     bytes
 }
 
-
 /// Convert a byte blob back to float32 values.
 fn blob_to_floats(blob: &[u8], expected_dims: usize) -> Vec<f32> {
     let mut floats = Vec::with_capacity(expected_dims);
@@ -129,7 +186,6 @@ fn blob_to_floats(blob: &[u8], expected_dims: usize) -> Vec<f32> {
     }
     floats
 }
-
 
 #[cfg(test)]
 mod tests {

@@ -5,7 +5,9 @@
  *   heading detection for chunk metadata.
  * Important Details: Uses pdf-extract for text extraction. Falls back gracefully
  *   on encrypted or image-only PDFs with a clear error message. File size capped
- *   at 50MB to prevent memory exhaustion.
+ *   at 50MB to prevent memory exhaustion. Extraction runs inside catch_unwind
+ *   because pdf-extract panics on some malformed files; a bad import must fail
+ *   with an error, never take down the whole app.
  */
 
 use std::path::Path;
@@ -14,12 +16,9 @@ use crate::error::{AppError, AppResult};
 
 use super::traits::{DocumentParser, ParsedDocument, ParsedPage};
 
-
 const MAX_FILE_SIZE: u64 = 50 * 1024 * 1024;
 
-
 pub struct PdfParser;
-
 
 impl DocumentParser for PdfParser {
     fn supported_extensions(&self) -> &[&str] {
@@ -39,10 +38,18 @@ impl DocumentParser for PdfParser {
 
         let bytes = std::fs::read(file_path)?;
 
-        let text = pdf_extract::extract_text_from_mem(&bytes)
-            .map_err(|e| AppError::InvalidInput(format!(
+        /* pdf-extract unwraps internally on malformed structures; contain the
+        panic so a corrupt file surfaces as a normal import error. */
+        let extracted = std::panic::catch_unwind(|| pdf_extract::extract_text_from_mem(&bytes))
+            .map_err(|_| AppError::InvalidInput(
+                "Could not read this PDF: the file appears to be damaged or uses unsupported features.".into(),
+            ))?;
+
+        let text = extracted.map_err(|e| {
+            AppError::InvalidInput(format!(
                 "Could not extract text from PDF: {e}. The file may be encrypted or image-only."
-            )))?;
+            ))
+        })?;
 
         if text.trim().is_empty() {
             return Err(AppError::InvalidInput(
@@ -87,7 +94,6 @@ impl DocumentParser for PdfParser {
     }
 }
 
-
 /// Heuristic heading detection for PDF text.
 /// Lines that are short, start with a capital letter, and are followed by
 /// longer lines are likely headings.
@@ -97,7 +103,11 @@ fn extract_likely_headings(text: &str) -> Vec<String> {
             let trimmed = line.trim();
             trimmed.len() > 2
                 && trimmed.len() < 100
-                && trimmed.chars().next().map(|c| c.is_uppercase()).unwrap_or(false)
+                && trimmed
+                    .chars()
+                    .next()
+                    .map(|c| c.is_uppercase())
+                    .unwrap_or(false)
                 && !trimmed.ends_with('.')
                 && !trimmed.ends_with(',')
         })

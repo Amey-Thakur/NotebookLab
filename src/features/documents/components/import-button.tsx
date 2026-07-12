@@ -8,6 +8,7 @@
  *   Disabled while an import is in progress.
  */
 
+import { formatError } from "@/lib/format-error";
 import { pickDocumentFile } from "../api/document-api";
 import { useImportDocument } from "../hooks/use-documents";
 
@@ -39,7 +40,7 @@ export function ImportButton({ notebookId }: ImportButtonProps) {
         {importDoc.isPending ? "Importing..." : "+ Import Document"}
       </button>
       {importDoc.isError && (
-        <p className="text-xs text-error mt-2">{String(importDoc.error)}</p>
+        <p role="alert" className="text-xs text-error mt-2">{formatError(importDoc.error)}</p>
       )}
     </div>
   );

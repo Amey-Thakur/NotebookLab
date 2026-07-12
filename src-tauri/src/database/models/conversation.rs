@@ -9,7 +9,6 @@
 use rusqlite::Row;
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Conversation {
     pub id: String,
@@ -30,7 +29,6 @@ impl Conversation {
         })
     }
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
@@ -53,7 +51,6 @@ impl Message {
     }
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Citation {
     pub id: String,
@@ -61,7 +58,6 @@ pub struct Citation {
     pub chunk_id: String,
     pub relevance_score: f64,
 }
-
 
 #[derive(Debug, Deserialize)]
 pub struct CreateConversation {

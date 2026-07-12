@@ -4,57 +4,50 @@ Offline-first AI knowledge workspace with thinking partner capabilities.
 
 ## Tech Stack
 
-- **Frontend:** React 19 + TypeScript + Tailwind CSS + shadcn/ui
+- **Frontend:** React 19 + TypeScript + Tailwind CSS + TanStack Query + Zustand
 - **Backend:** Rust (Tauri v2)
-- **Database:** SQLite + sqlite-vec
-- **LLM:** llama.cpp sidecar (GGUF models) + multi-provider abstraction
-- **Embeddings:** ONNX Runtime + all-MiniLM-L6-v2
+- **Database:** SQLite (WAL, FTS5, cascade deletes)
+- **LLM:** bundled llama.cpp sidecar (GGUF models) + any OpenAI-compatible provider
+- **Embeddings:** provider /v1/embeddings + brute-force cosine search in Rust
 
 ## Architecture
 
 Modular, layered backend. Each module is self-contained and removable.
 
 ```
-Commands (Tauri IPC) -> Services (business logic) -> Repositories (data access)
-                                                  -> Providers (LLM abstraction)
-                                                  -> Parsers (document formats)
+Commands (async Tauri IPC) -> Services (business logic) -> Repositories (data access)
+                                                        -> Providers (LLM abstraction)
+                                                        -> Parsers (document formats)
 ```
 
 ## Coding Standards
 
 - Every file starts with a header block (Title, Tech Stack, Description, Important Details)
 - Comments explain "why" not "what"
-- No AI filler text in code
 - Complete naming, no abbreviations
+- IPC arguments are snake_case on both sides; every command declares
+  `rename_all = "snake_case"` (tests enforce this)
+- Long-running commands are async (`spawn_blocking`); sync commands run on the
+  main thread and must stay fast
+- User-facing errors go through `formatError` (frontend) / `AppError` (backend)
+
+## Quality Gates
+
+Run before every push; CI enforces all of them on three platforms:
+
+```
+npm run lint && npm test && npm run build
+cd src-tauri && cargo fmt --all -- --check && cargo clippy --all-features -- -D warnings && cargo test
+```
 
 ## Commit Format
 
 ```
 [1-3 word message]
 
+* [1-5 word bullet]
+* [1-5 word bullet]
+
 Co-authored-by: Amey Thakur <ameythakur20@gmail.com>
 Co-authored-by: Archit Konde <architkonde19@gmail.com>
-
-* [1-5 word bullet]
-* [1-5 word bullet]
 ```
-
-## Skill routing
-
-When the user's request matches an available skill, ALWAYS invoke it using the Skill
-tool as your FIRST action. Do NOT answer directly, do NOT use other tools first.
-The skill has specialized workflows that produce better results than ad-hoc answers.
-
-Key routing rules:
-- Product ideas, "is this worth building", brainstorming -> invoke office-hours
-- Bugs, errors, "why is this broken", 500 errors -> invoke investigate
-- Ship, deploy, push, create PR -> invoke ship
-- QA, test the site, find bugs -> invoke qa
-- Code review, check my diff -> invoke review
-- Update docs after shipping -> invoke document-release
-- Weekly retro -> invoke retro
-- Design system, brand -> invoke design-consultation
-- Visual audit, design polish -> invoke design-review
-- Architecture review -> invoke plan-eng-review
-- Save progress, checkpoint, resume -> invoke checkpoint
-- Code quality, health check -> invoke health
