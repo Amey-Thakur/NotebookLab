@@ -28,6 +28,8 @@ const NAV_ITEMS = [
   { path: ROUTES.THINKING_PARTNER, label: "Think" },
   { path: ROUTES.TRANSFORMS, label: "Transform" },
   { path: ROUTES.PODCASTS, label: "Podcasts" },
+  { path: ROUTES.PROMPT_STUDIO, label: "Prompt Studio" },
+  { path: ROUTES.GRAPH, label: "Connections" },
   { path: ROUTES.MODELS, label: "Models" },
   { path: ROUTES.SETTINGS, label: "Settings" },
 ] as const;

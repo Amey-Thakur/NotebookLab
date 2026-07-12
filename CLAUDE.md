@@ -22,7 +22,7 @@ Commands (async Tauri IPC) -> Services (business logic) -> Repositories (data ac
 
 ## Coding Standards
 
-- Every file starts with a header block (Title, Tech Stack, Description, Important Details)
+- Every file starts with a header block (Name, Purpose, Description, Tech Stack, License, Authors, Date)
 - Comments explain "why" not "what"
 - Complete naming, no abbreviations
 - IPC arguments are snake_case on both sides; every command declares

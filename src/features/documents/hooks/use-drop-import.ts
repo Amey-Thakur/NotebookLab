@@ -55,6 +55,10 @@ export function useDropImport(notebookId: string | undefined) {
       .then((stop) => {
         if (cancelled) stop();
         else unlisten = stop;
+      })
+      .catch(() => {
+        /* The webview drag-drop API is unavailable outside the desktop app
+           (for example in unit tests); dropping simply does nothing then. */
       });
 
     return () => {

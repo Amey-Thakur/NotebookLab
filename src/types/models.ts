@@ -105,6 +105,22 @@ export interface RecentNote extends Note {
   notebook_name: string;
 }
 
+export interface GraphNode {
+  id: string;
+  title: string;
+  degree: number;
+}
+
+export interface GraphEdge {
+  source: string;
+  target: string;
+}
+
+export interface NotesGraph {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
 export interface UnifiedSearchResult {
   chunks: SearchResult[];
   notes: Note[];

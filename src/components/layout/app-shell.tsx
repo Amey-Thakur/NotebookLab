@@ -4,10 +4,10 @@
  * Description: Renders sidebar, header, and content area. Sidebar collapses
  *   on mobile (<768px) behind a hamburger toggle; Escape closes it
  *   and the backdrop is aria-hidden. Global keyboard shortcuts
- *   live here: Ctrl+K focuses search and Ctrl+N creates a note in
- *   the active notebook (Cmd on macOS). A persisted
- *   active-notebook id that no longer exists is cleared so pages
- *   never query a dangling notebook.
+ *   live here: Ctrl+K toggles the command palette and Ctrl+N
+ *   creates a note in the active notebook (Cmd on macOS). A
+ *   persisted active-notebook id that no longer exists is cleared
+ *   so pages never query a dangling notebook.
  * Tech Stack: React 19, Tailwind CSS
  * License: MIT
  * Authors: Amey Thakur (https://github.com/Amey-Thakur)

@@ -213,6 +213,71 @@ pub fn list_recent(conn: &Connection, limit: usize) -> AppResult<Vec<RecentNote>
     Ok(notes)
 }
 
+/// One node in the notes connection map: a note and how many links touch it.
+#[derive(serde::Serialize)]
+pub struct GraphNode {
+    pub id: String,
+    pub title: String,
+    pub degree: i64,
+}
+
+/// One directed edge from one note to another via a [[wiki-link]].
+#[derive(serde::Serialize)]
+pub struct GraphEdge {
+    pub source: String,
+    pub target: String,
+}
+
+/// The connection map for a notebook: nodes and the links between them.
+#[derive(serde::Serialize)]
+pub struct NotesGraph {
+    pub nodes: Vec<GraphNode>,
+    pub edges: Vec<GraphEdge>,
+}
+
+/// Build the wiki-link connection map for one notebook. Only note-to-note
+/// links are included, and both endpoints must live in this notebook.
+pub fn notes_graph(conn: &Connection, notebook_id: &str) -> AppResult<NotesGraph> {
+    let mut edge_stmt = conn.prepare(
+        "SELECT l.source_id, l.target_id
+         FROM links l
+         INNER JOIN notes s ON l.source_id = s.id
+         INNER JOIN notes t ON l.target_id = t.id
+         WHERE l.source_type = 'note' AND l.target_type = 'note'
+           AND s.notebook_id = ?1 AND t.notebook_id = ?1",
+    )?;
+    let edges: Vec<GraphEdge> = edge_stmt
+        .query_map(params![notebook_id], |row| {
+            Ok(GraphEdge {
+                source: row.get(0)?,
+                target: row.get(1)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    /* Degree counts every link that touches a note, incoming or outgoing */
+    let mut node_stmt = conn.prepare(
+        "SELECT n.id, n.title,
+            (SELECT COUNT(*) FROM links l
+             WHERE (l.source_id = n.id OR l.target_id = n.id)
+               AND l.source_type = 'note' AND l.target_type = 'note') AS degree
+         FROM notes n
+         WHERE n.notebook_id = ?1
+         ORDER BY degree DESC, n.updated_at DESC",
+    )?;
+    let nodes: Vec<GraphNode> = node_stmt
+        .query_map(params![notebook_id], |row| {
+            Ok(GraphNode {
+                id: row.get(0)?,
+                title: row.get(1)?,
+                degree: row.get(2)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(NotesGraph { nodes, edges })
+}
+
 /// List notes that link to the given note (the backlinks panel).
 pub fn get_backlinks(conn: &Connection, note_id: &str) -> AppResult<Vec<Note>> {
     let mut stmt = conn.prepare(

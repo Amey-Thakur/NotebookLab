@@ -1,11 +1,10 @@
 /*
  * Name: app-header.tsx
- * Purpose: Top application bar with hamburger toggle, brand, and search
- *   trigger.
- * Description: Hamburger button visible only on mobile (<768px). The search
- *   button navigates to the Search page; the same route is bound
- *   to Ctrl+K globally in AppShell, so the visible kbd hint is
- *   real.
+ * Purpose: Top application bar with hamburger toggle, brand, command palette
+ *   trigger, and theme switch.
+ * Description: Hamburger button visible only on mobile (<768px). The "Jump
+ *   to..." button opens the command palette, the same action bound to Ctrl+K
+ *   globally in AppShell, so the visible kbd hint is real.
  * Tech Stack: React 19, Tailwind CSS, Tauri v2
  * License: MIT
  * Authors: Amey Thakur (https://github.com/Amey-Thakur)

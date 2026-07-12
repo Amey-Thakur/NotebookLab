@@ -6,14 +6,23 @@ All notable changes to NotebookLab will be documented in this file.
 
 ### Added
 
-- Command palette: Ctrl+K opens one search box to jump to any page or
-  notebook, or run an action, fully keyboard driven.
+- Prompt Studio: build a clear prompt from simple parts (role, task, context,
+  format, tone, constraints, examples) with a live preview, then sharpen it
+  with the active model. It teaches prompt structure by showing it.
+- Connections: a calm diagram of how the notes in a notebook link to each
+  other, with an accessible list of the most-connected notes.
+- Document outline: a navigable tree of a document's sections, built from its
+  real heading structure, that jumps to any passage.
+- Word export: save a note as an RTF document that opens in Word, Pages, or
+  LibreOffice with real formatting, alongside the existing Markdown export.
+- Command palette: Ctrl+K opens one box to jump to any page or notebook, or
+  run an action, fully keyboard driven.
 - Drag and drop import: drop PDF, TXT, or Markdown files anywhere on the
   window to import them, with a live drop target.
 - "Pick up where you left off": the notebooks page surfaces your three most
   recently edited notes across all notebooks.
 - Regenerate: ask the same question again on the latest chat answer.
-- Note export: save any note as a Markdown file from the editor.
+- Note export to Markdown from the editor.
 - Live word count in the editor.
 - Rename a notebook by editing its title in place.
 - Copy button on every chat answer.
