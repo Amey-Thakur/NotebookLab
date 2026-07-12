@@ -7,6 +7,8 @@ Everything about NotebookLab, one page away.
 | I want to... | Read this |
 |--------------|-----------|
 | Install and use the app | [Main README](../README.md) |
+| Get a quick answer | [FAQ](FAQ.md) |
+| Ask a question or share an idea | [Discussions](https://github.com/Amey-Thakur/NotebookLab/discussions) |
 | Understand how it works inside | [Architecture](ARCHITECTURE.md) |
 | Set up a dev environment and contribute | [Contributing guide](../.github/CONTRIBUTING.md) |
 | Report a security problem | [Security policy](../.github/SECURITY.md) |

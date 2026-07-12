@@ -188,11 +188,16 @@ API binds to localhost and requires a fresh token every session.
 
 <br>
 
-## Contributing
+## Community
 
-Start with the [contributing guide](.github/CONTRIBUTING.md). Security issues
-go through the [security policy](.github/SECURITY.md). Maintainers cut
-releases with [docs/RELEASING.md](docs/RELEASING.md).
+Questions and ideas live in
+[Discussions](https://github.com/Amey-Thakur/NotebookLab/discussions), and
+the [FAQ](docs/FAQ.md) answers the common ones directly. Bugs go through
+[issues](https://github.com/Amey-Thakur/NotebookLab/issues/new/choose).
+
+Contributions start with the [contributing guide](.github/CONTRIBUTING.md).
+Security issues go through the [security policy](.github/SECURITY.md), and
+maintainers cut releases with [docs/RELEASING.md](docs/RELEASING.md).
 
 <br>
 
