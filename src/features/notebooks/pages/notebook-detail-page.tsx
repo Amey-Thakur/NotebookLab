@@ -25,6 +25,7 @@ import { formatBytes } from "@/lib/utils";
 import type { Notebook, Note } from "@/types/models";
 import { pickDocumentFile } from "@/features/documents/api/document-api";
 import { useDocuments, useImportDocument } from "@/features/documents/hooks/use-documents";
+import { useDropImport } from "@/features/documents/hooks/use-drop-import";
 
 
 export function NotebookDetailPage() {
@@ -85,6 +86,7 @@ export function NotebookDetailPage() {
   };
 
   const importDoc = useImportDocument(id);
+  const { isDragging } = useDropImport(id);
 
   const handleImport = async () => {
     const filePath = await pickDocumentFile();
@@ -94,7 +96,13 @@ export function NotebookDetailPage() {
   if (!id) return null;
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
+    <div className="relative p-8 max-w-4xl mx-auto">
+      {isDragging && (
+        <div className="absolute inset-4 z-10 flex items-center justify-center border-2 border-dashed
+                        border-accent bg-surface/90 pointer-events-none">
+          <p className="text-sm font-mono text-accent">Drop PDF, TXT, or Markdown files to import</p>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-8">
         <div>
           <button

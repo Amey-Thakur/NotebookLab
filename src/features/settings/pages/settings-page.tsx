@@ -140,7 +140,7 @@ export function SettingsPage() {
         </h2>
         <div className="space-y-1">
           {[
-            ["Ctrl+K", "Open search"],
+            ["Ctrl+K", "Open the command palette"],
             ["Ctrl+N", "New note in the active notebook"],
             ["Ctrl+S", "Save the open note now (also auto-saves every 2s)"],
           ].map(([key, desc]) => (

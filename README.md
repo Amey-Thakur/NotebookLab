@@ -26,7 +26,7 @@ help you think. Nothing leaves your computer.
 
 <br>
 
-<img src="site/screenshots/chat.png" alt="NotebookLab chat answering a question with cited sources" width="720">
+<img src="docs/brand/hero.svg" alt="NotebookLab answering a question with answers grounded in cited sources from the user's documents" width="820">
 
 <br>
 

@@ -13,19 +13,16 @@
  * Date: 2026-07-12
  */
 
-import { useNavigate } from "react-router-dom";
-
-import { ROUTES } from "@/lib/constants";
 import { useTheme } from "@/components/providers/theme-context";
 
 
 interface AppHeaderProps {
   onToggleSidebar: () => void;
+  onOpenPalette: () => void;
 }
 
 
-export function AppHeader({ onToggleSidebar }: AppHeaderProps) {
-  const navigate = useNavigate();
+export function AppHeader({ onToggleSidebar, onOpenPalette }: AppHeaderProps) {
   const { resolvedTheme, setTheme } = useTheme();
   const nextTheme = resolvedTheme === "dark" ? "light" : "dark";
 
@@ -55,12 +52,12 @@ export function AppHeader({ onToggleSidebar }: AppHeaderProps) {
       <div className="flex items-center gap-2">
         <button
           type="button"
-          aria-label="Open search (Ctrl+K)"
+          aria-label="Open the command palette (Ctrl+K)"
           className="hidden sm:flex px-3 py-1 text-xs font-mono text-text-3 bg-surface-2 border border-border
                      hover:border-border-hover focus-visible:border-accent transition-colors"
-          onClick={() => navigate(ROUTES.SEARCH)}
+          onClick={onOpenPalette}
         >
-          Search...
+          Jump to...
           <kbd className="ml-2 text-text-4" aria-hidden="true">Ctrl+K</kbd>
         </button>
 

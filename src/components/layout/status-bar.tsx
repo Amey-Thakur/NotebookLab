@@ -13,8 +13,10 @@
  * Date: 2026-07-12
  */
 
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { listen } from "@tauri-apps/api/event";
 
 import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS, ROUTES } from "@/lib/constants";
@@ -25,6 +27,18 @@ import { useNotebooks } from "@/features/notebooks/hooks/use-notebooks";
 export function StatusBar() {
   const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
   const { data: notebooks } = useNotebooks();
+  const [updateVersion, setUpdateVersion] = useState<string | null>(null);
+
+  /* The backend downloads updates in the background and announces when one
+     is staged; restarting swaps it in. */
+  useEffect(() => {
+    const unlisten = listen<string>("update-ready", (event) => {
+      setUpdateVersion(event.payload);
+    });
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, []);
 
   const { data: activeProvider } = useQuery({
     queryKey: [QUERY_KEYS.ACTIVE_PROVIDER],
@@ -72,8 +86,19 @@ export function StatusBar() {
         )}
       </div>
 
-      <span className={`font-mono text-2xs ${chunks > 0 ? "text-text-3" : "text-text-4"}`}>
-        {chunks} chunks indexed
+      <span className="flex items-center gap-4 shrink-0">
+        {updateVersion && (
+          <button
+            type="button"
+            onClick={() => tauriInvoke("restart_app")}
+            className="font-mono text-2xs text-accent hover:underline"
+          >
+            v{updateVersion} ready, restart to update
+          </button>
+        )}
+        <span className={`font-mono text-2xs ${chunks > 0 ? "text-text-3" : "text-text-4"}`}>
+          {chunks} chunks indexed
+        </span>
       </span>
     </footer>
   );

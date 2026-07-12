@@ -38,6 +38,13 @@ pub fn get_api_token(state: tauri::State<'_, crate::state::AppState>) -> String 
     state.api_token.clone()
 }
 
+/// Relaunch the app so a downloaded update takes effect.
+/// Only offered by the status bar after the updater stages a new version.
+#[tauri::command(rename_all = "snake_case")]
+pub fn restart_app(app: AppHandle) {
+    app.restart();
+}
+
 #[tauri::command(rename_all = "snake_case")]
 pub fn health_check() -> &'static str {
     "ok"

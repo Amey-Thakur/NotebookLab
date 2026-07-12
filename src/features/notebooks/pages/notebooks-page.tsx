@@ -19,10 +19,14 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
+import { tauriInvoke } from "@/services/tauri-client";
+import { QUERY_KEYS } from "@/lib/constants";
 import { formatError } from "@/lib/format-error";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { useNotebooks, useCreateNotebook, useDeleteNotebook } from "../hooks/use-notebooks";
+import type { RecentNote } from "@/types/models";
 
 
 export function NotebooksPage() {
@@ -35,6 +39,16 @@ export function NotebooksPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
+
+  const { data: recentNotes } = useQuery({
+    queryKey: [QUERY_KEYS.NOTES, "recent"],
+    queryFn: () => tauriInvoke<RecentNote[]>("list_recent_notes", { limit: 3 }),
+  });
+
+  const openRecent = (note: RecentNote) => {
+    setActiveNotebook(note.notebook_id);
+    navigate(`/editor/${note.id}`);
+  };
 
   const handleCreate = () => {
     if (!newName.trim()) return;
@@ -124,6 +138,31 @@ export function NotebooksPage() {
             </p>
           )}
         </div>
+      )}
+
+      {/* Pick up where you left off */}
+      {recentNotes && recentNotes.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-3">
+            Pick up where you left off
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {recentNotes.map((note) => (
+              <button
+                key={note.id}
+                type="button"
+                onClick={() => openRecent(note)}
+                className="text-left p-4 border border-border bg-surface hover:border-accent-dim
+                           focus-visible:border-accent transition-colors"
+              >
+                <p className="text-sm font-medium text-text-1 truncate">{note.title}</p>
+                <p className="text-2xs font-mono text-text-4 mt-1 truncate">
+                  {note.notebook_name} · {new Date(note.updated_at).toLocaleDateString()}
+                </p>
+              </button>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* Empty state */}

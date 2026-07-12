@@ -136,6 +136,9 @@ export function ChatPage() {
   }
 
   const hasHistory = conversations && conversations.length > 0;
+  const lastUserMessage = messages
+    ? ([...messages].reverse().find((m) => m.role === "user")?.content ?? null)
+    : null;
 
   return (
     <div className="flex h-full">
@@ -210,23 +213,42 @@ export function ChatPage() {
                   {msg.role === "user" ? "You" : "NotebookLab"}
                 </span>
                 {msg.role === "assistant" && (
-                  <button
-                    type="button"
-                    aria-label="Copy answer"
-                    onClick={() => {
-                      navigator.clipboard.writeText(msg.content).then(
-                        () => {
-                          setCopiedMessageId(msg.id);
-                          setTimeout(() => setCopiedMessageId(null), 1500);
-                        },
-                        () => setCopiedMessageId(null),
-                      );
-                    }}
-                    className="text-2xs font-mono text-text-4 opacity-0 group-hover:opacity-100
-                               focus-visible:opacity-100 hover:text-text-1 transition-opacity"
-                  >
-                    {copiedMessageId === msg.id ? "Copied" : "Copy"}
-                  </button>
+                  <span className="flex items-center gap-3">
+                    {/* Ask the same question again, on the last answer only */}
+                    {!sendMessage.isPending &&
+                      messages[messages.length - 1]?.id === msg.id &&
+                      lastUserMessage && (
+                        <button
+                          type="button"
+                          aria-label="Ask the same question again"
+                          onClick={() => {
+                            setPendingMessage(lastUserMessage);
+                            sendMessage.mutate({ convoId: conversationId!, message: lastUserMessage });
+                          }}
+                          className="text-2xs font-mono text-text-4 opacity-0 group-hover:opacity-100
+                                     focus-visible:opacity-100 hover:text-text-1 transition-opacity"
+                        >
+                          Regenerate
+                        </button>
+                      )}
+                    <button
+                      type="button"
+                      aria-label="Copy answer"
+                      onClick={() => {
+                        navigator.clipboard.writeText(msg.content).then(
+                          () => {
+                            setCopiedMessageId(msg.id);
+                            setTimeout(() => setCopiedMessageId(null), 1500);
+                          },
+                          () => setCopiedMessageId(null),
+                        );
+                      }}
+                      className="text-2xs font-mono text-text-4 opacity-0 group-hover:opacity-100
+                                 focus-visible:opacity-100 hover:text-text-1 transition-opacity"
+                    >
+                      {copiedMessageId === msg.id ? "Copied" : "Copy"}
+                    </button>
+                  </span>
                 )}
               </div>
               <div className="text-sm font-body text-text-2 whitespace-pre-wrap leading-relaxed">

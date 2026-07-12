@@ -2,6 +2,35 @@
 
 All notable changes to NotebookLab will be documented in this file.
 
+## [0.3.0] - 2026-07-12
+
+### Added
+
+- Command palette: Ctrl+K opens one search box to jump to any page or
+  notebook, or run an action, fully keyboard driven.
+- Drag and drop import: drop PDF, TXT, or Markdown files anywhere on the
+  window to import them, with a live drop target.
+- "Pick up where you left off": the notebooks page surfaces your three most
+  recently edited notes across all notebooks.
+- Regenerate: ask the same question again on the latest chat answer.
+- Note export: save any note as a Markdown file from the editor.
+- Live word count in the editor.
+- Rename a notebook by editing its title in place.
+- Copy button on every chat answer.
+
+### Fixed
+
+- Auto-update actually runs now. The updater plugin was registered but never
+  invoked, so no install ever checked for or applied updates. The app now
+  checks on launch, downloads in the background, and the status bar offers a
+  one-click restart when a new version is staged.
+
+### Changed
+
+- Removed the last unwired backend commands; every registered command now has
+  a real caller in the interface, the REST API, or the system layer.
+- README leads with a branded hero illustration of the cited-answer flow.
+
 ## [0.2.0] - 2026-07-12
 
 ### Fixed

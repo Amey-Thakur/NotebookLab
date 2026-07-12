@@ -1,0 +1,220 @@
+/*
+ * Name: command-palette.tsx
+ * Purpose: Ctrl+K command palette for jumping anywhere and acting fast.
+ * Description: One input filters pages, notebooks, and actions; arrows move,
+ *   Enter runs, Escape closes. Matches rank prefix hits first. Fully
+ *   keyboard driven with dialog and listbox semantics for screen
+ *   readers, and the backdrop click closes it for mouse users.
+ * Tech Stack: React 19, React Router, TanStack Query, Tailwind CSS
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
+ */
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+
+import { tauriInvoke } from "@/services/tauri-client";
+import { QUERY_KEYS, ROUTES } from "@/lib/constants";
+import { useNotebookStore } from "@/stores/notebook-store";
+import { useNotebooks } from "@/features/notebooks/hooks/use-notebooks";
+import { useTheme } from "@/components/providers/theme-context";
+import type { Note } from "@/types/models";
+
+
+interface PaletteItem {
+  id: string;
+  label: string;
+  hint: string;
+  run: () => void;
+}
+
+interface CommandPaletteProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+
+const PAGES: Array<{ label: string; route: string }> = [
+  { label: "Notebooks", route: ROUTES.NOTEBOOKS },
+  { label: "Documents", route: ROUTES.DOCUMENTS },
+  { label: "Search", route: ROUTES.SEARCH },
+  { label: "Chat", route: ROUTES.CHAT },
+  { label: "Thinking Partner", route: ROUTES.THINKING_PARTNER },
+  { label: "Transforms", route: ROUTES.TRANSFORMS },
+  { label: "Podcasts", route: ROUTES.PODCASTS },
+  { label: "Models", route: ROUTES.MODELS },
+  { label: "Settings", route: ROUTES.SETTINGS },
+];
+
+
+export function CommandPalette({ open, onClose }: CommandPaletteProps) {
+  /* Mounting fresh on every open gives clean state with no reset effects */
+  if (!open) return null;
+  return <PaletteDialog onClose={onClose} />;
+}
+
+
+function PaletteDialog({ onClose }: { onClose: () => void }) {
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState(0);
+  const listRef = useRef<HTMLUListElement>(null);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { data: notebooks } = useNotebooks();
+  const { resolvedTheme, setTheme } = useTheme();
+  const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
+  const setActiveNotebook = useNotebookStore((s) => s.setActiveNotebook);
+
+  const items = useMemo<PaletteItem[]>(() => {
+    const go = (route: string) => () => {
+      navigate(route);
+      onClose();
+    };
+
+    const actions: PaletteItem[] = [
+      {
+        id: "action-new-note",
+        label: "New note",
+        hint: "action",
+        run: () => {
+          onClose();
+          if (!activeNotebookId) {
+            navigate(ROUTES.NOTEBOOKS);
+            return;
+          }
+          tauriInvoke<Note>("create_note", { input: { notebook_id: activeNotebookId } })
+            .then((note) => {
+              queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.NOTES, activeNotebookId] });
+              navigate(`/editor/${note.id}`);
+            })
+            .catch(() => navigate(ROUTES.NOTEBOOKS));
+        },
+      },
+      {
+        id: "action-theme",
+        label: resolvedTheme === "dark" ? "Switch to light theme" : "Switch to dark theme",
+        hint: "action",
+        run: () => {
+          setTheme(resolvedTheme === "dark" ? "light" : "dark");
+          onClose();
+        },
+      },
+    ];
+
+    const pageItems: PaletteItem[] = PAGES.map((p) => ({
+      id: `page-${p.route}`,
+      label: p.label,
+      hint: "page",
+      run: go(p.route),
+    }));
+
+    const notebookItems: PaletteItem[] = (notebooks ?? []).map((nb) => ({
+      id: `notebook-${nb.id}`,
+      label: nb.name,
+      hint: "notebook",
+      run: () => {
+        setActiveNotebook(nb.id);
+        navigate(`/notebooks/${nb.id}`);
+        onClose();
+      },
+    }));
+
+    return [...actions, ...pageItems, ...notebookItems];
+  }, [notebooks, resolvedTheme, activeNotebookId, navigate, onClose, queryClient, setActiveNotebook, setTheme]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    const starts = items.filter((i) => i.label.toLowerCase().startsWith(q));
+    const contains = items.filter(
+      (i) => !i.label.toLowerCase().startsWith(q) && i.label.toLowerCase().includes(q),
+    );
+    return [...starts, ...contains];
+  }, [items, query]);
+
+  /* Typing changes the result list, so selection snaps back to the top.
+     Render-phase adjustment avoids an extra effect pass. */
+  const [prevQuery, setPrevQuery] = useState(query);
+  if (prevQuery !== query) {
+    setPrevQuery(query);
+    setSelected(0);
+  }
+
+  /* Keep the selected option visible while arrowing through a long list */
+  useEffect(() => {
+    listRef.current
+      ?.querySelector('[aria-selected="true"]')
+      ?.scrollIntoView({ block: "nearest" });
+  }, [selected]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelected((s) => Math.min(s + 1, filtered.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelected((s) => Math.max(s - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      filtered[selected]?.run();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      onClose();
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center pt-[18vh] bg-black/40"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
+        className="w-full max-w-lg mx-4 bg-surface border border-border shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={handleKeyDown}
+      >
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Jump to a page or notebook, or run an action..."
+          aria-label="Search commands"
+          autoFocus
+          className="w-full px-4 py-3 text-sm bg-surface text-text-1 border-b border-border
+                     placeholder:text-text-4 outline-none"
+        />
+        <ul ref={listRef} role="listbox" aria-label="Commands" className="max-h-72 overflow-y-auto py-1">
+          {filtered.length === 0 && (
+            <li className="px-4 py-3 text-sm text-text-4">Nothing matches. Try fewer letters.</li>
+          )}
+          {filtered.map((item, index) => (
+            <li
+              key={item.id}
+              role="option"
+              aria-selected={index === selected}
+              className={`flex items-center justify-between px-4 py-2 text-sm cursor-pointer ${
+                index === selected ? "bg-surface-2 text-text-1" : "text-text-2"
+              }`}
+              onMouseEnter={() => setSelected(index)}
+              onClick={() => item.run()}
+            >
+              <span className="truncate">{item.label}</span>
+              <span className="ml-3 shrink-0 text-2xs font-mono text-text-4">{item.hint}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="flex items-center gap-3 px-4 py-2 border-t border-border text-2xs font-mono text-text-4">
+          <span>Up and Down to move</span>
+          <span>Enter to run</span>
+          <span>Esc to close</span>
+        </div>
+      </div>
+    </div>
+  );
+}
