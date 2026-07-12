@@ -192,11 +192,12 @@ pub fn start_sidecar(
                     if crashed {
                         tracing::warn!("llama-server exited unexpectedly: {:?}", status);
                         /* Deactivate the dead provider so chat reports "no
-                        provider" instead of opaque connection errors. */
+                        provider" instead of opaque connection errors. The
+                        trailing semicolon drops the guard before `state`. */
                         let state: State<'_, AppState> = handle.state();
                         if let Ok(providers) = state.provider_read() {
                             providers.deactivate_if_named(SIDECAR_PROVIDER_NAME);
-                        }
+                        };
                     } else {
                         tracing::info!("llama-server exited after stop: {:?}", status);
                     }

@@ -13,7 +13,6 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
     "tauri": "tauri",
     "test": "vitest run",
     "test:watch": "vitest",
