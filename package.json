@@ -4,6 +4,11 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Your thinking partner, on your machine. Offline-first AI knowledge workspace.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Amey-Thakur/NotebookLab.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
