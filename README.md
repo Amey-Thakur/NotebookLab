@@ -2,6 +2,8 @@
 
 <br>
 
+<img src="site/favicon.svg" alt="NotebookLab icon" width="88">
+
 # NotebookLab
 
 **Your thinking partner, on your machine.**
