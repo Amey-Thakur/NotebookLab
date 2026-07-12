@@ -17,7 +17,6 @@ pub use traits::{DocumentParser, ParsedDocument, ParsedPage};
 
 use crate::error::{AppError, AppResult};
 
-
 /// Get the parser for a given file extension. Returns an error for unsupported formats.
 pub fn parser_for_extension(ext: &str) -> AppResult<Box<dyn DocumentParser>> {
     match ext.to_lowercase().as_str() {

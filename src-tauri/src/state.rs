@@ -4,10 +4,11 @@
  * Description: Application state managed by Tauri's state system (app.manage()).
  * Important Details: WAL mode verified after activation. Foreign keys enabled for
  *   cascade deletes. Migrations run from bundled SQL files at startup.
- *   Provider router manages multiple LLM backends with dynamic switching.
+ *   Provider router sits behind an RwLock so long-running LLM calls (reads)
+ *   never block each other; only provider registration takes the write lock.
  */
 
-use std::sync::{Mutex, MutexGuard};
+use std::sync::{Mutex, MutexGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use rusqlite::Connection;
 use tauri::{AppHandle, Manager};
@@ -15,12 +16,12 @@ use tauri::{AppHandle, Manager};
 use crate::error::{AppError, AppResult};
 use crate::providers::ProviderRouter;
 
-
 pub struct AppState {
     pub db: Mutex<Connection>,
-    pub providers: Mutex<ProviderRouter>,
+    pub providers: RwLock<ProviderRouter>,
+    /// Bearer token for the local REST API, generated fresh each session.
+    pub api_token: String,
 }
-
 
 impl AppState {
     /// Acquire the database connection with graceful poison handling.
@@ -30,17 +31,26 @@ impl AppState {
             .map_err(|_| AppError::Internal("Database lock poisoned".into()))
     }
 
-    /// Acquire the provider router with graceful poison handling.
-    pub fn provider(&self) -> AppResult<MutexGuard<'_, ProviderRouter>> {
+    /// Acquire shared read access to the provider router. Chat completions and
+    /// embeddings only need read access, so concurrent AI calls do not serialize.
+    pub fn provider_read(&self) -> AppResult<RwLockReadGuard<'_, ProviderRouter>> {
         self.providers
-            .lock()
+            .read()
+            .map_err(|_| AppError::Internal("Provider lock poisoned".into()))
+    }
+
+    /// Acquire exclusive write access to the provider router (registration only).
+    pub fn provider_write(&self) -> AppResult<RwLockWriteGuard<'_, ProviderRouter>> {
+        self.providers
+            .write()
             .map_err(|_| AppError::Internal("Provider lock poisoned".into()))
     }
 }
 
-
 impl AppState {
     /// Initialize all application state. Called once during app setup.
+    /// The REST API token is generated here so both the HTTP server and the
+    /// get_api_token command can hand out the same value.
     pub fn initialize(app: &AppHandle) -> Result<Self, Box<dyn std::error::Error>> {
         let data_dir = app
             .path()
@@ -57,7 +67,7 @@ impl AppState {
         conn.execute_batch(
             "PRAGMA journal_mode = WAL;
              PRAGMA busy_timeout = 5000;
-             PRAGMA foreign_keys = ON;"
+             PRAGMA foreign_keys = ON;",
         )?;
 
         let wal_mode: String = conn.query_row("PRAGMA journal_mode", [], |r| r.get(0))?;
@@ -71,7 +81,8 @@ impl AppState {
 
         Ok(Self {
             db: Mutex::new(conn),
-            providers: Mutex::new(provider_router),
+            providers: RwLock::new(provider_router),
+            api_token: format!("nbl-api-{}", uuid::Uuid::new_v4().simple()),
         })
     }
 

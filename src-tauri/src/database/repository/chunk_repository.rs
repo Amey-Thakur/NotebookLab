@@ -14,13 +14,12 @@ use uuid::Uuid;
 use crate::database::models::{Chunk, CreateChunk};
 use crate::error::{AppError, AppResult};
 
-
 /// Insert a batch of chunks within a single transaction.
 /// Used by the ingestion pipeline after document parsing and chunking.
 pub fn bulk_create(conn: &Connection, chunks: Vec<CreateChunk>) -> AppResult<usize> {
     /* Safety: unchecked_transaction is required because conn is &Connection (not &mut),
-       held behind a Mutex. The Mutex guarantees single-thread access, preventing
-       concurrent transactions on the same connection. */
+    held behind a Mutex. The Mutex guarantees single-thread access, preventing
+    concurrent transactions on the same connection. */
     let tx = conn.unchecked_transaction()?;
     let now = chrono::Utc::now().to_rfc3339();
     let count = chunks.len();
@@ -39,7 +38,6 @@ pub fn bulk_create(conn: &Connection, chunks: Vec<CreateChunk>) -> AppResult<usi
     Ok(count)
 }
 
-
 pub fn get_by_document(conn: &Connection, document_id: &str) -> AppResult<Vec<Chunk>> {
     let mut stmt = conn.prepare(
         "SELECT id, document_id, content, position, page_number, heading_context, token_count, created_at
@@ -52,7 +50,6 @@ pub fn get_by_document(conn: &Connection, document_id: &str) -> AppResult<Vec<Ch
 
     Ok(chunks)
 }
-
 
 #[allow(dead_code)]
 pub fn get_by_id(conn: &Connection, id: &str) -> AppResult<Chunk> {
@@ -68,7 +65,6 @@ pub fn get_by_id(conn: &Connection, id: &str) -> AppResult<Chunk> {
     })
 }
 
-
 /// Delete all chunks belonging to a document. Called before re-ingestion.
 #[allow(dead_code)]
 pub fn delete_by_document(conn: &Connection, document_id: &str) -> AppResult<usize> {
@@ -79,7 +75,6 @@ pub fn delete_by_document(conn: &Connection, document_id: &str) -> AppResult<usi
 
     Ok(affected)
 }
-
 
 /// Count total chunks across all documents. Used for status bar display.
 pub fn count_all(conn: &Connection) -> AppResult<i64> {

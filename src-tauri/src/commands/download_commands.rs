@@ -16,7 +16,6 @@ use tauri::{Emitter, Manager};
 
 use crate::error::{AppError, AppResult};
 
-
 /// Default model for first-launch: small enough for 8GB RAM, good quality.
 const DEFAULT_MODEL_URL: &str =
     "https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q4_K_M.gguf";
@@ -25,10 +24,8 @@ const DEFAULT_MODEL_NAME: &str = "Llama-3.2-3B-Instruct-Q4_K_M.gguf";
 /// Allowed download hosts. Only trusted model repositories.
 const ALLOWED_HOSTS: &[&str] = &["huggingface.co"];
 
-
 /// Global download guard: prevents concurrent downloads.
 static DOWNLOAD_IN_PROGRESS: AtomicBool = AtomicBool::new(false);
-
 
 /// Progress event emitted to the frontend during download.
 #[derive(Clone, serde::Serialize)]
@@ -40,26 +37,27 @@ pub struct DownloadProgress {
     pub status: String, /* "downloading", "complete", "error" */
 }
 
-
 /// Download the default model for first-launch experience.
 /// Returns immediately; progress is reported via events.
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 pub fn download_default_model(app: tauri::AppHandle) -> AppResult<String> {
     download_model(app, None, None)
 }
 
-
 /// Download a GGUF model from a URL. If url is None, uses the default model.
 /// Progress is reported via "model-download-progress" Tauri events.
 /// Returns the expected output path (file may not exist yet if download is async).
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 pub fn download_model(
     app: tauri::AppHandle,
     url: Option<String>,
     filename: Option<String>,
 ) -> AppResult<String> {
     /* Prevent concurrent downloads */
-    if DOWNLOAD_IN_PROGRESS.compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire).is_err() {
+    if DOWNLOAD_IN_PROGRESS
+        .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+        .is_err()
+    {
         return Err(AppError::InvalidInput(
             "A download is already in progress".into(),
         ));
@@ -90,7 +88,10 @@ pub fn download_model(
         .next()
         .unwrap_or("");
 
-    if !ALLOWED_HOSTS.iter().any(|h| host == *h || host.ends_with(&format!(".{h}"))) {
+    if !ALLOWED_HOSTS
+        .iter()
+        .any(|h| host == *h || host.ends_with(&format!(".{h}")))
+    {
         DOWNLOAD_IN_PROGRESS.store(false, Ordering::Release);
         return Err(AppError::InvalidInput(format!(
             "Downloads only allowed from: {}",
@@ -99,17 +100,15 @@ pub fn download_model(
     }
 
     /* Resolve output path */
-    let data_dir = app.path().app_data_dir()
-        .map_err(|e| {
-            DOWNLOAD_IN_PROGRESS.store(false, Ordering::Release);
-            AppError::Internal(format!("Failed to resolve data dir: {e}"))
-        })?;
+    let data_dir = app.path().app_data_dir().map_err(|e| {
+        DOWNLOAD_IN_PROGRESS.store(false, Ordering::Release);
+        AppError::Internal(format!("Failed to resolve data dir: {e}"))
+    })?;
     let models_dir = data_dir.join("models").join("gguf");
-    std::fs::create_dir_all(&models_dir)
-        .map_err(|e| {
-            DOWNLOAD_IN_PROGRESS.store(false, Ordering::Release);
-            AppError::Internal(format!("Failed to create models dir: {e}"))
-        })?;
+    std::fs::create_dir_all(&models_dir).map_err(|e| {
+        DOWNLOAD_IN_PROGRESS.store(false, Ordering::Release);
+        AppError::Internal(format!("Failed to create models dir: {e}"))
+    })?;
 
     let output_path = models_dir.join(model_name);
 
@@ -118,17 +117,27 @@ pub fn download_model(
 
     /* Skip if already downloaded (file exists with .gguf extension and non-zero size) */
     if output_path.exists() {
-        let size = std::fs::metadata(&output_path).map(|m| m.len()).unwrap_or(0);
+        let size = std::fs::metadata(&output_path)
+            .map(|m| m.len())
+            .unwrap_or(0);
         if size > 0 {
             DOWNLOAD_IN_PROGRESS.store(false, Ordering::Release);
-            tracing::info!("Model already exists: {} ({} MB)", model_name, size / 1_048_576);
-            app.emit("model-download-progress", DownloadProgress {
-                downloaded: size,
-                total: size,
-                percent: 100.0,
-                model_name: model_name.to_string(),
-                status: "complete".to_string(),
-            }).ok();
+            tracing::info!(
+                "Model already exists: {} ({} MB)",
+                model_name,
+                size / 1_048_576
+            );
+            app.emit(
+                "model-download-progress",
+                DownloadProgress {
+                    downloaded: size,
+                    total: size,
+                    percent: 100.0,
+                    model_name: model_name.to_string(),
+                    status: "complete".to_string(),
+                },
+            )
+            .ok();
             return Ok(output_path.to_string_lossy().to_string());
         }
     }
@@ -151,13 +160,18 @@ pub fn download_model(
             let tmp_path = path_owned.with_extension("gguf.downloading");
             let _ = std::fs::remove_file(&tmp_path);
 
-            app_clone.emit("model-download-progress", DownloadProgress {
-                downloaded: 0,
-                total: 0,
-                percent: 0.0,
-                model_name: name_owned,
-                status: format!("error: {e}"),
-            }).ok();
+            app_clone
+                .emit(
+                    "model-download-progress",
+                    DownloadProgress {
+                        downloaded: 0,
+                        total: 0,
+                        percent: 0.0,
+                        model_name: name_owned,
+                        status: format!("error: {e}"),
+                    },
+                )
+                .ok();
         }
 
         /* Release download guard */
@@ -166,7 +180,6 @@ pub fn download_model(
 
     Ok(output_path.to_string_lossy().to_string())
 }
-
 
 /// Perform the actual download with progress reporting.
 fn do_download(
@@ -216,13 +229,17 @@ fn do_download(
 
         let elapsed = last_report.elapsed();
         if percent - last_percent >= 1.0 || elapsed.as_millis() >= 500 {
-            app.emit("model-download-progress", DownloadProgress {
-                downloaded,
-                total,
-                percent,
-                model_name: model_name.to_string(),
-                status: "downloading".to_string(),
-            }).ok();
+            app.emit(
+                "model-download-progress",
+                DownloadProgress {
+                    downloaded,
+                    total,
+                    percent,
+                    model_name: model_name.to_string(),
+                    status: "downloading".to_string(),
+                },
+            )
+            .ok();
             last_report = std::time::Instant::now();
             last_percent = percent;
         }
@@ -234,19 +251,26 @@ fn do_download(
     /* Rename temp file to final name */
     std::fs::rename(&tmp_path, output_path)?;
 
-    tracing::info!("Model download complete: {} ({} MB)", model_name, downloaded / 1_048_576);
+    tracing::info!(
+        "Model download complete: {} ({} MB)",
+        model_name,
+        downloaded / 1_048_576
+    );
 
-    app.emit("model-download-progress", DownloadProgress {
-        downloaded,
-        total: downloaded,
-        percent: 100.0,
-        model_name: model_name.to_string(),
-        status: "complete".to_string(),
-    }).ok();
+    app.emit(
+        "model-download-progress",
+        DownloadProgress {
+            downloaded,
+            total: downloaded,
+            percent: 100.0,
+            model_name: model_name.to_string(),
+            status: "complete".to_string(),
+        },
+    )
+    .ok();
 
     Ok(())
 }
-
 
 /// Clean up stale .downloading temp files from previous failed attempts.
 fn cleanup_temp_files(models_dir: &std::path::Path) {
@@ -261,11 +285,12 @@ fn cleanup_temp_files(models_dir: &std::path::Path) {
     }
 }
 
-
 /// Check if a model file exists and is likely complete.
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 pub fn has_local_model(app: tauri::AppHandle) -> AppResult<bool> {
-    let data_dir = app.path().app_data_dir()
+    let data_dir = app
+        .path()
+        .app_data_dir()
         .map_err(|e| AppError::Internal(format!("Failed to resolve data dir: {e}")))?;
     let models_dir = data_dir.join("models").join("gguf");
 

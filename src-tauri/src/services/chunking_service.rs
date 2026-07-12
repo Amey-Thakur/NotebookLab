@@ -10,11 +10,9 @@
 
 use crate::database::models::CreateChunk;
 
-
 const TARGET_TOKENS: usize = 400;
 const OVERLAP_TOKENS: usize = 50;
 const APPROX_TOKENS_PER_WORD: f32 = 1.3;
-
 
 /// Split text into overlapping chunks with positional metadata.
 pub fn chunk_text(
@@ -72,7 +70,6 @@ pub fn chunk_text(
     chunks
 }
 
-
 /// Split text into paragraphs (double newline separated).
 fn split_into_paragraphs(text: &str) -> Vec<String> {
     text.split("\n\n")
@@ -81,13 +78,11 @@ fn split_into_paragraphs(text: &str) -> Vec<String> {
         .collect()
 }
 
-
 /// Approximate token count from word count.
 fn approx_token_count(text: &str) -> usize {
     let words = text.split_whitespace().count();
     (words as f32 * APPROX_TOKENS_PER_WORD) as usize
 }
-
 
 /// Extract the last N approximate tokens from text for chunk overlap.
 fn get_overlap_text(text: &str, target_tokens: usize) -> String {

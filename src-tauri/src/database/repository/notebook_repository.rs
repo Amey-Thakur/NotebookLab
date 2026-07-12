@@ -13,7 +13,6 @@ use uuid::Uuid;
 use crate::database::models::{CreateNotebook, Notebook, UpdateNotebook};
 use crate::error::{AppError, AppResult};
 
-
 pub fn create(conn: &Connection, input: CreateNotebook) -> AppResult<Notebook> {
     let id = Uuid::now_v7().to_string();
     let now = chrono::Utc::now().to_rfc3339();
@@ -29,7 +28,6 @@ pub fn create(conn: &Connection, input: CreateNotebook) -> AppResult<Notebook> {
     get_by_id(conn, &id)
 }
 
-
 pub fn get_by_id(conn: &Connection, id: &str) -> AppResult<Notebook> {
     conn.query_row(
         "SELECT id, name, description, color, created_at, updated_at
@@ -38,11 +36,12 @@ pub fn get_by_id(conn: &Connection, id: &str) -> AppResult<Notebook> {
         Notebook::from_row,
     )
     .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Notebook not found: {id}")),
+        rusqlite::Error::QueryReturnedNoRows => {
+            AppError::NotFound(format!("Notebook not found: {id}"))
+        }
         other => AppError::Database(other),
     })
 }
-
 
 pub fn list_all(conn: &Connection) -> AppResult<Vec<Notebook>> {
     let mut stmt = conn.prepare(
@@ -56,7 +55,6 @@ pub fn list_all(conn: &Connection) -> AppResult<Vec<Notebook>> {
 
     Ok(notebooks)
 }
-
 
 pub fn update(conn: &Connection, id: &str, input: UpdateNotebook) -> AppResult<Notebook> {
     let existing = get_by_id(conn, id)?;
@@ -74,7 +72,6 @@ pub fn update(conn: &Connection, id: &str, input: UpdateNotebook) -> AppResult<N
 
     get_by_id(conn, id)
 }
-
 
 pub fn delete(conn: &Connection, id: &str) -> AppResult<()> {
     let affected = conn.execute("DELETE FROM notebooks WHERE id = ?1", params![id])?;
