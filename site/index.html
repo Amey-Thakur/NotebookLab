@@ -315,7 +315,7 @@
         <div class="os">macOS</div><div class="fmt">.dmg (Apple Silicon &amp; Intel)</div>
       </a>
       <a href="https://github.com/Amey-Thakur/NotebookLab/releases/latest" data-dl="linux">
-        <div class="os">Linux</div><div class="fmt">.AppImage / .deb / .rpm</div>
+        <div class="os">Linux</div><div class="fmt">.deb / .rpm</div>
       </a>
     </div>
     <p style="margin-top:16px;font-size:12px;color:var(--muted)">Verify downloads with the SHA256SUMS file on the release page.</p>
@@ -349,7 +349,7 @@ fetch('https://api.github.com/repos/Amey-Thakur/NotebookLab/releases/latest')
     const targets={
       windows:pick(/\.msi$/)||pick(/setup\.exe$/),
       mac:pick(/aarch64\.dmg$/)||pick(/\.dmg$/),
-      linux:pick(/\.AppImage$/)||pick(/\.deb$/)
+      linux:pick(/\.deb$/)||pick(/\.rpm$/)
     };
     document.querySelectorAll('[data-dl]').forEach(a=>{
       const asset=targets[a.dataset.dl];
