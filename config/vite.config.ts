@@ -1,10 +1,12 @@
 /*
  * Name: vite.config.ts
  * Purpose: Single build configuration for bundling, styling, and tests.
- * Description: Path alias @ maps to src/ for clean imports. Tauri requires
- *   clearScreen false and a fixed dev port by convention. PostCSS runs
- *   Tailwind and Autoprefixer inline, and the vitest section drives the
- *   unit tests, so the project needs exactly one frontend config file.
+ * Description: Lives in config/ to keep the repository root minimal; npm
+ *   scripts pass it explicitly with --config. The Vite root is src/, where
+ *   index.html lives. Path alias @ maps to src/ for clean imports. Tauri
+ *   requires clearScreen false and a fixed dev port by convention. PostCSS
+ *   runs Tailwind and Autoprefixer inline, and the vitest section drives
+ *   the unit tests, so the frontend needs exactly one config file.
  * Tech Stack: Vite, React, Tailwind CSS, Vitest, Tauri v2
  * License: MIT
  * Authors: Amey Thakur (https://github.com/Amey-Thakur)
@@ -20,19 +22,25 @@ import path from "path";
 import tailwindcss from "tailwindcss";
 import autoprefixer from "autoprefixer";
 
+const repoRoot = path.resolve(__dirname, "..");
 
 export default defineConfig({
+  root: path.join(repoRoot, "src"),
+
   plugins: [react()],
 
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.join(repoRoot, "src"),
     },
   },
 
   css: {
     postcss: {
-      plugins: [tailwindcss({ config: "./config/tailwind.config.ts" }), autoprefixer()],
+      plugins: [
+        tailwindcss({ config: path.join(repoRoot, "config", "tailwind.config.ts") }),
+        autoprefixer(),
+      ],
     },
   },
 
@@ -47,14 +55,16 @@ export default defineConfig({
   build: {
     /* Tauri uses Chromium, target modern JS */
     target: "esnext",
-    /* Reduce chunk warnings threshold */
+    /* Vite root is src/, so the bundle goes up one level */
+    outDir: path.join(repoRoot, "dist"),
+    emptyOutDir: true,
     chunkSizeWarningLimit: 1000,
   },
 
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: ["./src/test/setup.ts"],
-    include: ["src/**/*.test.{ts,tsx}"],
+    setupFiles: [path.join(repoRoot, "src", "test", "setup.ts")],
+    include: ["**/*.test.{ts,tsx}"],
   },
 });

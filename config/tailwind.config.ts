@@ -17,7 +17,7 @@ import type { Config } from "tailwindcss";
 
 
 export default {
-  content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  content: ["./src/index.html", "./src/**/*.{ts,tsx}"],
 
   theme: {
     /* Top-level overrides: replace Tailwind's default font stacks entirely.
