@@ -32,3 +32,10 @@ vi.mock("@tauri-apps/plugin-dialog", () => ({
   open: vi.fn().mockResolvedValue(null),
   save: vi.fn().mockResolvedValue(null),
 }));
+
+/* Mock Tauri webview API (drag and drop events) */
+vi.mock("@tauri-apps/api/webview", () => ({
+  getCurrentWebview: () => ({
+    onDragDropEvent: vi.fn().mockResolvedValue(() => {}),
+  }),
+}));

@@ -28,6 +28,7 @@ import type { Note } from "@/types/models";
 import { AppSidebar } from "./app-sidebar";
 import { AppHeader } from "./app-header";
 import { StatusBar } from "./status-bar";
+import { CommandPalette } from "@/components/shared/command-palette";
 
 
 interface AppShellProps {
@@ -37,6 +38,7 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
@@ -60,7 +62,7 @@ export function AppShell({ children }: AppShellProps) {
       const key = event.key.toLowerCase();
       if (key === "k") {
         event.preventDefault();
-        navigate(ROUTES.SEARCH);
+        setPaletteOpen((current) => !current);
       } else if (key === "n") {
         event.preventDefault();
         const notebookId = useNotebookStore.getState().activeNotebookId;
@@ -93,7 +95,12 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="flex flex-col h-screen bg-bg text-text-1 overflow-hidden">
-      <AppHeader onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+      <AppHeader
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        onOpenPalette={() => setPaletteOpen(true)}
+      />
+
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
 
       <div className="flex flex-1 overflow-hidden relative">
         {/* Mobile overlay */}

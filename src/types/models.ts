@@ -101,6 +101,10 @@ export interface ModelFileInfo {
   size_display: string;
 }
 
+export interface RecentNote extends Note {
+  notebook_name: string;
+}
+
 export interface UnifiedSearchResult {
   chunks: SearchResult[];
   notes: Note[];

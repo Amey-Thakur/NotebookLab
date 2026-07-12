@@ -182,6 +182,37 @@ pub fn sync_note_links(
     Ok(())
 }
 
+/// A recently edited note joined with its notebook name, for the
+/// "pick up where you left off" section on the notebooks page.
+#[derive(serde::Serialize)]
+pub struct RecentNote {
+    #[serde(flatten)]
+    pub note: Note,
+    pub notebook_name: String,
+}
+
+/// The most recently edited notes across every notebook.
+pub fn list_recent(conn: &Connection, limit: usize) -> AppResult<Vec<RecentNote>> {
+    let mut stmt = conn.prepare(
+        "SELECT n.id, n.notebook_id, n.title, n.content, n.created_at, n.updated_at, nb.name
+         FROM notes n
+         INNER JOIN notebooks nb ON n.notebook_id = nb.id
+         ORDER BY n.updated_at DESC
+         LIMIT ?1",
+    )?;
+
+    let notes = stmt
+        .query_map(params![limit as i64], |row| {
+            Ok(RecentNote {
+                note: Note::from_row(row)?,
+                notebook_name: row.get(6)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(notes)
+}
+
 /// List notes that link to the given note (the backlinks panel).
 pub fn get_backlinks(conn: &Connection, note_id: &str) -> AppResult<Vec<Note>> {
     let mut stmt = conn.prepare(

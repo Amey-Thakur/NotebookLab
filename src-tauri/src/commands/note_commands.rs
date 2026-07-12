@@ -57,6 +57,17 @@ pub fn get_backlinks(state: State<'_, AppState>, note_id: String) -> AppResult<V
     note_repository::get_backlinks(&conn, &note_id)
 }
 
+/// The most recently edited notes across all notebooks, with notebook names.
+/// Powers the "pick up where you left off" section on the notebooks page.
+#[tauri::command(rename_all = "snake_case")]
+pub fn list_recent_notes(
+    state: State<'_, AppState>,
+    limit: u32,
+) -> AppResult<Vec<note_repository::RecentNote>> {
+    let conn = state.conn()?;
+    note_repository::list_recent(&conn, (limit as usize).min(20))
+}
+
 /// Resolve a [[wiki-link]] title to a note, creating the note when it does
 /// not exist yet. Clicking a link therefore always navigates somewhere.
 #[tauri::command(rename_all = "snake_case")]

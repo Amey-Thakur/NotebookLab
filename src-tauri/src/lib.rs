@@ -78,6 +78,30 @@ pub fn run() {
                 };
             });
 
+            /* Check for updates in the background. When a new version has
+            been downloaded and staged, the status bar offers a restart;
+            registering the plugin alone never checks anything. */
+            let update_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                use tauri::Emitter;
+                use tauri_plugin_updater::UpdaterExt;
+
+                let Ok(updater) = update_handle.updater() else {
+                    return;
+                };
+                match updater.check().await {
+                    Ok(Some(update)) => {
+                        let version = update.version.clone();
+                        tracing::info!("Update available: v{version}");
+                        if update.download_and_install(|_, _| {}, || {}).await.is_ok() {
+                            update_handle.emit("update-ready", version).ok();
+                        }
+                    }
+                    Ok(None) => tracing::debug!("App is up to date"),
+                    Err(e) => tracing::debug!("Update check skipped: {e}"),
+                }
+            });
+
             tracing::info!("Application state initialized");
             Ok(())
         })
@@ -85,6 +109,7 @@ pub fn run() {
             commands::system_commands::get_app_version,
             commands::system_commands::get_data_directory,
             commands::system_commands::get_api_token,
+            commands::system_commands::restart_app,
             commands::system_commands::health_check,
             commands::notebook_commands::list_notebooks,
             commands::notebook_commands::get_notebook,
@@ -99,6 +124,7 @@ pub fn run() {
             commands::note_commands::get_backlinks,
             commands::note_commands::resolve_wiki_link,
             commands::note_commands::export_note,
+            commands::note_commands::list_recent_notes,
             commands::document_commands::import_document,
             commands::document_commands::list_documents,
             commands::document_commands::delete_document,

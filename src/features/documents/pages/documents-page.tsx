@@ -20,6 +20,7 @@ import { ROUTES } from "@/lib/constants";
 import { formatError } from "@/lib/format-error";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { useDocuments, useDeleteDocument } from "../hooks/use-documents";
+import { useDropImport } from "../hooks/use-drop-import";
 import { ImportButton } from "../components/import-button";
 import { DocumentList } from "../components/document-list";
 import { DocumentDetail } from "../components/document-detail";
@@ -31,6 +32,7 @@ export function DocumentsPage() {
 
   const { data: documents, isLoading, isError, error } = useDocuments(activeNotebookId ?? undefined);
   const deleteDoc = useDeleteDocument(activeNotebookId ?? undefined);
+  const { isDragging } = useDropImport(activeNotebookId ?? undefined);
 
   const handleDelete = (id: string) => {
     deleteDoc.mutate(id, {
@@ -58,7 +60,15 @@ export function DocumentsPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="relative p-8">
+      {/* Drop target overlay while a file hovers over the window */}
+      {isDragging && (
+        <div className="absolute inset-4 z-10 flex items-center justify-center border-2 border-dashed
+                        border-accent bg-surface/90 pointer-events-none">
+          <p className="text-sm font-mono text-accent">Drop PDF, TXT, or Markdown files to import</p>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-display font-bold text-text-1">Documents</h1>
         <ImportButton notebookId={activeNotebookId} />
