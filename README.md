@@ -16,7 +16,7 @@ help you think. Nothing leaves your computer.
 
 [![CI](https://github.com/Amey-Thakur/NotebookLab/actions/workflows/ci.yml/badge.svg)](https://github.com/Amey-Thakur/NotebookLab/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/badge/release-v0.2.0-3568c8)](https://github.com/Amey-Thakur/NotebookLab/releases/latest)
-[![License](https://img.shields.io/badge/license-MIT-3568c8)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
 [**Download**](https://github.com/Amey-Thakur/NotebookLab/releases/latest) &nbsp;·&nbsp;
 [**Website**](https://amey-thakur.github.io/NotebookLab/) &nbsp;·&nbsp;

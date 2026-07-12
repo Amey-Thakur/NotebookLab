@@ -21,7 +21,7 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const OUT = join(__dirname, "..", "logos", "final");
+const OUT = join(__dirname, "..", "docs", "brand");
 mkdirSync(OUT, { recursive: true });
 
 /* Brand tokens */
