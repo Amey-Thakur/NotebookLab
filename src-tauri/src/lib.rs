@@ -128,10 +128,12 @@ pub fn run() {
         .map(|app| {
             app.run(|app_handle, event| {
                 /* Terminate the llama-server child on exit so it never
-                outlives the app as an orphaned process. */
+                outlives the app as an orphaned process. try_state: if setup
+                failed before manage(), there is nothing to clean up. */
                 if let tauri::RunEvent::Exit = event {
-                    let sidecar: tauri::State<'_, SidecarManager> = app_handle.state();
-                    sidecar.shutdown();
+                    if let Some(sidecar) = app_handle.try_state::<SidecarManager>() {
+                        sidecar.shutdown();
+                    }
                 }
             });
         })
