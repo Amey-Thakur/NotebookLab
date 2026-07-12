@@ -7,9 +7,6 @@
  *   Commands are registered via invoke_handler(). Plugins extend Tauri's capabilities.
  */
 
-/* Allow dead code for future-use functions and re-exports during MVP */
-#![allow(dead_code)]
-
 pub mod api;
 pub mod commands;
 pub mod database;
@@ -25,7 +22,6 @@ use tauri::Manager;
 use services::sidecar_service::SidecarManager;
 use state::AppState;
 
-
 /// Build and run the Tauri application.
 /// Called from main.rs on desktop, or from a test harness.
 pub fn run() {
@@ -35,41 +31,43 @@ pub fn run() {
         "notebooklab=info,tauri=warn"
     };
 
-    tracing_subscriber::fmt()
-        .with_env_filter(log_filter)
-        .init();
+    tracing_subscriber::fmt().with_env_filter(log_filter).init();
 
     tracing::info!("Starting NotebookLab v{}", env!("CARGO_PKG_VERSION"));
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let app_state = AppState::initialize(app.handle())?;
 
             /* Create sample notebook on first run */
             if let Ok(conn) = app_state.conn() {
-                services::first_run_service::ensure_sample_notebook(&conn).ok();
+                services::first_run_service::ensure_sample_notebook(&conn)
+                    .unwrap_or_else(|e| tracing::warn!("First-run setup failed: {e}"));
             }
 
-            /* Start the local REST API server with its own read-only DB connection */
-            let data_dir = app.path().app_data_dir()
+            /* Start the local REST API server with its own read-only DB
+            connection. It shares the session token stored in AppState so
+            the Settings page can show users how to authenticate. */
+            let data_dir = app
+                .path()
+                .app_data_dir()
                 .map_err(|e| format!("Failed to resolve data dir: {e}"))?;
             let db_path = data_dir.join("notebooklab.db");
-            let _api_token = api::server::start_api_server(db_path);
+            api::server::start_api_server(db_path, app_state.api_token.clone());
 
             app.manage(app_state);
             app.manage(SidecarManager::new());
 
             /* Auto-detect local LLM providers on a background thread.
-               Runs after manage() so state is accessible via Tauri's Arc wrapper.
-               This avoids blocking the UI (up to 1.5s if all probes timeout). */
+            Runs after manage() so state is accessible via Tauri's Arc wrapper.
+            This avoids blocking the UI (up to 1.5s if all probes timeout). */
             let handle = app.handle().clone();
             std::thread::spawn(move || {
                 let state: tauri::State<'_, AppState> = handle.state();
-                if let Ok(mut providers) = state.provider() {
+                if let Ok(mut providers) = state.provider_write() {
                     services::auto_setup_service::auto_detect_providers(&mut providers);
                 };
             });
@@ -80,6 +78,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::system_commands::get_app_version,
             commands::system_commands::get_data_directory,
+            commands::system_commands::get_api_token,
             commands::system_commands::health_check,
             commands::notebook_commands::list_notebooks,
             commands::notebook_commands::get_notebook,
@@ -92,6 +91,8 @@ pub fn run() {
             commands::note_commands::update_note,
             commands::note_commands::delete_note,
             commands::note_commands::search_notes,
+            commands::note_commands::get_backlinks,
+            commands::note_commands::resolve_wiki_link,
             commands::document_commands::import_document,
             commands::document_commands::list_documents,
             commands::document_commands::get_document,
@@ -102,6 +103,7 @@ pub fn run() {
             commands::chat_commands::send_chat_message,
             commands::chat_commands::list_conversations,
             commands::chat_commands::get_chat_messages,
+            commands::chat_commands::get_message_citations,
             commands::chat_commands::delete_conversation,
             commands::search_commands::search,
             commands::thinking_commands::generate_mind_map,
@@ -111,7 +113,7 @@ pub fn run() {
             commands::model_commands::register_provider,
             commands::model_commands::set_active_provider,
             commands::model_commands::get_active_provider_name,
-            commands::model_commands::get_model_registry,
+            commands::model_commands::detect_providers,
             commands::podcast_commands::generate_podcast,
             commands::download_commands::download_default_model,
             commands::download_commands::download_model,
@@ -122,7 +124,17 @@ pub fn run() {
             commands::sidecar_commands::stop_sidecar,
             commands::sidecar_commands::list_local_models,
         ])
-        .run(tauri::generate_context!())
+        .build(tauri::generate_context!())
+        .map(|app| {
+            app.run(|app_handle, event| {
+                /* Terminate the llama-server child on exit so it never
+                outlives the app as an orphaned process. */
+                if let tauri::RunEvent::Exit = event {
+                    let sidecar: tauri::State<'_, SidecarManager> = app_handle.state();
+                    sidecar.shutdown();
+                }
+            });
+        })
         .unwrap_or_else(|e| {
             tracing::error!("Failed to run NotebookLab: {e}");
             eprintln!("Fatal error: {e}");

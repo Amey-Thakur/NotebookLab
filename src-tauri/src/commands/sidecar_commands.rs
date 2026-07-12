@@ -16,20 +16,26 @@ use tauri_plugin_shell::ShellExt;
 
 use crate::error::{AppError, AppResult};
 use crate::providers::openai_compatible::OpenAiCompatibleProvider;
-use crate::services::sidecar_service::{self, SidecarManager, SidecarStatusInfo, STATE_STOPPED, STATE_STARTING};
+use crate::services::sidecar_service::{
+    self, SidecarManager, SidecarStatusInfo, STATE_CRASHED, STATE_READY, STATE_STARTING,
+    STATE_STOPPED,
+};
 use crate::state::AppState;
 
+/// Provider name registered for the managed llama-server process.
+/// Shared between registration, stop, and crash handling so activation
+/// state stays consistent across restarts.
+pub const SIDECAR_PROVIDER_NAME: &str = "llama.cpp (sidecar)";
 
 /// Check if the sidecar binary exists in the app bundle.
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 pub fn sidecar_available(app: tauri::AppHandle) -> AppResult<bool> {
     let available = app.shell().sidecar("llama-server").is_ok();
     Ok(available)
 }
 
-
 /// Get current sidecar status for the frontend UI.
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 pub fn get_sidecar_status(sidecar: State<'_, SidecarManager>) -> AppResult<SidecarStatusInfo> {
     Ok(SidecarStatusInfo {
         state: sidecar.current_state(),
@@ -39,17 +45,19 @@ pub fn get_sidecar_status(sidecar: State<'_, SidecarManager>) -> AppResult<Sidec
     })
 }
 
-
 /// Start the llama-server sidecar with a specified model file.
 /// If model_path is empty, scans the models directory for GGUF files.
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 pub fn start_sidecar(
     app: tauri::AppHandle,
     sidecar: State<'_, SidecarManager>,
     model_path: Option<String>,
 ) -> AppResult<SidecarStatusInfo> {
-    /* Atomic transition: STOPPED -> STARTING. Prevents double-start race. */
-    if !sidecar.try_transition(STATE_STOPPED, STATE_STARTING) {
+    /* Atomic transition into STARTING. Prevents double-start races while
+    allowing restart after a crash (CRASHED is a recoverable state). */
+    if !sidecar.try_transition(STATE_STOPPED, STATE_STARTING)
+        && !sidecar.try_transition(STATE_CRASHED, STATE_STARTING)
+    {
         /* Already running or starting, return current status */
         return Ok(SidecarStatusInfo {
             state: sidecar.current_state(),
@@ -63,11 +71,10 @@ pub fn start_sidecar(
     sidecar.cancelled.store(false, Ordering::Release);
 
     /* Resolve and validate model path */
-    let data_dir = app.path().app_data_dir()
-        .map_err(|e| {
-            sidecar.set_state(STATE_STOPPED);
-            AppError::Internal(format!("Failed to resolve data dir: {e}"))
-        })?;
+    let data_dir = app.path().app_data_dir().map_err(|e| {
+        sidecar.set_state(STATE_STOPPED);
+        AppError::Internal(format!("Failed to resolve data dir: {e}"))
+    })?;
     let models_dir = data_dir.join("models").join("gguf");
 
     let model = match model_path {
@@ -118,21 +125,28 @@ pub fn start_sidecar(
     /* Build sidecar command via Tauri shell plugin */
     let args = sidecar_service::build_sidecar_args(port, &model_str);
 
-    let sidecar_cmd = app.shell().sidecar("llama-server")
-        .map_err(|e| {
-            sidecar.set_state(STATE_STOPPED);
-            AppError::Internal(format!("Failed to resolve sidecar binary: {e}"))
-        })?;
+    let sidecar_cmd = app.shell().sidecar("llama-server").map_err(|e| {
+        sidecar.set_state(STATE_STOPPED);
+        AppError::Internal(format!("Failed to resolve sidecar binary: {e}"))
+    })?;
 
-    let sidecar_cmd = sidecar_cmd.args(args)
+    let mut sidecar_cmd = sidecar_cmd
+        .args(args)
         .env(sidecar_service::api_key_env_var(), &api_key);
 
+    /* Point the child at its bundled shared libraries (DLLs / dylibs / .so).
+    The llama.cpp release binaries link against libraries shipped in the
+    same archive; installers place them under the resource directory. */
+    let resource_dir = app.path().resource_dir().ok();
+    for (key, value) in sidecar_service::library_env(resource_dir) {
+        sidecar_cmd = sidecar_cmd.env(key, value);
+    }
+
     /* Spawn the process */
-    let (mut rx, child) = sidecar_cmd.spawn()
-        .map_err(|e| {
-            sidecar.set_state(STATE_STOPPED);
-            AppError::Internal(format!("Failed to spawn llama-server: {e}"))
-        })?;
+    let (mut rx, child) = sidecar_cmd.spawn().map_err(|e| {
+        sidecar.set_state(STATE_STOPPED);
+        AppError::Internal(format!("Failed to spawn llama-server: {e}"))
+    })?;
 
     let child_pid = child.pid();
     /* Update PID under the existing lock set by configure() */
@@ -140,11 +154,13 @@ pub fn start_sidecar(
         let mut inner = sidecar.inner_lock();
         inner.pid = child_pid;
     }
+    /* Keep the handle so stop and app exit can terminate the process */
+    sidecar.set_child(child);
 
     tracing::info!("llama-server spawned (PID: {child_pid})");
 
     /* Background thread: drain stdout/stderr and detect termination.
-       Sets the cancellation flag so the health poller aborts immediately. */
+    Sets the cancellation flag so the health poller aborts immediately. */
     let handle = app.clone();
     std::thread::spawn(move || {
         while let Some(event) = rx.blocking_recv() {
@@ -163,14 +179,34 @@ pub fn start_sidecar(
                     }
                 }
                 tauri_plugin_shell::process::CommandEvent::Terminated(status) => {
-                    tracing::warn!("llama-server exited: {:?}", status);
                     let mgr: State<'_, SidecarManager> = handle.state();
                     mgr.cancelled.store(true, Ordering::Release);
-                    mgr.set_state(sidecar_service::STATE_CRASHED);
+
+                    /* Only mark CRASHED for unexpected exits. A clean stop has
+                    already moved the state to STOPPED, and overwriting it
+                    here would strand the manager in a phantom crash. */
+                    let crashed = mgr
+                        .try_transition(STATE_STARTING, sidecar_service::STATE_CRASHED)
+                        || mgr.try_transition(STATE_READY, sidecar_service::STATE_CRASHED);
+
+                    if crashed {
+                        tracing::warn!("llama-server exited unexpectedly: {:?}", status);
+                        /* Deactivate the dead provider so chat reports "no
+                        provider" instead of opaque connection errors. */
+                        let state: State<'_, AppState> = handle.state();
+                        if let Ok(providers) = state.provider_read() {
+                            providers.deactivate_if_named(SIDECAR_PROVIDER_NAME);
+                        }
+                    } else {
+                        tracing::info!("llama-server exited after stop: {:?}", status);
+                    }
+
                     {
                         let mut inner = mgr.inner_lock();
                         inner.pid = 0;
                     }
+                    /* Drop the stale child handle; the process is gone */
+                    drop(mgr.take_child());
                     break;
                 }
                 _ => {}
@@ -179,10 +215,11 @@ pub fn start_sidecar(
     });
 
     /* Background thread: poll health and register provider when ready.
-       The cancelled flag lets this thread abort early if the process dies. */
+    The cancelled flag lets this thread abort early if the process dies. */
     let handle2 = app.clone();
     let api_key_for_provider = api_key;
-    let model_name = model.file_stem()
+    let model_name = model
+        .file_stem()
         .and_then(|s| s.to_str())
         .unwrap_or("local-model")
         .to_string();
@@ -197,18 +234,21 @@ pub fn start_sidecar(
             mgr.set_state(sidecar_service::STATE_READY);
             tracing::info!("llama-server ready on port {port}");
 
-            /* Register as provider with the API key for auth */
+            /* Register as provider with the API key for auth. Replace any
+            entry from a previous run so restarts do not accumulate
+            duplicate providers pointing at dead ports. */
             let state: State<'_, AppState> = handle2.state();
-            if let Ok(mut providers) = state.provider() {
+            if let Ok(mut providers) = state.provider_write() {
                 let provider = OpenAiCompatibleProvider::new(
-                    "llama.cpp (sidecar)".to_string(),
+                    SIDECAR_PROVIDER_NAME.to_string(),
                     format!("http://127.0.0.1:{port}"),
                     Some(api_key_for_provider),
                     model_name,
                     true,
                 );
-                let provider_box: Box<dyn crate::providers::traits::LlmProvider> = Box::new(provider);
-                let index = providers.register(provider_box);
+                let provider_box: Box<dyn crate::providers::traits::LlmProvider> =
+                    Box::new(provider);
+                let index = providers.register_or_replace(provider_box);
                 if providers.set_active(index).is_ok() {
                     tracing::info!("Sidecar auto-activated as provider (index {index})");
                 }
@@ -228,62 +268,30 @@ pub fn start_sidecar(
     })
 }
 
-
-/// Stop the running sidecar process.
-#[tauri::command]
+/// Stop the sidecar process and deactivate its provider entry.
+/// Safe to call from any state: a crashed sidecar is reset to Stopped so it
+/// can be started again.
+#[tauri::command(rename_all = "snake_case")]
 pub fn stop_sidecar(
+    state: State<'_, AppState>,
     sidecar: State<'_, SidecarManager>,
 ) -> AppResult<()> {
-    if !sidecar.is_running() {
-        return Ok(());
+    /* Route chat away from the server that is about to die */
+    if let Ok(providers) = state.provider_read() {
+        providers.deactivate_if_named(SIDECAR_PROVIDER_NAME);
     }
 
     sidecar.set_state(sidecar_service::STATE_STOPPING);
-    let pid = sidecar.pid();
-
-    if pid == 0 {
-        sidecar.set_state(STATE_STOPPED);
-        sidecar.clear();
-        return Ok(());
-    }
-
-    tracing::info!("Stopping llama-server (PID: {pid})");
-
-    /* Kill the process by PID. Platform-specific commands. */
-    #[cfg(target_os = "windows")]
-    {
-        let result = std::process::Command::new("taskkill")
-            .args(["/PID", &pid.to_string(), "/F"])
-            .output();
-        if let Err(e) = result {
-            tracing::warn!("taskkill failed: {e}");
-        }
-    }
-
-    #[cfg(not(target_os = "windows"))]
-    {
-        let result = std::process::Command::new("kill")
-            .arg(pid.to_string())
-            .output();
-        if let Err(e) = result {
-            tracing::warn!("kill failed: {e}");
-        }
-    }
-
-    /* Signal cancellation so background threads clean up */
-    sidecar.cancelled.store(true, Ordering::Release);
-    sidecar.set_state(STATE_STOPPED);
-    sidecar.clear();
-
-    tracing::info!("llama-server stopped");
+    sidecar.shutdown();
     Ok(())
 }
 
-
 /// List available GGUF model files in the models directory.
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 pub fn list_local_models(app: tauri::AppHandle) -> AppResult<Vec<ModelFileInfo>> {
-    let data_dir = app.path().app_data_dir()
+    let data_dir = app
+        .path()
+        .app_data_dir()
         .map_err(|e| AppError::Internal(format!("Failed to resolve data dir: {e}")))?;
     let models_dir = data_dir.join("models").join("gguf");
 
@@ -291,19 +299,22 @@ pub fn list_local_models(app: tauri::AppHandle) -> AppResult<Vec<ModelFileInfo>>
 
     let models = sidecar_service::find_model_files(&models_dir);
 
-    Ok(models.iter().map(|p| {
-        let size = std::fs::metadata(p).map(|m| m.len()).unwrap_or(0);
-        ModelFileInfo {
-            name: p.file_stem()
-                .and_then(|s| s.to_str())
-                .unwrap_or("unknown")
-                .to_string(),
-            size_bytes: size,
-            size_display: format_size(size),
-        }
-    }).collect())
+    Ok(models
+        .iter()
+        .map(|p| {
+            let size = std::fs::metadata(p).map(|m| m.len()).unwrap_or(0);
+            ModelFileInfo {
+                name: p
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("unknown")
+                    .to_string(),
+                size_bytes: size,
+                size_display: format_size(size),
+            }
+        })
+        .collect())
 }
-
 
 #[derive(serde::Serialize)]
 pub struct ModelFileInfo {
@@ -311,7 +322,6 @@ pub struct ModelFileInfo {
     pub size_bytes: u64,
     pub size_display: String,
 }
-
 
 fn format_size(bytes: u64) -> String {
     if bytes >= 1_073_741_824 {

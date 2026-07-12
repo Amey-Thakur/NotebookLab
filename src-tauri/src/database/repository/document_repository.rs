@@ -12,7 +12,6 @@ use uuid::Uuid;
 use crate::database::models::{CreateDocument, Document, DocumentStatus};
 use crate::error::{AppError, AppResult};
 
-
 pub fn create(conn: &Connection, input: CreateDocument) -> AppResult<Document> {
     let id = Uuid::now_v7().to_string();
     let now = chrono::Utc::now().to_rfc3339();
@@ -25,7 +24,6 @@ pub fn create(conn: &Connection, input: CreateDocument) -> AppResult<Document> {
 
     get_by_id(conn, &id)
 }
-
 
 pub fn get_by_id(conn: &Connection, id: &str) -> AppResult<Document> {
     conn.query_row(
@@ -40,7 +38,6 @@ pub fn get_by_id(conn: &Connection, id: &str) -> AppResult<Document> {
     })
 }
 
-
 pub fn list_by_notebook(conn: &Connection, notebook_id: &str) -> AppResult<Vec<Document>> {
     let mut stmt = conn.prepare(
         "SELECT id, notebook_id, title, file_path, file_type, file_hash, file_size, status, created_at, updated_at
@@ -53,7 +50,6 @@ pub fn list_by_notebook(conn: &Connection, notebook_id: &str) -> AppResult<Vec<D
 
     Ok(docs)
 }
-
 
 pub fn update_status(conn: &Connection, id: &str, status: DocumentStatus) -> AppResult<()> {
     let now = chrono::Utc::now().to_rfc3339();
@@ -70,7 +66,6 @@ pub fn update_status(conn: &Connection, id: &str, status: DocumentStatus) -> App
     Ok(())
 }
 
-
 pub fn delete(conn: &Connection, id: &str) -> AppResult<()> {
     let affected = conn.execute("DELETE FROM documents WHERE id = ?1", params![id])?;
 
@@ -81,9 +76,12 @@ pub fn delete(conn: &Connection, id: &str) -> AppResult<()> {
     Ok(())
 }
 
-
 /// Check if a document with the same file hash already exists in a notebook.
-pub fn find_by_hash(conn: &Connection, notebook_id: &str, file_hash: &str) -> AppResult<Option<Document>> {
+pub fn find_by_hash(
+    conn: &Connection,
+    notebook_id: &str,
+    file_hash: &str,
+) -> AppResult<Option<Document>> {
     let result = conn.query_row(
         "SELECT id, notebook_id, title, file_path, file_type, file_hash, file_size, status, created_at, updated_at
          FROM documents WHERE notebook_id = ?1 AND file_hash = ?2",

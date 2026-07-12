@@ -11,12 +11,10 @@ use std::sync::RwLock;
 
 use super::traits::{ChatRequest, ChatResponse, LlmProvider, ProviderError};
 
-
 pub struct ProviderRouter {
     providers: Vec<Box<dyn LlmProvider>>,
     active_index: RwLock<Option<usize>>,
 }
-
 
 impl Default for ProviderRouter {
     fn default() -> Self {
@@ -39,6 +37,38 @@ impl ProviderRouter {
         index
     }
 
+    /// Register a provider, replacing any existing provider with the same name.
+    /// Keeps indexes stable so the frontend's index-based activation stays valid
+    /// across sidecar restarts (which would otherwise accumulate duplicates).
+    pub fn register_or_replace(&mut self, provider: Box<dyn LlmProvider>) -> usize {
+        let name = provider.name().to_string();
+        if let Some(index) = self.providers.iter().position(|p| p.name() == name) {
+            self.providers[index] = provider;
+            index
+        } else {
+            self.register(provider)
+        }
+    }
+
+    /// Clear the active provider if it currently points at the named provider.
+    /// Used when the sidecar stops so chat fails with a clear "no provider"
+    /// message instead of a network error against a dead server.
+    pub fn deactivate_if_named(&self, name: &str) {
+        let Ok(mut active) = self.active_index.write() else {
+            return;
+        };
+        if let Some(idx) = *active {
+            if self
+                .providers
+                .get(idx)
+                .map(|p| p.name() == name)
+                .unwrap_or(false)
+            {
+                *active = None;
+            }
+        }
+    }
+
     /// Set the active provider by index.
     pub fn set_active(&self, index: usize) -> Result<(), ProviderError> {
         if index >= self.providers.len() {
@@ -48,9 +78,10 @@ impl ProviderRouter {
             )));
         }
 
-        let mut active = self.active_index.write().map_err(|_| {
-            ProviderError::Configuration("Provider router lock poisoned".into())
-        })?;
+        let mut active = self
+            .active_index
+            .write()
+            .map_err(|_| ProviderError::Configuration("Provider router lock poisoned".into()))?;
 
         *active = Some(index);
         Ok(())
@@ -65,9 +96,10 @@ impl ProviderRouter {
 
     /// Send a chat completion request to the active provider.
     pub fn chat_completion(&self, request: ChatRequest) -> Result<ChatResponse, ProviderError> {
-        let active = self.active_index.read().map_err(|_| {
-            ProviderError::NotAvailable("Provider router lock poisoned".into())
-        })?;
+        let active = self
+            .active_index
+            .read()
+            .map_err(|_| ProviderError::NotAvailable("Provider router lock poisoned".into()))?;
 
         let idx = active.ok_or_else(|| {
             ProviderError::NotAvailable("No active provider. Select a model first.".into())
@@ -76,16 +108,17 @@ impl ProviderRouter {
         let provider = &self.providers[idx];
 
         /* Availability check removed from hot path. The completion call itself
-           will return a clear error if the provider is unreachable. Checking
-           availability added ~100-300ms latency per request. */
+        will return a clear error if the provider is unreachable. Checking
+        availability added ~100-300ms latency per request. */
         provider.chat_completion(request)
     }
 
     /// Generate an embedding vector using the active provider.
     pub fn embed(&self, text: &str) -> Result<Option<Vec<f32>>, ProviderError> {
-        let active = self.active_index.read().map_err(|_| {
-            ProviderError::NotAvailable("Provider router lock poisoned".into())
-        })?;
+        let active = self
+            .active_index
+            .read()
+            .map_err(|_| ProviderError::NotAvailable("Provider router lock poisoned".into()))?;
 
         let idx = active.ok_or_else(|| {
             ProviderError::NotAvailable("No active provider. Select a model first.".into())
@@ -111,7 +144,6 @@ impl ProviderRouter {
             .collect()
     }
 }
-
 
 #[derive(Debug, serde::Serialize)]
 pub struct ProviderInfo {
