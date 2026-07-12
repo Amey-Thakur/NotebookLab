@@ -48,42 +48,6 @@ impl OpenAiCompatibleProvider {
                 .unwrap_or_else(|_| Client::new()),
         }
     }
-
-    /// Create a provider configured for a local llama.cpp sidecar.
-    #[allow(dead_code)]
-    pub fn llama_cpp(port: u16, model_name: String) -> Self {
-        Self::new(
-            "llama.cpp".into(),
-            format!("http://127.0.0.1:{port}"),
-            None,
-            model_name,
-            true,
-        )
-    }
-
-    /// Create a provider configured for Ollama's local server.
-    #[allow(dead_code)]
-    pub fn ollama(model_name: String) -> Self {
-        Self::new(
-            "Ollama".into(),
-            "http://127.0.0.1:11434".into(),
-            None,
-            model_name,
-            true,
-        )
-    }
-
-    /// Create a provider configured for the OpenAI API.
-    #[allow(dead_code)]
-    pub fn openai(api_key: String, model: String) -> Self {
-        Self::new(
-            "OpenAI".into(),
-            "https://api.openai.com".into(),
-            Some(api_key),
-            model,
-            false,
-        )
-    }
 }
 
 impl LlmProvider for OpenAiCompatibleProvider {
