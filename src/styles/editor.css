@@ -1,11 +1,15 @@
 /*
- * Title: editor.css
+ * Name: editor.css
+ * Purpose: Milkdown/ProseMirror editor style overrides to match the
+ *   NotebookLab design system.
+ * Description: Overrides the Nord theme defaults with our color palette. Uses
+ *   Source Serif 4 for body text (readable long-form), Play for
+ *   headings, and JetBrains Mono for code blocks.
  * Tech Stack: CSS, Milkdown, ProseMirror
- * Description: Milkdown/ProseMirror editor style overrides to match the NotebookLab
- *   design system.
- * Important Details: Overrides the Nord theme defaults with our color palette.
- *   Uses Source Serif 4 for body text (readable long-form), Play for headings,
- *   and JetBrains Mono for code blocks.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 .milkdown-editor-root .milkdown {

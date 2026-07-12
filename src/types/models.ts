@@ -1,9 +1,13 @@
 /*
- * Title: models.ts
+ * Name: models.ts
+ * Purpose: Shared type definitions mirroring Rust backend models.
+ * Description: These types must match the Rust structs exactly. Changes to
+ *   Rust models should be reflected here.
  * Tech Stack: TypeScript
- * Description: Shared type definitions mirroring Rust backend models.
- * Important Details: These types must match the Rust structs exactly.
- *   Changes to Rust models should be reflected here.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 export interface Notebook {

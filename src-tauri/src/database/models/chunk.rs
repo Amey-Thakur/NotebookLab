@@ -1,11 +1,16 @@
 /*
- * Title: chunk.rs
+ * Name: chunk.rs
+ * Purpose: Chunk domain model.
+ * Description: A text segment extracted from a document during the ingestion
+ *   pipeline, ready for embedding and RAG retrieval. Chunks are
+ *   created by the chunking service with ~300-500 token windows
+ *   and 50-token overlap. Each chunk carries positional metadata
+ *   (page number, heading context) for citation reconstruction.
  * Tech Stack: Rust, serde, rusqlite
- * Description: Chunk domain model. A text segment extracted from a document during
- *   the ingestion pipeline, ready for embedding and RAG retrieval.
- * Important Details: Chunks are created by the chunking service with ~300-500 token
- *   windows and 50-token overlap. Each chunk carries positional metadata (page number,
- *   heading context) for citation reconstruction.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use rusqlite::Row;

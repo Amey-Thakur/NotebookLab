@@ -1,12 +1,18 @@
 /*
- * Title: podcast-page.tsx
+ * Name: podcast-page.tsx
+ * Purpose: Podcast generation and playback page.
+ * Description: The LLM generates a conversation script, and the browser's
+ *   SpeechSynthesis API reads it aloud with distinct voices. Uses
+ *   Web Speech API for TTS (offline, zero-config, cross-platform).
+ *   Two different voices are assigned to Speaker A and Speaker B.
+ *   The script is stored in component state (not persisted to
+ *   disk). Audio quality depends on OS voices. Can be upgraded to
+ *   Piper/Kokoro TTS later for better quality.
  * Tech Stack: React 19, TanStack Query, Web Speech API, Tailwind CSS
- * Description: Podcast generation and playback page. The LLM generates a conversation
- *   script, and the browser's SpeechSynthesis API reads it aloud with distinct voices.
- * Important Details: Uses Web Speech API for TTS (offline, zero-config, cross-platform).
- *   Two different voices are assigned to Speaker A and Speaker B. The script is stored
- *   in component state (not persisted to disk). Audio quality depends on OS voices.
- *   Can be upgraded to Piper/Kokoro TTS later for better quality.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";

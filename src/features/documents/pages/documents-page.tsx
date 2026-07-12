@@ -1,11 +1,16 @@
 /*
- * Title: documents-page.tsx
+ * Name: documents-page.tsx
+ * Purpose: Document management page.
+ * Description: Import files, view document list, preview extracted chunks,
+ *   and delete documents. Scoped to the active notebook from the
+ *   Zustand store. If no notebook is selected, prompts the user to
+ *   select one first. Uses a split layout: document list on left,
+ *   chunk preview on right.
  * Tech Stack: React 19, TanStack Query, Tailwind CSS
- * Description: Document management page. Import files, view document list,
- *   preview extracted chunks, and delete documents.
- * Important Details: Scoped to the active notebook from the Zustand store.
- *   If no notebook is selected, prompts the user to select one first.
- *   Uses a split layout: document list on left, chunk preview on right.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useState } from "react";

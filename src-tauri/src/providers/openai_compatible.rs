@@ -1,11 +1,17 @@
 /*
- * Title: openai_compatible.rs
+ * Name: openai_compatible.rs
+ * Purpose: Provider for any OpenAI-compatible API.
+ * Description: Covers OpenAI, llama.cpp server, Ollama, LM Studio, and any
+ *   other server exposing /v1/chat/completions. The base_url is
+ *   configurable per provider instance. llama.cpp sidecar uses
+ *   http://127.0.0.1:{port}, while OpenAI uses
+ *   https://api.openai.com. API key is optional (not needed for
+ *   local servers like llama.cpp or Ollama).
  * Tech Stack: Rust, reqwest, serde
- * Description: Provider for any OpenAI-compatible API. Covers OpenAI, llama.cpp server,
- *   Ollama, LM Studio, and any other server exposing /v1/chat/completions.
- * Important Details: The base_url is configurable per provider instance. llama.cpp
- *   sidecar uses http://127.0.0.1:{port}, while OpenAI uses https://api.openai.com.
- *   API key is optional (not needed for local servers like llama.cpp or Ollama).
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use std::time::Duration;

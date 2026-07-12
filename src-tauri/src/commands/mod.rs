@@ -1,9 +1,14 @@
 /*
- * Title: commands/mod.rs
+ * Name: mod.rs
+ * Purpose: Module declarations for all Tauri command handler groups.
+ * Description: Each command file is a separate module for isolation. Adding a
+ *   new feature's commands = add one mod line here + register in
+ *   lib.rs.
  * Tech Stack: Rust
- * Description: Module declarations for all Tauri command handler groups.
- * Important Details: Each command file is a separate module for isolation.
- *   Adding a new feature's commands = add one mod line here + register in lib.rs.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 pub mod chat_commands;

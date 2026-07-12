@@ -1,11 +1,16 @@
 /*
- * Title: markdown_parser.rs
- * Tech Stack: Rust
- * Description: Parser for Markdown files (.md, .markdown). Extracts headings as
- *   structural metadata for chunk heading_context during ingestion.
- * Important Details: Uses simple line-based parsing (not a full AST parser) because
- *   the goal is text extraction, not rendering. Headings are detected by leading #
+ * Name: markdown_parser.rs
+ * Purpose: Parser for Markdown files (.md, .markdown).
+ * Description: Extracts headings as structural metadata for chunk
+ *   heading_context during ingestion. Uses simple line-based
+ *   parsing (not a full AST parser) because the goal is text
+ *   extraction, not rendering. Headings are detected by leading #
  *   characters. Frontmatter (between --- delimiters) is stripped.
+ * Tech Stack: Rust
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use std::path::Path;

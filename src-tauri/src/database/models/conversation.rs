@@ -1,9 +1,14 @@
 /*
- * Title: conversation.rs
+ * Name: conversation.rs
+ * Purpose: Conversation and message models for RAG-powered AI chat.
+ * Description: Each conversation is scoped to a notebook. Messages alternate
+ *   between user and assistant roles. Citations link assistant
+ *   messages to source chunks.
  * Tech Stack: Rust, serde, rusqlite
- * Description: Conversation and message models for RAG-powered AI chat.
- * Important Details: Each conversation is scoped to a notebook. Messages alternate
- *   between user and assistant roles. Citations link assistant messages to source chunks.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use rusqlite::Row;

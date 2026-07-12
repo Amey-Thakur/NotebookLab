@@ -1,11 +1,17 @@
 /*
- * Title: auto_setup_service.rs
+ * Name: auto_setup_service.rs
+ * Purpose: Auto-setup service that detects and registers local LLM providers
+ *   on startup.
+ * Description: Checks common local endpoints (Ollama, LM Studio, llama.cpp).
+ *   Runs non-blocking probes on localhost. If a provider is found,
+ *   it's automatically registered and activated. This eliminates
+ *   the manual "go to Models, fill in a form" step for users who
+ *   already have Ollama running.
  * Tech Stack: Rust, reqwest
- * Description: Auto-setup service that detects and registers local LLM providers
- *   on startup. Checks common local endpoints (Ollama, LM Studio, llama.cpp).
- * Important Details: Runs non-blocking probes on localhost. If a provider is found,
- *   it's automatically registered and activated. This eliminates the manual
- *   "go to Models, fill in a form" step for users who already have Ollama running.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use crate::providers::openai_compatible::OpenAiCompatibleProvider;

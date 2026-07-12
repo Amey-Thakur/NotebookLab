@@ -1,11 +1,16 @@
 /*
- * Title: plaintext_parser.rs
+ * Name: plaintext_parser.rs
+ * Purpose: Parser for plain text files (.txt).
+ * Description: Treats the entire file as a single page with no heading
+ *   extraction. Detects encoding via BOM (UTF-8, UTF-16). Falls
+ *   back to UTF-8 with lossy conversion for non-UTF-8 files. File
+ *   size capped at 50MB to prevent memory exhaustion on large
+ *   files.
  * Tech Stack: Rust
- * Description: Parser for plain text files (.txt). Treats the entire file as a single
- *   page with no heading extraction.
- * Important Details: Detects encoding via BOM (UTF-8, UTF-16). Falls back to UTF-8
- *   with lossy conversion for non-UTF-8 files. File size capped at 50MB to prevent
- *   memory exhaustion on large files.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use std::path::Path;

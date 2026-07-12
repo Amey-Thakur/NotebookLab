@@ -1,8 +1,13 @@
 /*
- * Title: constants.test.ts
+ * Name: constants.test.ts
+ * Purpose: Tests for application constants.
+ * Description: Ensures routes, query keys, and supported file types are
+ *   consistent and don't accidentally change.
  * Tech Stack: Vitest
- * Description: Tests for application constants. Ensures routes, query keys, and
- *   supported file types are consistent and don't accidentally change.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { describe, it, expect } from "vitest";

@@ -1,9 +1,14 @@
 /*
- * Title: app.tsx
+ * Name: app.tsx
+ * Purpose: Root application component.
+ * Description: Every route maps to a fully implemented page, including
+ *   Podcasts (Web Speech playback). Routes use ROUTES constants
+ *   from lib/constants.ts.
  * Tech Stack: React 19, React Router v7
- * Description: Root application component. Every route maps to a fully
- *   implemented page, including Podcasts (Web Speech playback).
- * Important Details: Routes use ROUTES constants from lib/constants.ts.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { Routes, Route, Navigate } from "react-router-dom";

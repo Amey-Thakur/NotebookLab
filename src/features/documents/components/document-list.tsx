@@ -1,10 +1,15 @@
 /*
- * Title: document-list.tsx
+ * Name: document-list.tsx
+ * Purpose: Displays a list of documents within a notebook.
+ * Description: Shows title, file type, size, processing status, and actions
+ *   (view chunks, delete). Clicking a document selects it for
+ *   chunk preview in the detail panel. Delete requires a
+ *   confirmation click to prevent accidental data loss.
  * Tech Stack: React 19, Tailwind CSS
- * Description: Displays a list of documents within a notebook. Shows title, file type,
- *   size, processing status, and actions (view chunks, delete).
- * Important Details: Clicking a document selects it for chunk preview in the detail panel.
- *   Delete requires a confirmation click to prevent accidental data loss.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useState } from "react";

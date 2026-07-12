@@ -1,11 +1,15 @@
 /*
- * Title: constants.ts
+ * Name: constants.ts
+ * Purpose: Application-wide constants and configuration values.
+ * Description: Route paths are defined here to avoid magic strings in
+ *   components. Query key prefixes ensure TanStack Query cache
+ *   isolation between features.
  * Tech Stack: TypeScript
- * Description: Application-wide constants and configuration values.
- * Important Details: Route paths are defined here to avoid magic strings in components.
- *   Query key prefixes ensure TanStack Query cache isolation between features.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
-
 
 export const ROUTES = {
   NOTEBOOKS: "/notebooks",

@@ -1,11 +1,16 @@
 /*
- * Title: citation-list.tsx
+ * Name: citation-list.tsx
+ * Purpose: Source chips under an assistant chat message.
+ * Description: Shows which document passages grounded the answer, with
+ *   heading and page context. Citations load lazily per message
+ *   and are cached indefinitely because they never change once
+ *   written. Renders nothing when a message has no stored
+ *   citations (for example, small talk).
  * Tech Stack: React 19, TanStack Query, Tailwind CSS
- * Description: Source chips under an assistant chat message. Shows which
- *   document passages grounded the answer, with heading and page context.
- * Important Details: Citations load lazily per message and are cached
- *   indefinitely because they never change once written. Renders nothing
- *   when a message has no stored citations (for example, small talk).
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useState } from "react";

@@ -1,12 +1,18 @@
 /*
- * Title: first_run_service.rs
+ * Name: first_run_service.rs
+ * Purpose: First-run experience.
+ * Description: Creates a sample notebook with example notes so users get
+ *   instant value without importing documents first. Gated on a
+ *   settings-table flag rather than notebook count, so a user who
+ *   deletes every notebook is respected instead of getting the
+ *   sample recreated on the next launch. The two sample notes link
+ *   to each other, so their wiki-links are re-synced after both
+ *   rows exist.
  * Tech Stack: Rust, rusqlite
- * Description: First-run experience. Creates a sample notebook with example notes
- *   so users get instant value without importing documents first.
- * Important Details: Gated on a settings-table flag rather than notebook count,
- *   so a user who deletes every notebook is respected instead of getting the
- *   sample recreated on the next launch. The two sample notes link to each
- *   other, so their wiki-links are re-synced after both rows exist.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use rusqlite::Connection;

@@ -1,12 +1,17 @@
 /*
- * Title: rag_service.rs
+ * Name: rag_service.rs
+ * Purpose: RAG (Retrieval-Augmented Generation) pipeline.
+ * Description: Orchestrates: search chunks -> assemble context -> call LLM ->
+ *   save response + citations. The pipeline is split into phases
+ *   to minimize lock duration. Phase 1 (DB read): search + history
+ *   fetch. Phase 2 (no locks): LLM call. Phase 3 (DB write): save
+ *   response + citations. Conversation history is capped to the
+ *   last 20 messages to stay within model context windows.
  * Tech Stack: Rust
- * Description: RAG (Retrieval-Augmented Generation) pipeline. Orchestrates:
- *   search chunks -> assemble context -> call LLM -> save response + citations.
- * Important Details: The pipeline is split into phases to minimize lock duration.
- *   Phase 1 (DB read): search + history fetch. Phase 2 (no locks): LLM call.
- *   Phase 3 (DB write): save response + citations. Conversation history is capped
- *   to the last 20 messages to stay within model context windows.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use rusqlite::Connection;

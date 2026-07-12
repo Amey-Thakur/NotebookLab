@@ -1,13 +1,18 @@
 /*
- * Title: milkdown-editor.tsx
+ * Name: milkdown-editor.tsx
+ * Purpose: Core Milkdown editor wrapper with [[wiki-link]] support.
+ * Description: The editor instance is created once per mount; callbacks are
+ *   read through refs so the effect never re-runs on prop identity
+ *   changes. Creation is async, so a cancelled flag guards against
+ *   the StrictMode mount-unmount-mount cycle leaving an orphaned
+ *   editor attached to the DOM. Wiki-link clicks are handled by
+ *   delegation on the root element, reading the data-note-title
+ *   attribute written by the decoration plugin.
  * Tech Stack: React 19, Milkdown, ProseMirror
- * Description: Core Milkdown editor wrapper with [[wiki-link]] support.
- * Important Details: The editor instance is created once per mount; callbacks
- *   are read through refs so the effect never re-runs on prop identity changes.
- *   Creation is async, so a cancelled flag guards against the StrictMode
- *   mount-unmount-mount cycle leaving an orphaned editor attached to the DOM.
- *   Wiki-link clicks are handled by delegation on the root element, reading
- *   the data-note-title attribute written by the decoration plugin.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useEffect, useRef } from "react";

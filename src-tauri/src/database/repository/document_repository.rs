@@ -1,9 +1,14 @@
 /*
- * Title: document_repository.rs
+ * Name: document_repository.rs
+ * Purpose: Data access layer for documents.
+ * Description: Handles CRUD and status transitions. Documents are scoped to
+ *   notebooks via foreign key. The status field tracks ingestion
+ *   pipeline progress. Cascade delete removes associated chunks.
  * Tech Stack: Rust, rusqlite
- * Description: Data access layer for documents. Handles CRUD and status transitions.
- * Important Details: Documents are scoped to notebooks via foreign key. The status
- *   field tracks ingestion pipeline progress. Cascade delete removes associated chunks.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use rusqlite::{params, Connection};

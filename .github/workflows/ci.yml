@@ -1,12 +1,15 @@
-##
-## Title: ci.yml
+## Name: ci.yml
+## Purpose: Continuous integration pipeline.
+## Description: Runs on every push and PR. Backend job builds the frontend
+##   first because Tauri's proc macro validates that frontendDist
+##   exists at compile time. Third-party actions are pinned to
+##   commit SHAs. The vitest suite runs on all three desktop
+##   platforms in the backend job, not just Linux.
 ## Tech Stack: GitHub Actions, Node.js, Rust, Tauri v2
-## Description: Continuous integration pipeline. Runs on every push and PR.
-## Important Details: Backend job builds the frontend first because Tauri's proc
-##   macro validates that frontendDist exists at compile time. Third-party
-##   actions are pinned to commit SHAs. The vitest suite runs on all three
-##   desktop platforms in the backend job, not just Linux.
-##
+## License: MIT
+## Authors: Amey Thakur (https://github.com/Amey-Thakur)
+##          Archit Konde (https://github.com/Archit-Konde)
+## Date: 2026-07-12
 
 name: CI
 

@@ -1,8 +1,13 @@
--- Title: 003_fts5_search.sql
+-- Name: 003_fts5_search.sql
+-- Purpose: Full-text search index on document chunks for fast keyword search.
+-- Description: FTS5 virtual table mirrors chunk content. Populated via
+--   triggers that fire on chunk INSERT and DELETE. BM25 ranking
+--   provides relevance scoring.
 -- Tech Stack: SQLite FTS5
--- Description: Full-text search index on document chunks for fast keyword search.
--- Important Details: FTS5 virtual table mirrors chunk content. Populated via triggers
---   that fire on chunk INSERT and DELETE. BM25 ranking provides relevance scoring.
+-- License: MIT
+-- Authors: Amey Thakur (https://github.com/Amey-Thakur)
+--          Archit Konde (https://github.com/Archit-Konde)
+-- Date: 2026-07-12
 
 CREATE VIRTUAL TABLE IF NOT EXISTS chunks_fts USING fts5(
     content,

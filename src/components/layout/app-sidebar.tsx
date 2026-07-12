@@ -1,12 +1,17 @@
 /*
- * Title: app-sidebar.tsx
- * Tech Stack: React 19, Tailwind CSS, React Router
- * Description: Left sidebar with navigation. Collapses on mobile (<768px) behind
- *   a hamburger toggle. Shows as slide-over on mobile with overlay backdrop.
- * Important Details: When closed on mobile the aside is inert, so its links
- *   leave the tab order instead of being focusable while invisible off-screen.
- *   Active item uses accent background. Clicking a nav link on mobile
+ * Name: app-sidebar.tsx
+ * Purpose: Left sidebar with navigation.
+ * Description: Collapses on mobile (<768px) behind a hamburger toggle. Shows
+ *   as slide-over on mobile with overlay backdrop. When closed on
+ *   mobile the aside is inert, so its links leave the tab order
+ *   instead of being focusable while invisible off-screen. Active
+ *   item uses accent background. Clicking a nav link on mobile
  *   auto-closes the sidebar.
+ * Tech Stack: React 19, Tailwind CSS, React Router
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useEffect, useRef } from "react";

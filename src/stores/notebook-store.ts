@@ -1,9 +1,14 @@
 /*
- * Title: notebook-store.ts
+ * Name: notebook-store.ts
+ * Purpose: Client-side store for the currently active notebook.
+ * Description: Persists to localStorage so the active notebook survives page
+ *   reloads. Search, chat, and thinking partner use this to scope
+ *   operations.
  * Tech Stack: Zustand, localStorage
- * Description: Client-side store for the currently active notebook.
- * Important Details: Persists to localStorage so the active notebook survives page
- *   reloads. Search, chat, and thinking partner use this to scope operations.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { create } from "zustand";

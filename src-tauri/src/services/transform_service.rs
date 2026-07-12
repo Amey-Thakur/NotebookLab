@@ -1,10 +1,15 @@
 /*
- * Title: transform_service.rs
+ * Name: transform_service.rs
+ * Purpose: Content transformation types.
+ * Description: The actual transformation logic lives in transform_commands.rs
+ *   for proper lock-phase splitting. TransformType determines
+ *   which prompt instruction is used. Custom transforms accept a
+ *   user-provided prompt string.
  * Tech Stack: Rust, serde
- * Description: Content transformation types. The actual transformation logic lives
- *   in transform_commands.rs for proper lock-phase splitting.
- * Important Details: TransformType determines which prompt instruction is used.
- *   Custom transforms accept a user-provided prompt string.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 #[derive(Debug, Clone, serde::Deserialize)]

@@ -1,10 +1,15 @@
 /*
- * Title: setup.ts
+ * Name: setup.ts
+ * Purpose: Global test setup.
+ * Description: Mocks Tauri IPC and plugin APIs so frontend components can be
+ *   tested without a running Tauri backend. All @tauri-apps/*
+ *   imports are mocked here. Individual tests can override mocks
+ *   via vi.mocked() for specific test cases.
  * Tech Stack: Vitest, jsdom
- * Description: Global test setup. Mocks Tauri IPC and plugin APIs so frontend
- *   components can be tested without a running Tauri backend.
- * Important Details: All @tauri-apps/* imports are mocked here. Individual tests
- *   can override mocks via vi.mocked() for specific test cases.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import "@testing-library/jest-dom/vitest";

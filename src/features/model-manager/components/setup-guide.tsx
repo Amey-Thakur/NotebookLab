@@ -1,14 +1,19 @@
 /*
- * Title: setup-guide.tsx
+ * Name: setup-guide.tsx
+ * Purpose: One-click setup guide for users who don't have an AI provider yet.
+ * Description: Shows step-by-step instructions for installing Ollama with a
+ *   single download link. Shown on the Models page when no
+ *   providers are registered. Provides a direct download link and
+ *   the exact terminal command to run. "Check for providers"
+ *   re-runs the real endpoint probe (detect_providers), not just a
+ *   cache refresh, so a freshly started Ollama is found
+ *   immediately.
  * Tech Stack: React 19, Tailwind CSS
- * Description: One-click setup guide for users who don't have an AI provider yet.
- *   Shows step-by-step instructions for installing Ollama with a single download link.
- * Important Details: Shown on the Models page when no providers are registered.
- *   Provides a direct download link and the exact terminal command to run.
- *   "Check for providers" re-runs the real endpoint probe (detect_providers),
- *   not just a cache refresh, so a freshly started Ollama is found immediately.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
-
 
 interface SetupGuideProps {
   onDetect: () => void;

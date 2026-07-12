@@ -1,8 +1,13 @@
--- Title: 002_chat_tables.sql
+-- Name: 002_chat_tables.sql
+-- Purpose: Chat conversation and message tables for RAG-powered AI chat.
+-- Description: Messages store role (user/assistant) and content. Citations
+--   link AI responses back to specific chunks for source
+--   attribution.
 -- Tech Stack: SQLite
--- Description: Chat conversation and message tables for RAG-powered AI chat.
--- Important Details: Messages store role (user/assistant) and content. Citations link
---   AI responses back to specific chunks for source attribution.
+-- License: MIT
+-- Authors: Amey Thakur (https://github.com/Amey-Thakur)
+--          Archit Konde (https://github.com/Archit-Konde)
+-- Date: 2026-07-12
 
 CREATE TABLE IF NOT EXISTS conversations (
     id              TEXT PRIMARY KEY,

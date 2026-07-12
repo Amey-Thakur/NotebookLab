@@ -1,10 +1,15 @@
--- Title: 001_initial_schema.sql
--- Tech Stack: SQLite
--- Description: Initial database schema for notebooks, documents, notes, chunks,
+-- Name: 001_initial_schema.sql
+-- Purpose: Initial database schema for notebooks, documents, notes, chunks,
 --   wiki-links, and settings.
--- Important Details: UUID7 primary keys for chronological ordering. WAL mode
---   assumed. Every table here is read and written by the application; anything
---   speculative was removed before open sourcing.
+-- Description: UUID7 primary keys for chronological ordering. WAL mode
+--   assumed. Every table here is read and written by the
+--   application; anything speculative was removed before open
+--   sourcing.
+-- Tech Stack: SQLite
+-- License: MIT
+-- Authors: Amey Thakur (https://github.com/Amey-Thakur)
+--          Archit Konde (https://github.com/Archit-Konde)
+-- Date: 2026-07-12
 
 CREATE TABLE IF NOT EXISTS notebooks (
     id              TEXT PRIMARY KEY,

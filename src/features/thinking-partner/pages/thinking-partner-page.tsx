@@ -1,11 +1,17 @@
 /*
- * Title: thinking-partner-page.tsx
+ * Name: thinking-partner-page.tsx
+ * Purpose: Thinking Partner page.
+ * Description: Two modes: mind map generation from documents, and Socratic
+ *   questioning to challenge the user's thinking. Requires an
+ *   active notebook with imported documents. Mind map output is
+ *   displayed as formatted text (d3 visualization deferred to
+ *   Phase 2). Socratic mode returns probing questions the user can
+ *   reflect on.
  * Tech Stack: React 19, TanStack Query, Tailwind CSS
- * Description: Thinking Partner page. Two modes: mind map generation from documents,
- *   and Socratic questioning to challenge the user's thinking.
- * Important Details: Requires an active notebook with imported documents. Mind map
- *   output is displayed as formatted text (d3 visualization deferred to Phase 2).
- *   Socratic mode returns probing questions the user can reflect on.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useState } from "react";

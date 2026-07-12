@@ -1,10 +1,17 @@
 /*
- * Title: sidecar_tests.rs
+ * Name: sidecar_tests.rs
+ * Purpose: Tests for sidecar service utilities (port allocation, key
+ *   generation, argument building, model file...
+ * Description: Tests for sidecar service utilities (port allocation, key
+ *   generation, argument building, model file scanning, path
+ *   validation). Tests the pure functions in sidecar_service.
+ *   Process spawning tests require the actual llama-server binary
+ *   and are not included here.
  * Tech Stack: Rust, integration tests
- * Description: Tests for sidecar service utilities (port allocation, key generation,
- *   argument building, model file scanning, path validation).
- * Important Details: Tests the pure functions in sidecar_service. Process spawning
- *   tests require the actual llama-server binary and are not included here.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use notebooklab_lib::services::sidecar_service;

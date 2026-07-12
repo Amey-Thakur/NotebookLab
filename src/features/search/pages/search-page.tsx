@@ -1,9 +1,14 @@
 /*
- * Title: search-page.tsx
+ * Name: search-page.tsx
+ * Purpose: Search page with unified results across document chunks and notes.
+ * Description: Search is debounced (300ms). Requires an active notebook to
+ *   scope the search. Results show matched content with source
+ *   attribution.
  * Tech Stack: React 19, TanStack Query, Zustand, Tailwind CSS
- * Description: Search page with unified results across document chunks and notes.
- * Important Details: Search is debounced (300ms). Requires an active notebook to
- *   scope the search. Results show matched content with source attribution.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useEffect, useMemo, useState } from "react";

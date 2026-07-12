@@ -1,8 +1,13 @@
 /*
- * Title: utils/mod.rs
+ * Name: mod.rs
+ * Purpose: Shared utility functions.
+ * Description: Text processing, hashing, file helpers. Pure functions with no
+ *   side effects. Used across all backend modules.
  * Tech Stack: Rust
- * Description: Shared utility functions. Text processing, hashing, file helpers.
- * Important Details: Pure functions with no side effects. Used across all backend modules.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 pub mod text_utils;

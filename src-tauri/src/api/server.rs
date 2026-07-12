@@ -1,10 +1,15 @@
 /*
- * Title: server.rs
+ * Name: server.rs
+ * Purpose: Local HTTP REST API server for external automation.
+ * Description: Binds to 127.0.0.1:8484 (localhost only). Opens its own
+ *   read-only SQLite connection to avoid contending with the main
+ *   app's Mutex. WAL mode enables concurrent readers. Runs in a
+ *   background thread.
  * Tech Stack: Rust, tiny_http, serde_json
- * Description: Local HTTP REST API server for external automation.
- * Important Details: Binds to 127.0.0.1:8484 (localhost only). Opens its own
- *   read-only SQLite connection to avoid contending with the main app's Mutex.
- *   WAL mode enables concurrent readers. Runs in a background thread.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 use std::path::PathBuf;

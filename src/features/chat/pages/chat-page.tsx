@@ -1,14 +1,19 @@
 /*
- * Title: chat-page.tsx
+ * Name: chat-page.tsx
+ * Purpose: RAG-powered chat page.
+ * Description: Users ask questions about their documents and receive answers
+ *   grounded in cited sources. The user message renders
+ *   optimistically so it stays visible through the 30-120s LLM
+ *   wait; on failure the draft returns to the input for retry.
+ *   Past conversations are listed in a side rail and can be
+ *   resumed or deleted. The message list is an aria-live log so
+ *   screen readers hear new answers, and the input stays enabled
+ *   while a reply is pending so keyboard focus is never dropped.
  * Tech Stack: React 19, TanStack Query, Tailwind CSS
- * Description: RAG-powered chat page. Users ask questions about their documents
- *   and receive answers grounded in cited sources.
- * Important Details: The user message renders optimistically so it stays
- *   visible through the 30-120s LLM wait; on failure the draft returns to the
- *   input for retry. Past conversations are listed in a side rail and can be
- *   resumed or deleted. The message list is an aria-live log so screen
- *   readers hear new answers, and the input stays enabled while a reply is
- *   pending so keyboard focus is never dropped.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { useState, useRef, useEffect } from "react";

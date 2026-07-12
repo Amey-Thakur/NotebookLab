@@ -1,10 +1,15 @@
 /*
- * Title: notebook-api.ts
+ * Name: notebook-api.ts
+ * Purpose: Tauri IPC wrappers for notebook commands.
+ * Description: Each function maps to a Rust #[tauri::command] handler. All
+ *   functions use the centralized tauriInvoke wrapper for
+ *   consistent error handling. Types mirror the Rust models
+ *   exactly.
  * Tech Stack: TypeScript, Tauri v2
- * Description: Tauri IPC wrappers for notebook commands. Each function maps to a
- *   Rust #[tauri::command] handler.
- * Important Details: All functions use the centralized tauriInvoke wrapper for
- *   consistent error handling. Types mirror the Rust models exactly.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { tauriInvoke } from "@/services/tauri-client";

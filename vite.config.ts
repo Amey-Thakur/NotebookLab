@@ -1,10 +1,14 @@
 /*
- * Title: vite.config.ts
+ * Name: vite.config.ts
+ * Purpose: Vite bundler configuration for the React frontend.
+ * Description: Path alias @ maps to src/ for clean imports. Tauri requires
+ *   clearScreen: false and server port 1420 by convention. The
+ *   host is set to enable Tauri to connect to the dev server.
  * Tech Stack: Vite, React, Tauri v2
- * Description: Vite bundler configuration for the React frontend.
- * Important Details: Path alias @ maps to src/ for clean imports.
- *   Tauri requires clearScreen: false and server port 1420 by convention.
- *   The host is set to enable Tauri to connect to the dev server.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import { defineConfig } from "vite";

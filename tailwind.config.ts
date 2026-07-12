@@ -1,10 +1,16 @@
 /*
- * Title: tailwind.config.ts
+ * Name: tailwind.config.ts
+ * Purpose: Tailwind configuration with custom design tokens mapped from CSS
+ *   variables.
+ * Description: All colors reference CSS custom properties for theme
+ *   switching. Font stack: Play (display/UI), Source Serif 4
+ *   (body/editor), JetBrains Mono (code). 8-point spacing grid
+ *   enforced via default spacing scale.
  * Tech Stack: Tailwind CSS 3.4
- * Description: Tailwind configuration with custom design tokens mapped from CSS variables.
- * Important Details: All colors reference CSS custom properties for theme switching.
- *   Font stack: Play (display/UI), Source Serif 4 (body/editor), JetBrains Mono (code).
- *   8-point spacing grid enforced via default spacing scale.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 import type { Config } from "tailwindcss";

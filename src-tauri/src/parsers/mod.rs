@@ -1,10 +1,16 @@
 /*
- * Title: parsers/mod.rs
+ * Name: mod.rs
+ * Purpose: Document format parsers.
+ * Description: Each parser extracts text from a file type. The
+ *   parser_for_extension function returns the appropriate parser
+ *   based on file extension. Adding a new format = create parser
+ *   file + add to match. PDF and DOCX parsers will be added when
+ *   their crate dependencies are integrated.
  * Tech Stack: Rust
- * Description: Document format parsers. Each parser extracts text from a file type.
- * Important Details: The parser_for_extension function returns the appropriate parser
- *   based on file extension. Adding a new format = create parser file + add to match.
- *   PDF and DOCX parsers will be added when their crate dependencies are integrated.
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
  */
 
 pub mod markdown_parser;
