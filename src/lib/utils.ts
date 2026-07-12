@@ -33,21 +33,40 @@ export function formatBytes(bytes: number, decimals = 1): string {
 
 
 /**
- * Debounce a function call. Returns a cancellable debounced function.
- * Call .cancel() in useEffect cleanup to prevent firing after unmount.
+ * Debounce a function call. Returns a cancellable, flushable debounced function.
+ * Call .flush() in useEffect cleanup so a pending call runs immediately instead
+ * of being dropped (an editor unmounting must not lose the last edit), or
+ * .cancel() when the pending call should be discarded.
  */
 export function debounce<T extends (...args: any[]) => void>(
   fn: T,
   delay: number,
 ) {
-  let timer: ReturnType<typeof setTimeout>;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let pendingArgs: Parameters<T> | null = null;
 
   const debounced = (...args: Parameters<T>) => {
+    pendingArgs = args;
     clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), delay);
+    timer = setTimeout(() => {
+      pendingArgs = null;
+      fn(...args);
+    }, delay);
   };
 
-  debounced.cancel = () => clearTimeout(timer);
+  debounced.cancel = () => {
+    clearTimeout(timer);
+    pendingArgs = null;
+  };
+
+  debounced.flush = () => {
+    if (pendingArgs !== null) {
+      clearTimeout(timer);
+      const args = pendingArgs;
+      pendingArgs = null;
+      fn(...args);
+    }
+  };
 
   return debounced;
 }

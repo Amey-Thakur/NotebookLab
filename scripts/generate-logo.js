@@ -2,9 +2,12 @@
  * Title: generate-logo.js
  * Tech Stack: Node.js
  * Description: Programmatically generates NotebookLab logo SVGs with precise
- *   geometry. Produces horizontal, icon-only, and dark variants.
+ *   geometry. Produces horizontal, icon-only, and dark variants in logos/final.
  * Important Details: All coordinates are computed mathematically, not hand-placed.
  *   Run with: node scripts/generate-logo.js
+ *   App icons are derived separately: rasterize the icon SVG to a 512x512
+ *   src-tauri/icons/icon.png, then run `npx tauri icon src-tauri/icons/icon.png`
+ *   to regenerate the .ico, .icns, and PNG set that Tauri bundles.
  */
 
 import { writeFileSync, mkdirSync } from "fs";

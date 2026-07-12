@@ -1,9 +1,16 @@
 ##
 ## Title: release.yml
 ## Tech Stack: GitHub Actions, Tauri v2, tauri-action
-## Description: Release pipeline. Builds signed installers for Windows, macOS, and Linux.
-## Important Details: Triggered by version tags (v*). Creates a draft GitHub Release.
-##   Third-party actions are version-pinned.
+## Description: Release pipeline. Builds signed installers for Windows, macOS,
+##   and Linux, then publishes the release automatically.
+## Important Details: Triggered by version tags (v*). A guard job fails fast if
+##   the tag does not match the versions committed in package.json, Cargo.toml,
+##   and tauri.conf.json, which would otherwise ship mislabeled artifacts and a
+##   latest.json the updater ignores. Builds accumulate on a draft release;
+##   the publish job adds SHA256SUMS and flips the draft live only after every
+##   platform succeeds, so users never see a half-populated release and the
+##   updater endpoint (releases/latest/download/latest.json) always resolves.
+##   Third-party actions are pinned to commit SHAs.
 ##
 
 name: Release
@@ -20,8 +27,31 @@ env:
   NODE_VERSION: "22"
 
 jobs:
+  verify:
+    name: Verify tag matches versions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Compare tag against manifest versions
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION=$(jq -r .version package.json)
+          CONF_VERSION=$(jq -r .version src-tauri/tauri.conf.json)
+          CARGO_VERSION=$(grep -m1 '^version' src-tauri/Cargo.toml | cut -d'"' -f2)
+
+          echo "tag=$TAG_VERSION package.json=$PKG_VERSION tauri.conf.json=$CONF_VERSION Cargo.toml=$CARGO_VERSION"
+
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ] || \
+             [ "$TAG_VERSION" != "$CONF_VERSION" ] || \
+             [ "$TAG_VERSION" != "$CARGO_VERSION" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match the committed versions. Bump them first (see RELEASING.md)."
+            exit 1
+          fi
+
   build:
     name: Build (${{ matrix.platform }})
+    needs: verify
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -42,21 +72,22 @@ jobs:
           - platform: linux
             runner: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
-            args: --bundles deb,rpm
+            args: --bundles deb,rpm,appimage
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable
         with:
+          toolchain: stable
           targets: ${{ matrix.target }}
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           workspaces: src-tauri
 
@@ -69,11 +100,11 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Download llama-server sidecar
+      - name: Download llama-server sidecar (checksum verified)
         run: npm run sidecar:download
 
       - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v1.0
+        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -84,15 +115,36 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: "NotebookLab ${{ github.ref_name }}"
           releaseBody: |
-            See the [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+            See the [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for what changed.
 
             ## Download
             | Platform | File |
             |----------|------|
-            | Windows | `.msi` installer |
-            | macOS (Intel) | `.dmg` disk image |
-            | macOS (Apple Silicon) | `.dmg` disk image |
-            | Linux | `.deb` or `.rpm` |
+            | Windows | `.msi` or `-setup.exe` installer |
+            | macOS (Apple Silicon) | `aarch64.dmg` |
+            | macOS (Intel) | `x64.dmg` |
+            | Linux | `.AppImage`, `.deb`, or `.rpm` |
+
+            Verify downloads against `SHA256SUMS`.
           releaseDraft: true
           prerelease: false
           args: --target ${{ matrix.target }} ${{ matrix.args }}
+
+  publish:
+    name: Checksums + publish
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate SHA256SUMS and publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          mkdir assets && cd assets
+          gh release download "$TAG" --repo "$REPO" --pattern '*'
+          # Checksums cover installers and update bundles, not signatures
+          sha256sum $(ls | grep -v -E '\.sig$|^latest\.json$|^SHA256SUMS$') > SHA256SUMS
+          cat SHA256SUMS
+          gh release upload "$TAG" SHA256SUMS --repo "$REPO" --clobber
+          gh release edit "$TAG" --repo "$REPO" --draft=false --latest

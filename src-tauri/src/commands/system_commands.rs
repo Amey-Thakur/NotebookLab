@@ -10,14 +10,12 @@ use tauri::{AppHandle, Manager};
 
 use crate::error::AppResult;
 
-
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 pub fn get_app_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
 }
 
-
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 pub fn get_data_directory(app: AppHandle) -> AppResult<String> {
     let path = app
         .path()
@@ -27,8 +25,14 @@ pub fn get_data_directory(app: AppHandle) -> AppResult<String> {
     Ok(path.to_string_lossy().to_string())
 }
 
+/// Return the bearer token for the local REST API so users can authenticate
+/// scripts against it. Shown in Settings with a copy control.
+#[tauri::command(rename_all = "snake_case")]
+pub fn get_api_token(state: tauri::State<'_, crate::state::AppState>) -> String {
+    state.api_token.clone()
+}
 
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 pub fn health_check() -> &'static str {
     "ok"
 }

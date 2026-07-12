@@ -14,12 +14,9 @@ use crate::error::{AppError, AppResult};
 
 use super::traits::{DocumentParser, ParsedDocument, ParsedPage};
 
-
 const MAX_FILE_SIZE: u64 = 50 * 1024 * 1024;
 
-
 pub struct MarkdownParser;
-
 
 impl DocumentParser for MarkdownParser {
     fn supported_extensions(&self) -> &[&str] {
@@ -42,16 +39,13 @@ impl DocumentParser for MarkdownParser {
         let content = strip_frontmatter(&raw);
         let headings = extract_headings(&content);
 
-        let title = headings
-            .first()
-            .cloned()
-            .unwrap_or_else(|| {
-                file_path
-                    .file_stem()
-                    .and_then(|s| s.to_str())
-                    .unwrap_or("Untitled")
-                    .to_string()
-            });
+        let title = headings.first().cloned().unwrap_or_else(|| {
+            file_path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("Untitled")
+                .to_string()
+        });
 
         Ok(ParsedDocument {
             title,
@@ -63,7 +57,6 @@ impl DocumentParser for MarkdownParser {
         })
     }
 }
-
 
 /// Remove YAML frontmatter (content between opening and closing --- lines).
 fn strip_frontmatter(text: &str) -> String {
@@ -81,7 +74,6 @@ fn strip_frontmatter(text: &str) -> String {
         text.to_string()
     }
 }
-
 
 /// Extract Markdown headings (lines starting with #).
 fn extract_headings(text: &str) -> Vec<String> {

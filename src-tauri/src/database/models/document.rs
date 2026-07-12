@@ -11,7 +11,6 @@
 use rusqlite::Row;
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Document {
     pub id: String,
@@ -43,7 +42,6 @@ impl Document {
         })
     }
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -77,7 +75,6 @@ impl DocumentStatus {
         }
     }
 }
-
 
 #[derive(Debug, Deserialize)]
 pub struct CreateDocument {

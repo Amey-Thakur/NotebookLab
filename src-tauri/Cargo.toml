@@ -1,14 +1,16 @@
 # Title: Cargo.toml
-# Tech Stack: Rust, Tauri v2, SQLite, ONNX Runtime
+# Tech Stack: Rust, Tauri v2, SQLite
 # Description: Rust package manifest for the Tauri backend.
-# Important Details: Features are split so optional heavy dependencies (ort for ONNX,
-#   reqwest for model downloads) can be conditionally compiled.
+# Important Details: All dependencies are unconditional; the only feature flag
+#   is Tauri's custom-protocol used for production webview asset serving.
 
 [package]
 name = "notebooklab"
-version = "0.1.0"
+version = "0.2.0"
 description = "Your thinking partner, on your machine."
 authors = ["Amey Thakur", "Archit Konde"]
+license = "MIT"
+repository = "https://github.com/Amey-Thakur/NotebookLab"
 edition = "2021"
 rust-version = "1.77"
 
@@ -20,10 +22,9 @@ crate-type = ["lib", "cdylib", "staticlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-# Tauri core (shell plugin deferred until sidecar is implemented)
+# Tauri core; shell plugin manages the llama-server sidecar process
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
-tauri-plugin-fs = "2"
 tauri-plugin-shell = "2"
 tauri-plugin-updater = "2"
 
@@ -64,8 +65,9 @@ tiny_http = "0.12"
 default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]
 
+# panic stays "unwind" so catch_unwind can contain parser panics (see
+# pdf_parser.rs) instead of aborting the whole app on a malformed file.
 [profile.release]
 strip = true
 lto = true
 codegen-units = 1
-panic = "abort"

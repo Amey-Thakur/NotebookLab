@@ -8,12 +8,14 @@
  */
 
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
-import { QUERY_KEYS } from "@/lib/constants";
+import { ROUTES } from "@/lib/constants";
+import { formatError } from "@/lib/format-error";
 import { useNotebookStore } from "@/stores/notebook-store";
-import type { Document } from "@/types/models";
+import { useDocuments } from "@/features/documents/hooks/use-documents";
 
 
 type TransformType = "summarize" | "extractkeypoints" | "custom";
@@ -31,12 +33,9 @@ export function TransformsPage() {
   const [transformType, setTransformType] = useState<TransformType>("summarize");
   const [customPrompt, setCustomPrompt] = useState("");
   const [result, setResult] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
-  const { data: documents } = useQuery({
-    queryKey: [QUERY_KEYS.DOCUMENTS, activeNotebookId],
-    queryFn: () => tauriInvoke<Document[]>("list_documents", { notebook_id: activeNotebookId }),
-    enabled: !!activeNotebookId,
-  });
+  const { data: documents } = useDocuments(activeNotebookId ?? undefined);
 
   const processedDocs = documents?.filter((d) => d.status === "processed") || [];
 
@@ -54,7 +53,13 @@ export function TransformsPage() {
     return (
       <div className="flex flex-col items-center justify-center h-full text-text-3 p-8">
         <p className="text-lg mb-2">No notebook selected</p>
-        <p className="text-sm text-text-4">Open a notebook first to transform documents.</p>
+        <p className="text-sm text-text-4 mb-4">Open a notebook first to transform documents.</p>
+        <Link
+          to={ROUTES.NOTEBOOKS}
+          className="px-4 py-2 text-sm font-mono border border-border text-text-2 hover:border-accent-dim transition-colors"
+        >
+          Go to Notebooks
+        </Link>
       </div>
     );
   }
@@ -66,11 +71,15 @@ export function TransformsPage() {
 
         {/* Document selector */}
         <div className="mb-4">
-          <label className="block text-xs font-mono text-text-4 mb-1">Document</label>
+          <label htmlFor="transform-document" className="block text-xs font-mono text-text-4 mb-1">
+            Document
+          </label>
           <select
+            id="transform-document"
             value={selectedDoc}
             onChange={(e) => { setSelectedDoc(e.target.value); setResult(null); }}
-            className="w-full px-3 py-2 text-sm bg-surface border border-border text-text-1 outline-none"
+            className="w-full px-3 py-2 text-sm bg-surface border border-border text-text-1
+                       outline-none focus:border-accent-dim"
           >
             <option value="">Select a document...</option>
             {processedDocs.map((doc) => (
@@ -80,16 +89,17 @@ export function TransformsPage() {
         </div>
 
         {/* Transform type */}
-        <div className="flex gap-1 mb-4">
+        <div className="flex gap-1 mb-4" role="group" aria-label="Transformation type">
           {(Object.entries(TRANSFORM_LABELS) as [TransformType, string][]).map(([type, label]) => (
             <button
               key={type}
               type="button"
+              aria-pressed={transformType === type}
               onClick={() => { setTransformType(type); setResult(null); }}
               className={`px-4 py-2 text-sm font-mono border transition-colors ${
                 transformType === type
                   ? "border-accent-dim text-text-1 bg-surface-2"
-                  : "border-border text-text-3"
+                  : "border-border text-text-3 hover:text-text-1"
               }`}
             >
               {label}
@@ -100,14 +110,17 @@ export function TransformsPage() {
         {/* Custom prompt input */}
         {transformType === "custom" && (
           <div className="mb-4">
-            <label className="block text-xs font-mono text-text-4 mb-1">Custom instruction</label>
+            <label htmlFor="transform-custom-prompt" className="block text-xs font-mono text-text-4 mb-1">
+              Custom instruction
+            </label>
             <input
+              id="transform-custom-prompt"
               type="text"
               value={customPrompt}
               onChange={(e) => setCustomPrompt(e.target.value)}
               placeholder="e.g., Extract all statistics and data points..."
               className="w-full px-3 py-2 text-sm bg-surface border border-border text-text-1
-                         placeholder:text-text-4 outline-none"
+                         placeholder:text-text-4 outline-none focus:border-accent-dim"
             />
           </div>
         )}
@@ -125,8 +138,8 @@ export function TransformsPage() {
       {/* Result */}
       <div className="flex-1 overflow-auto px-8 py-4">
         {transform.isError && (
-          <div className="p-3 border border-error text-xs text-error">
-            {String(transform.error)}
+          <div role="alert" className="p-3 border border-error text-xs text-error">
+            {formatError(transform.error)}
           </div>
         )}
 
@@ -138,10 +151,18 @@ export function TransformsPage() {
               </h2>
               <button
                 type="button"
-                onClick={() => navigator.clipboard.writeText(result)}
+                onClick={() => {
+                  navigator.clipboard.writeText(result).then(
+                    () => {
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 1500);
+                    },
+                    () => setCopied(false),
+                  );
+                }}
                 className="text-xs font-mono text-text-3 hover:text-text-1"
               >
-                Copy
+                {copied ? "Copied" : "Copy"}
               </button>
             </div>
             <pre className="text-sm font-body text-text-2 whitespace-pre-wrap leading-relaxed">

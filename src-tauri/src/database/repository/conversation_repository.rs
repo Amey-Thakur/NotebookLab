@@ -12,8 +12,10 @@ use uuid::Uuid;
 use crate::database::models::{Citation, Conversation, CreateConversation, Message};
 use crate::error::{AppError, AppResult};
 
-
-pub fn create_conversation(conn: &Connection, input: CreateConversation) -> AppResult<Conversation> {
+pub fn create_conversation(
+    conn: &Connection,
+    input: CreateConversation,
+) -> AppResult<Conversation> {
     let id = Uuid::now_v7().to_string();
     let now = chrono::Utc::now().to_rfc3339();
     let title = input.title.unwrap_or_else(|| "New Chat".to_string());
@@ -27,7 +29,6 @@ pub fn create_conversation(conn: &Connection, input: CreateConversation) -> AppR
     get_conversation(conn, &id)
 }
 
-
 pub fn get_conversation(conn: &Connection, id: &str) -> AppResult<Conversation> {
     conn.query_row(
         "SELECT id, notebook_id, title, created_at, updated_at
@@ -36,11 +37,12 @@ pub fn get_conversation(conn: &Connection, id: &str) -> AppResult<Conversation> 
         Conversation::from_row,
     )
     .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Conversation not found: {id}")),
+        rusqlite::Error::QueryReturnedNoRows => {
+            AppError::NotFound(format!("Conversation not found: {id}"))
+        }
         other => AppError::Database(other),
     })
 }
-
 
 pub fn list_by_notebook(conn: &Connection, notebook_id: &str) -> AppResult<Vec<Conversation>> {
     let mut stmt = conn.prepare(
@@ -54,7 +56,6 @@ pub fn list_by_notebook(conn: &Connection, notebook_id: &str) -> AppResult<Vec<C
 
     Ok(convos)
 }
-
 
 pub fn add_message(
     conn: &Connection,
@@ -86,7 +87,6 @@ pub fn add_message(
     .map_err(AppError::Database)
 }
 
-
 pub fn get_messages(conn: &Connection, conversation_id: &str) -> AppResult<Vec<Message>> {
     let mut stmt = conn.prepare(
         "SELECT id, conversation_id, role, content, created_at
@@ -100,10 +100,13 @@ pub fn get_messages(conn: &Connection, conversation_id: &str) -> AppResult<Vec<M
     Ok(msgs)
 }
 
-
 /// Get the most recent N messages for a conversation (for RAG context window).
 /// Returns messages in chronological order (oldest first).
-pub fn get_recent_messages(conn: &Connection, conversation_id: &str, limit: usize) -> AppResult<Vec<Message>> {
+pub fn get_recent_messages(
+    conn: &Connection,
+    conversation_id: &str,
+    limit: usize,
+) -> AppResult<Vec<Message>> {
     let mut stmt = conn.prepare(
         "SELECT id, conversation_id, role, content, created_at
          FROM (
@@ -120,7 +123,6 @@ pub fn get_recent_messages(conn: &Connection, conversation_id: &str, limit: usiz
 
     Ok(msgs)
 }
-
 
 pub fn add_citation(
     conn: &Connection,
@@ -139,8 +141,6 @@ pub fn add_citation(
     Ok(())
 }
 
-
-#[allow(dead_code)]
 pub fn get_citations_for_message(conn: &Connection, message_id: &str) -> AppResult<Vec<Citation>> {
     let mut stmt = conn.prepare(
         "SELECT c.id, c.message_id, c.chunk_id, c.relevance_score
@@ -162,6 +162,48 @@ pub fn get_citations_for_message(conn: &Connection, message_id: &str) -> AppResu
     Ok(citations)
 }
 
+/// A citation joined with its chunk and document so the chat UI can render
+/// a meaningful source chip (document title, heading, page, snippet).
+#[derive(Debug, serde::Serialize)]
+pub struct CitationSource {
+    pub chunk_id: String,
+    pub document_id: String,
+    pub document_title: String,
+    pub heading_context: String,
+    pub page_number: Option<i32>,
+    pub snippet: String,
+    pub relevance_score: f64,
+}
+
+/// Fetch citations for a message with document context for display.
+/// The snippet is capped in SQL so large chunks never cross the IPC boundary.
+pub fn get_citation_sources(conn: &Connection, message_id: &str) -> AppResult<Vec<CitationSource>> {
+    let mut stmt = conn.prepare(
+        "SELECT ch.id, d.id, d.title, ch.heading_context, ch.page_number,
+                substr(ch.content, 1, 240), c.relevance_score
+         FROM citations c
+         INNER JOIN chunks ch ON c.chunk_id = ch.id
+         INNER JOIN documents d ON ch.document_id = d.id
+         WHERE c.message_id = ?1
+         ORDER BY c.relevance_score DESC",
+    )?;
+
+    let sources = stmt
+        .query_map(params![message_id], |row| {
+            Ok(CitationSource {
+                chunk_id: row.get(0)?,
+                document_id: row.get(1)?,
+                document_title: row.get(2)?,
+                heading_context: row.get(3)?,
+                page_number: row.get(4)?,
+                snippet: row.get(5)?,
+                relevance_score: row.get(6)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(sources)
+}
 
 pub fn delete_conversation(conn: &Connection, id: &str) -> AppResult<()> {
     let affected = conn.execute("DELETE FROM conversations WHERE id = ?1", params![id])?;

@@ -11,7 +11,6 @@
 use rusqlite::Row;
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Chunk {
     pub id: String,
@@ -38,7 +37,6 @@ impl Chunk {
         })
     }
 }
-
 
 #[derive(Debug)]
 pub struct CreateChunk {

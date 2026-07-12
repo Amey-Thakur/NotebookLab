@@ -9,14 +9,12 @@
 
 use crate::error::AppResult;
 
-
 /// Output of a document parser. Contains the extracted text with metadata.
 #[derive(Debug, Clone)]
 pub struct ParsedDocument {
     pub title: String,
     pub pages: Vec<ParsedPage>,
 }
-
 
 /// A logical page of extracted text.
 #[derive(Debug, Clone)]
@@ -25,7 +23,6 @@ pub struct ParsedPage {
     pub content: String,
     pub headings: Vec<String>,
 }
-
 
 /// Every document parser implements this trait.
 pub trait DocumentParser: Send + Sync {

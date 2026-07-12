@@ -2,10 +2,12 @@
  * Title: model-manager-page.tsx
  * Tech Stack: React 19, TanStack Query, Tailwind CSS
  * Description: Model manager page with zero-config setup guide. Shows a 3-step
- *   setup guide when no providers are registered. Preset buttons for common
- *   providers (Ollama, LM Studio, OpenAI) eliminate manual form filling.
- * Important Details: Auto-detection runs on app startup. This page provides
- *   a manual fallback with guided setup for users who need it.
+ *   setup guide when no providers are registered, one-click model download,
+ *   and the bundled local server controls. Preset buttons cover common local
+ *   providers (Ollama, LM Studio, llama.cpp).
+ * Important Details: Auto-detection runs on app startup; the setup guide's
+ *   "Check for providers" re-runs the same probe on demand via
+ *   detect_providers rather than just refreshing the cached list.
  */
 
 import { useState } from "react";
@@ -13,9 +15,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS } from "@/lib/constants";
+import { formatError } from "@/lib/format-error";
 import type { ProviderInfo } from "@/types/models";
 import { SetupGuide } from "../components/setup-guide";
 import { ModelDownload } from "../components/model-download";
+import { LocalServerCard } from "../components/local-server-card";
 
 
 const PRESETS = [
@@ -93,6 +97,12 @@ export function ModelManagerPage() {
     queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ACTIVE_PROVIDER] });
   };
 
+  /* Actually re-probe local endpoints instead of only refreshing the cache */
+  const detect = useMutation({
+    mutationFn: () => tauriInvoke<ProviderInfo[]>("detect_providers"),
+    onSuccess: () => refreshProviders(),
+  });
+
   return (
     <div className="p-8">
       <h1 className="text-2xl font-display font-bold text-text-1 mb-2">Models</h1>
@@ -101,15 +111,21 @@ export function ModelManagerPage() {
       </p>
 
       {/* Setup guide shown when no providers */}
-      {!hasProviders && <SetupGuide onRefresh={refreshProviders} />}
+      {!hasProviders && (
+        <SetupGuide onDetect={() => detect.mutate()} isDetecting={detect.isPending} />
+      )}
 
       {/* Model download shown when no local model is available */}
       {!hasLocalModel && (
         <ModelDownload onComplete={() => {
           refetchModel();
           refreshProviders();
+          queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SIDECAR] });
         }} />
       )}
+
+      {/* Bundled llama-server controls, once a model exists */}
+      <LocalServerCard />
 
       {/* Quick preset buttons */}
       <div className="mb-6">
@@ -139,7 +155,10 @@ export function ModelManagerPage() {
           </button>
         </div>
         {register.isError && (
-          <p className="text-xs text-error mt-2">{String(register.error)}</p>
+          <p role="alert" className="text-xs text-error mt-2">{formatError(register.error)}</p>
+        )}
+        {detect.isError && (
+          <p role="alert" className="text-xs text-error mt-2">{formatError(detect.error)}</p>
         )}
       </div>
 
@@ -148,24 +167,28 @@ export function ModelManagerPage() {
         <div className="p-4 border border-border bg-surface-2 mb-6">
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
-              <label className="block text-xs font-mono text-text-4 mb-1">Name</label>
-              <input value={name} onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-surface border border-border text-text-1 outline-none" />
+              <label htmlFor="provider-name" className="block text-xs font-mono text-text-4 mb-1">Name</label>
+              <input id="provider-name" value={name} onChange={(e) => setName(e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-surface border border-border text-text-1
+                           outline-none focus:border-accent-dim" />
             </div>
             <div>
-              <label className="block text-xs font-mono text-text-4 mb-1">Model</label>
-              <input value={model} onChange={(e) => setModel(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-surface border border-border text-text-1 outline-none" />
+              <label htmlFor="provider-model" className="block text-xs font-mono text-text-4 mb-1">Model</label>
+              <input id="provider-model" value={model} onChange={(e) => setModel(e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-surface border border-border text-text-1
+                           outline-none focus:border-accent-dim" />
             </div>
             <div>
-              <label className="block text-xs font-mono text-text-4 mb-1">Base URL</label>
-              <input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-surface border border-border text-text-1 outline-none" />
+              <label htmlFor="provider-base-url" className="block text-xs font-mono text-text-4 mb-1">Base URL</label>
+              <input id="provider-base-url" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-surface border border-border text-text-1
+                           outline-none focus:border-accent-dim" />
             </div>
             <div>
-              <label className="block text-xs font-mono text-text-4 mb-1">API Key (optional)</label>
-              <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-surface border border-border text-text-1 outline-none"
+              <label htmlFor="provider-api-key" className="block text-xs font-mono text-text-4 mb-1">API Key (optional)</label>
+              <input id="provider-api-key" type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-surface border border-border text-text-1
+                           outline-none focus:border-accent-dim"
                 placeholder="Leave empty for local" />
             </div>
           </div>
