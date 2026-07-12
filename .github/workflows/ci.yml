@@ -36,6 +36,9 @@ on:
       - "package-lock.json"
       - "tsconfig.json"
       - ".github/workflows/ci.yml"
+  # Manual trigger so maintainers can validate on demand, for example after a
+  # history rewrite where GitHub does not compute changed paths.
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
