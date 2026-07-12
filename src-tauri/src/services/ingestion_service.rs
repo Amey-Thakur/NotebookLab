@@ -11,8 +11,8 @@
 use std::path::Path;
 
 use rusqlite::Connection;
-use std::io::Read;
 use sha2::{Digest, Sha256};
+use std::io::Read;
 
 use crate::database::models::{CreateDocument, DocumentStatus};
 use crate::database::repository::{chunk_repository, document_repository};
@@ -20,21 +20,13 @@ use crate::error::{AppError, AppResult};
 use crate::parsers;
 use crate::services::chunking_service;
 
-
 /// Run the full ingestion pipeline on a file.
 /// Returns the created document ID.
-pub fn ingest_file(
-    conn: &Connection,
-    notebook_id: &str,
-    file_path: &Path,
-) -> AppResult<String> {
+pub fn ingest_file(conn: &Connection, notebook_id: &str, file_path: &Path) -> AppResult<String> {
     /* Validate the file exists and get metadata */
     let metadata = std::fs::metadata(file_path)?;
 
-    let extension = file_path
-        .extension()
-        .and_then(|e| e.to_str())
-        .unwrap_or("");
+    let extension = file_path.extension().and_then(|e| e.to_str()).unwrap_or("");
 
     let title = file_path
         .file_stem()
@@ -47,7 +39,11 @@ pub fn ingest_file(
 
     /* Check if this file was already imported */
     if let Some(existing) = document_repository::find_by_hash(conn, notebook_id, &file_hash)? {
-        tracing::info!("Document already imported: {} ({})", existing.title, existing.id);
+        tracing::info!(
+            "Document already imported: {} ({})",
+            existing.title,
+            existing.id
+        );
         return Err(AppError::InvalidInput(format!(
             "This file has already been imported as '{}'",
             existing.title
@@ -55,14 +51,17 @@ pub fn ingest_file(
     }
 
     /* Create the document record */
-    let doc = document_repository::create(conn, CreateDocument {
-        notebook_id: notebook_id.to_string(),
-        title,
-        file_path: file_path.to_string_lossy().to_string(),
-        file_type: extension.to_string(),
-        file_hash,
-        file_size: metadata.len() as i64,
-    })?;
+    let doc = document_repository::create(
+        conn,
+        CreateDocument {
+            notebook_id: notebook_id.to_string(),
+            title,
+            file_path: file_path.to_string_lossy().to_string(),
+            file_type: extension.to_string(),
+            file_hash,
+            file_size: metadata.len() as i64,
+        },
+    )?;
 
     tracing::info!("Created document: {} ({})", doc.title, doc.id);
 
@@ -115,7 +114,6 @@ pub fn ingest_file(
 
     Ok(doc.id)
 }
-
 
 /// Compute SHA-256 hash via streaming reads to avoid loading entire file into memory.
 fn compute_file_hash(path: &Path) -> AppResult<String> {

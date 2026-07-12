@@ -11,14 +11,12 @@
 use crate::providers::openai_compatible::OpenAiCompatibleProvider;
 use crate::providers::ProviderRouter;
 
-
 /// Common local LLM provider endpoints to probe on startup.
 const LOCAL_PROVIDERS: &[(&str, &str, &str)] = &[
     ("Ollama", "http://127.0.0.1:11434", "llama3.2:3b"),
     ("LM Studio", "http://127.0.0.1:1234", "local-model"),
     ("llama.cpp", "http://127.0.0.1:8080", "local-model"),
 ];
-
 
 /// Probe local endpoints and auto-register any responding provider.
 /// Called once during app startup. Blocks briefly (up to ~1.5s if no providers respond).
@@ -50,8 +48,11 @@ pub fn auto_detect_providers(router: &mut ProviderRouter) {
             Ok(resp) if resp.status().is_success() => {
                 tracing::info!("Auto-detected local provider: {name} at {url}");
 
-                /* Try to get the actual model name from the response */
-                let model = extract_model_name(&resp, default_model);
+                /* Read the actual loaded model from the /v1/models listing so
+                requests name a model the server really has. Falls back to a
+                sensible default when the body is empty or unparseable. */
+                let body = resp.text().unwrap_or_default();
+                let model = extract_model_name(&body, default_model);
 
                 let provider = OpenAiCompatibleProvider::new(
                     name.to_string(),
@@ -61,7 +62,7 @@ pub fn auto_detect_providers(router: &mut ProviderRouter) {
                     true,
                 );
 
-                let index = router.register(Box::new(provider));
+                let index = router.register_or_replace(Box::new(provider));
                 if router.set_active(index).is_ok() {
                     tracing::info!("Auto-activated provider: {name} (index {index})");
                     return; /* Stop after first successful provider */
@@ -79,13 +80,40 @@ pub fn auto_detect_providers(router: &mut ProviderRouter) {
     tracing::info!("No local LLM providers detected. User can register manually in Models.");
 }
 
+/// Pull the first model id out of an OpenAI-style /v1/models response body.
+/// The endpoint returns { "data": [ { "id": "..." }, ... ] } across Ollama,
+/// LM Studio, and llama.cpp. Falls back when the shape does not match.
+fn extract_model_name(body: &str, fallback: &str) -> String {
+    serde_json::from_str::<serde_json::Value>(body)
+        .ok()
+        .and_then(|json| {
+            json.get("data")?
+                .get(0)?
+                .get("id")?
+                .as_str()
+                .map(str::to_string)
+        })
+        .filter(|id| !id.is_empty())
+        .unwrap_or_else(|| fallback.to_string())
+}
 
-/// Placeholder: returns fallback model name.
-/// TODO: Parse /v1/models response body to get actual loaded model name.
-/// Currently the response is consumed by reqwest before this is called,
-/// so we always use the hardcoded default. This means if the user has
-/// a different model loaded (e.g. mistral:7b), requests will specify
-/// the wrong model name. Fix by reading body text before calling this.
-fn extract_model_name(_resp: &reqwest::blocking::Response, fallback: &str) -> String {
-    fallback.to_string()
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn extracts_first_model_id() {
+        let body = r#"{"object":"list","data":[{"id":"mistral:7b"},{"id":"llama3.2:3b"}]}"#;
+        assert_eq!(extract_model_name(body, "fallback"), "mistral:7b");
+    }
+
+    #[test]
+    fn falls_back_on_empty_list() {
+        assert_eq!(extract_model_name(r#"{"data":[]}"#, "fallback"), "fallback");
+    }
+
+    #[test]
+    fn falls_back_on_invalid_json() {
+        assert_eq!(extract_model_name("not json", "fallback"), "fallback");
+    }
 }

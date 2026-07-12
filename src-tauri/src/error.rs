@@ -11,7 +11,6 @@
 use serde::Serialize;
 use thiserror::Error;
 
-
 #[derive(Debug, Error)]
 pub enum AppError {
     #[error("Database error: {0}")]
@@ -42,7 +41,6 @@ pub enum AppError {
     Internal(String),
 }
 
-
 /* Serialize user-safe messages to the frontend, log full detail on backend */
 impl Serialize for AppError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -70,9 +68,7 @@ impl Serialize for AppError {
     }
 }
 
-
 pub type AppResult<T> = Result<T, AppError>;
-
 
 impl From<crate::providers::ProviderError> for AppError {
     fn from(err: crate::providers::ProviderError) -> Self {

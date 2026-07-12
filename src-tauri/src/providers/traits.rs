@@ -9,7 +9,6 @@
 
 use serde::{Deserialize, Serialize};
 
-
 /// Every LLM provider (llama.cpp, OpenAI, Anthropic, etc.) implements this trait.
 /// Adding a new provider = implement this trait + register in the router.
 pub trait LlmProvider: Send + Sync {
@@ -32,13 +31,11 @@ pub trait LlmProvider: Send + Sync {
     }
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatMessage {
     pub role: MessageRole,
     pub content: String,
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -48,14 +45,12 @@ pub enum MessageRole {
     Assistant,
 }
 
-
 #[derive(Debug, Clone)]
 pub struct ChatRequest {
     pub messages: Vec<ChatMessage>,
     pub max_tokens: Option<u32>,
     pub temperature: Option<f32>,
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatResponse {
@@ -64,14 +59,12 @@ pub struct ChatResponse {
     pub usage: Option<TokenUsage>,
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TokenUsage {
     pub prompt_tokens: u32,
     pub completion_tokens: u32,
     pub total_tokens: u32,
 }
-
 
 #[derive(Debug, thiserror::Error)]
 pub enum ProviderError {

@@ -12,6 +12,7 @@
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Mutex;
 
+use tauri_plugin_shell::process::CommandChild;
 
 /// Sidecar lifecycle states (stored as u8 for atomic access).
 pub const STATE_STOPPED: u8 = 0;
@@ -19,7 +20,6 @@ pub const STATE_STARTING: u8 = 1;
 pub const STATE_READY: u8 = 2;
 pub const STATE_CRASHED: u8 = 3;
 pub const STATE_STOPPING: u8 = 4;
-
 
 /// Serializable state for the frontend.
 #[derive(Debug, Clone, serde::Serialize)]
@@ -45,7 +45,6 @@ impl From<u8> for SidecarState {
     }
 }
 
-
 /// Thread-safe sidecar manager. Stored in Tauri managed state.
 /// Uses a single Mutex for all mutable fields to prevent partial-update reads.
 pub struct SidecarManager {
@@ -55,6 +54,9 @@ pub struct SidecarManager {
     /// The health-polling thread checks this to abort early instead of
     /// waiting the full 120s timeout on a dead process.
     pub cancelled: AtomicBool,
+    /// Handle to the spawned llama-server process. Held so the app can kill
+    /// the child on stop and on exit; without it the server outlives the app.
+    child: Mutex<Option<CommandChild>>,
 }
 
 pub struct SidecarInner {
@@ -81,7 +83,38 @@ impl SidecarManager {
                 pid: 0,
             }),
             cancelled: AtomicBool::new(false),
+            child: Mutex::new(None),
         }
+    }
+
+    /// Store the spawned child process handle.
+    pub fn set_child(&self, child: CommandChild) {
+        let mut guard = self.child.lock().unwrap_or_else(|e| e.into_inner());
+        *guard = Some(child);
+    }
+
+    /// Take the child process handle, leaving None behind.
+    pub fn take_child(&self) -> Option<CommandChild> {
+        let mut guard = self.child.lock().unwrap_or_else(|e| e.into_inner());
+        guard.take()
+    }
+
+    /// Terminate the sidecar process and reset all state. Safe to call from
+    /// any state, including Crashed. Used by the stop command and app exit.
+    pub fn shutdown(&self) {
+        self.cancelled.store(true, Ordering::Release);
+
+        if let Some(child) = self.take_child() {
+            let pid = child.pid();
+            if let Err(e) = child.kill() {
+                tracing::warn!("Failed to kill llama-server (PID {pid}): {e}");
+            } else {
+                tracing::info!("llama-server stopped (PID {pid})");
+            }
+        }
+
+        self.set_state(STATE_STOPPED);
+        self.clear();
     }
 
     pub fn current_state(&self) -> SidecarState {
@@ -95,7 +128,9 @@ impl SidecarManager {
     /// Atomically transition from expected_state to new_state.
     /// Returns true if the transition succeeded (was in expected_state).
     pub fn try_transition(&self, expected: u8, new: u8) -> bool {
-        self.state.compare_exchange(expected, new, Ordering::AcqRel, Ordering::Acquire).is_ok()
+        self.state
+            .compare_exchange(expected, new, Ordering::AcqRel, Ordering::Acquire)
+            .is_ok()
     }
 
     pub fn port(&self) -> u16 {
@@ -103,11 +138,19 @@ impl SidecarManager {
     }
 
     pub fn api_key(&self) -> String {
-        self.inner.lock().unwrap_or_else(|e| e.into_inner()).api_key.clone()
+        self.inner
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .api_key
+            .clone()
     }
 
     pub fn model_path(&self) -> String {
-        self.inner.lock().unwrap_or_else(|e| e.into_inner()).model_path.clone()
+        self.inner
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .model_path
+            .clone()
     }
 
     pub fn pid(&self) -> u32 {
@@ -143,7 +186,6 @@ impl SidecarManager {
     }
 }
 
-
 /// Serializable status for the frontend.
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct SidecarStatusInfo {
@@ -152,7 +194,6 @@ pub struct SidecarStatusInfo {
     pub model_path: String,
     pub pid: u32,
 }
-
 
 /// Find an available TCP port by binding to port 0.
 pub fn find_available_port() -> u16 {
@@ -163,15 +204,17 @@ pub fn find_available_port() -> u16 {
         .unwrap_or(8090)
 }
 
-
 /// Generate a random API key for sidecar auth using UUID v4 (122 bits of randomness).
 pub fn generate_session_key() -> String {
     let key = uuid::Uuid::new_v4();
     format!("nbl-{}", key.simple())
 }
 
-
 /// Build the argument list for llama-server.
+/// Deliberately no --embeddings flag: on this llama.cpp release it restricts
+/// the server to embeddings only, which would break chat. Semantic search
+/// simply falls back to keyword ranking when the active provider has no
+/// /v1/embeddings (Ollama provides both, so it gets hybrid search).
 pub fn build_sidecar_args(port: u16, model_path: &str) -> Vec<String> {
     vec![
         "--port".to_string(),
@@ -185,12 +228,70 @@ pub fn build_sidecar_args(port: u16, model_path: &str) -> Vec<String> {
     ]
 }
 
+/// Directories that may hold llama-server's shared libraries, joined into a
+/// search-path value for the child process environment. The release archives
+/// ship llama-server together with its DLLs / dylibs / .so files; installers
+/// place them under the resource directory, while dev builds read them from
+/// src-tauri/binaries/libs.
+pub fn library_search_path(resource_dir: Option<std::path::PathBuf>) -> String {
+    let mut dirs: Vec<std::path::PathBuf> = Vec::new();
+
+    if let Some(dir) = resource_dir {
+        dirs.push(dir.join("llama-libs"));
+    }
+
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(exe_dir) = exe.parent() {
+            dirs.push(exe_dir.to_path_buf());
+        }
+    }
+
+    /* Dev fallback: the download script drops libraries next to the binary */
+    if cfg!(debug_assertions) {
+        dirs.push(
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("binaries")
+                .join("libs"),
+        );
+    }
+
+    let sep = if cfg!(windows) { ";" } else { ":" };
+    dirs.iter()
+        .filter(|d| d.exists())
+        .map(|d| d.to_string_lossy().to_string())
+        .collect::<Vec<_>>()
+        .join(sep)
+}
+
+/// Environment variables needed for the sidecar to find its shared libraries.
+/// Windows resolves DLLs via PATH, Linux via LD_LIBRARY_PATH, and macOS via
+/// DYLD_FALLBACK_LIBRARY_PATH (fallback so system paths keep working).
+pub fn library_env(resource_dir: Option<std::path::PathBuf>) -> Vec<(String, String)> {
+    let lib_path = library_search_path(resource_dir);
+    if lib_path.is_empty() {
+        return Vec::new();
+    }
+
+    if cfg!(windows) {
+        let existing = std::env::var("PATH").unwrap_or_default();
+        vec![("PATH".to_string(), format!("{lib_path};{existing}"))]
+    } else if cfg!(target_os = "macos") {
+        vec![("DYLD_FALLBACK_LIBRARY_PATH".to_string(), lib_path)]
+    } else {
+        let existing = std::env::var("LD_LIBRARY_PATH").unwrap_or_default();
+        let value = if existing.is_empty() {
+            lib_path
+        } else {
+            format!("{lib_path}:{existing}")
+        };
+        vec![("LD_LIBRARY_PATH".to_string(), value)]
+    }
+}
 
 /// Get the environment variable key for passing the API key to llama-server.
 pub fn api_key_env_var() -> &'static str {
     "LLAMA_API_KEY"
 }
-
 
 /// Check if llama-server is healthy by probing /health.
 pub fn check_health_with_client(client: &reqwest::blocking::Client, port: u16) -> bool {
@@ -200,7 +301,6 @@ pub fn check_health_with_client(client: &reqwest::blocking::Client, port: u16) -
         Err(_) => false,
     }
 }
-
 
 /// Poll /health until the server is ready, cancelled, or timeout expires.
 /// The `cancelled` flag is set by the stdout-reader thread when the process exits,
@@ -229,7 +329,6 @@ pub fn wait_for_ready(port: u16, timeout_secs: u64, cancelled: &AtomicBool) -> b
     false
 }
 
-
 /// Scan a directory for GGUF model files. Returns paths sorted by size (smallest first).
 pub fn find_model_files(models_dir: &std::path::Path) -> Vec<std::path::PathBuf> {
     let mut models: Vec<std::path::PathBuf> = Vec::new();
@@ -247,7 +346,6 @@ pub fn find_model_files(models_dir: &std::path::Path) -> Vec<std::path::PathBuf>
     models
 }
 
-
 /// Validate that a model path is within the allowed models directory.
 /// Prevents path traversal attacks via user-supplied model_path.
 pub fn validate_model_path(model: &std::path::Path, allowed_dir: &std::path::Path) -> bool {
@@ -263,7 +361,6 @@ pub fn validate_model_path(model: &std::path::Path, allowed_dir: &std::path::Pat
 
     canonical_model.starts_with(canonical_dir)
 }
-
 
 /// Get available CPU core count (fallback to 4 if detection fails).
 fn num_cpus() -> usize {

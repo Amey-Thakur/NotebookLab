@@ -9,7 +9,10 @@
  */
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
+import { ROUTES } from "@/lib/constants";
+import { formatError } from "@/lib/format-error";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { useDocuments, useDeleteDocument } from "../hooks/use-documents";
 import { ImportButton } from "../components/import-button";
@@ -36,9 +39,15 @@ export function DocumentsPage() {
     return (
       <div className="flex flex-col items-center justify-center h-full text-text-3 p-8">
         <p className="text-lg font-display font-bold mb-2">Documents</p>
-        <p className="text-sm text-text-4">
+        <p className="text-sm text-text-4 mb-4">
           Select a notebook first to view its documents.
         </p>
+        <Link
+          to={ROUTES.NOTEBOOKS}
+          className="px-4 py-2 text-sm font-mono border border-border text-text-2 hover:border-accent-dim transition-colors"
+        >
+          Go to Notebooks
+        </Link>
       </div>
     );
   }
@@ -60,10 +69,14 @@ export function DocumentsPage() {
             <p className="text-xs text-text-4 font-mono py-4">Loading documents...</p>
           )}
           {isError && (
-            <p className="text-xs text-error py-4">Failed to load documents: {String(error)}</p>
+            <p role="alert" className="text-xs text-error py-4">
+              Could not load documents. {formatError(error)}
+            </p>
           )}
           {deleteDoc.isError && (
-            <p className="text-xs text-error py-2">Delete failed: {String(deleteDoc.error)}</p>
+            <p role="alert" className="text-xs text-error py-2">
+              Delete failed. {formatError(deleteDoc.error)}
+            </p>
           )}
           {!isLoading && !isError && (
             <DocumentList

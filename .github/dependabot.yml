@@ -44,6 +44,7 @@ updates:
     labels:
       - ci
     ignore:
-      # Block major version bumps of actions until manually verified
-      - dependency-name: "actions/*"
+      # Block major version bumps of every action until manually verified;
+      # release-critical actions especially (tauri-action holds the signing key)
+      - dependency-name: "*"
         update-types: ["version-update:semver-major"]

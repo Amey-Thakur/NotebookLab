@@ -17,7 +17,6 @@ use super::traits::{
     ChatRequest, ChatResponse, LlmProvider, MessageRole, ProviderError, TokenUsage,
 };
 
-
 pub struct OpenAiCompatibleProvider {
     name: String,
     base_url: String,
@@ -26,7 +25,6 @@ pub struct OpenAiCompatibleProvider {
     is_local: bool,
     client: Client,
 }
-
 
 impl OpenAiCompatibleProvider {
     pub fn new(
@@ -50,44 +48,7 @@ impl OpenAiCompatibleProvider {
                 .unwrap_or_else(|_| Client::new()),
         }
     }
-
-    /// Create a provider configured for a local llama.cpp sidecar.
-    #[allow(dead_code)]
-    pub fn llama_cpp(port: u16, model_name: String) -> Self {
-        Self::new(
-            "llama.cpp".into(),
-            format!("http://127.0.0.1:{port}"),
-            None,
-            model_name,
-            true,
-        )
-    }
-
-    /// Create a provider configured for Ollama's local server.
-    #[allow(dead_code)]
-    pub fn ollama(model_name: String) -> Self {
-        Self::new(
-            "Ollama".into(),
-            "http://127.0.0.1:11434".into(),
-            None,
-            model_name,
-            true,
-        )
-    }
-
-    /// Create a provider configured for the OpenAI API.
-    #[allow(dead_code)]
-    pub fn openai(api_key: String, model: String) -> Self {
-        Self::new(
-            "OpenAI".into(),
-            "https://api.openai.com".into(),
-            Some(api_key),
-            model,
-            false,
-        )
-    }
 }
-
 
 impl LlmProvider for OpenAiCompatibleProvider {
     fn name(&self) -> &str {
@@ -147,8 +108,7 @@ impl LlmProvider for OpenAiCompatibleProvider {
             let status = response.status();
             /* Truncate error body to avoid leaking provider internals to frontend */
             let text = response.text().unwrap_or_default();
-            /* Use char boundary check to avoid panic on multi-byte UTF-8 */
-            let truncated = text.get(..200).unwrap_or(&text);
+            let truncated = crate::utils::text_utils::truncate_to_char_boundary(&text, 200);
             return Err(ProviderError::RequestFailed(format!(
                 "HTTP {status}: {truncated}"
             )));
@@ -192,7 +152,8 @@ impl LlmProvider for OpenAiCompatibleProvider {
 
         match req.send() {
             Ok(resp) if resp.status().is_success() => {
-                let json: serde_json::Value = resp.json()
+                let json: serde_json::Value = resp
+                    .json()
                     .map_err(|e| ProviderError::InvalidResponse(e.to_string()))?;
 
                 let embedding = json
@@ -213,7 +174,6 @@ impl LlmProvider for OpenAiCompatibleProvider {
         }
     }
 }
-
 
 /* OpenAI API wire format */
 

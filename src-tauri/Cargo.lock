@@ -2354,7 +2354,7 @@ dependencies = [
 
 [[package]]
 name = "notebooklab"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "pdf-extract",
@@ -2366,7 +2366,6 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",
- "tauri-plugin-fs",
  "tauri-plugin-shell",
  "tauri-plugin-updater",
  "thiserror 2.0.18",
