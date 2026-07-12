@@ -3,6 +3,14 @@
 Thanks for wanting to help. This guide covers everything you need to go from
 clone to merged pull request.
 
+**Jump to:**
+[Setup](#setup) ·
+[Project layout](#project-layout) ·
+[Quality gates](#quality-gates) ·
+[Conventions](#conventions) ·
+[Commit format](#commit-format) ·
+[Pull requests](#pull-requests)
+
 ## Setup
 
 Prerequisites: [Node.js](https://nodejs.org/) 22+ and [Rust](https://rustup.rs/) 1.77+.

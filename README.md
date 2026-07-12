@@ -30,6 +30,17 @@ help you think. Nothing leaves your computer.
 
 </div>
 
+**Jump to:**
+[What it does](#what-it-does) ·
+[Install](#install) ·
+[First run](#first-run) ·
+[Develop](#develop) ·
+[Architecture](docs/ARCHITECTURE.md) ·
+[REST API](#local-rest-api) ·
+[Privacy](#privacy)
+
+<br>
+
 ## What it does
 
 - **Ask your documents.** Chat grounded in your PDFs, notes, and Markdown files.
@@ -139,7 +150,9 @@ docs/           maintainer guides
 ```
 
 Each module is self-contained and has one purpose. Removing one does not
-break the others.
+break the others. Diagrams of the full system, the question-answering
+pipeline, the local server lifecycle, and the data model live in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 <br>
 
