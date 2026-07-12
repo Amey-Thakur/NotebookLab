@@ -49,6 +49,10 @@ Grab the installer for your platform from the
 The app checks for updates automatically. Verify downloads with the
 `SHA256SUMS` file attached to each release.
 
+macOS builds are not yet notarized with Apple. On first open, right-click the
+app and choose Open, or run
+`xattr -dr com.apple.quarantine /Applications/NotebookLab.app` once.
+
 ## First run
 
 1. NotebookLab opens with a **Getting Started** notebook and two sample notes.
