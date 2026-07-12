@@ -29,7 +29,7 @@ resolves it at that exact path. Everything movable has been moved.
 | `CLAUDE.md` | AI assistant project instructions, discovered at root |
 | `package.json`, `package-lock.json` | npm requires them at root |
 | `tsconfig.json` | TypeScript project root; points into `config/` for the rest |
-| `.gitignore` | Git requires it here |
+| `.gitignore`, `.gitattributes` | Git resolves both here: ignore rules, and LF normalization with binary markers |
 
 Everything else lives one level down: the Vite entry `index.html` sits in
 `src/`, and the Vite, ESLint, Tailwind, and secondary TypeScript configs sit
