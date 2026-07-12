@@ -12,7 +12,12 @@ commands; the workflow does the rest.
    - `src-tauri/Cargo.toml` (`version`, and refresh `Cargo.lock`)
    - `src-tauri/tauri.conf.json` (`version`)
 
-2. **Update `CHANGELOG.md`** with a new section for the version, dated.
+2. **Update `CHANGELOG.md`** with a new section for the version, dated, and
+   bump the version badge near the top of `README.md`. The badge is static
+   on purpose: dynamic badges show "repo not found" while the repository is
+   private. Once the repository is public you can switch it to
+   `img.shields.io/github/v/release/Amey-Thakur/NotebookLab` and stop
+   maintaining it by hand.
 
 3. **Commit, tag, and push**:
 
