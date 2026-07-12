@@ -10,9 +10,12 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
+import { ROUTES } from "@/lib/constants";
+import { formatError } from "@/lib/format-error";
 import { useNotebookStore } from "@/stores/notebook-store";
 
 
@@ -45,6 +48,13 @@ export function PodcastPage() {
     loadVoices();
     speechSynthesis.addEventListener("voiceschanged", loadVoices);
     return () => speechSynthesis.removeEventListener("voiceschanged", loadVoices);
+  }, []);
+
+  /* Stop playback when leaving the page; otherwise the chained utterances
+     keep reading with no visible way to stop them. */
+  useEffect(() => {
+    const synth = synthRef.current;
+    return () => synth.cancel();
   }, []);
 
   const generate = useMutation({
@@ -115,7 +125,13 @@ export function PodcastPage() {
     return (
       <div className="flex flex-col items-center justify-center h-full text-text-3 p-8">
         <p className="text-lg font-display font-bold mb-2">Podcasts</p>
-        <p className="text-sm text-text-4">Select a notebook first to generate a podcast.</p>
+        <p className="text-sm text-text-4 mb-4">Select a notebook first to generate a podcast.</p>
+        <Link
+          to={ROUTES.NOTEBOOKS}
+          className="px-4 py-2 text-sm font-mono border border-border text-text-2 hover:border-accent-dim transition-colors"
+        >
+          Go to Notebooks
+        </Link>
       </div>
     );
   }
@@ -138,6 +154,7 @@ export function PodcastPage() {
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             placeholder="Topic (optional)"
+            aria-label="Podcast topic (optional)"
             className="flex-1 px-3 py-2 text-sm bg-surface border border-border text-text-1
                        placeholder:text-text-4 outline-none focus:border-accent-dim"
           />
@@ -152,7 +169,7 @@ export function PodcastPage() {
           </button>
         </div>
         {generate.isError && (
-          <p className="text-xs text-error">{String(generate.error)}</p>
+          <p role="alert" className="text-xs text-error">{formatError(generate.error)}</p>
         )}
       </div>
 

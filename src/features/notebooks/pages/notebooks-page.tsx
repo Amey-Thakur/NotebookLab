@@ -3,14 +3,18 @@
  * Tech Stack: React 19, TanStack Query, Tailwind CSS
  * Description: Notebooks overview page. Shows all notebooks as cards with create
  *   and delete functionality.
- * Important Details: This is the default landing page after app startup. Empty state
- *   guides the user to create their first notebook. Notebook cards link to the
- *   notebook detail view where documents and notes are managed.
+ * Important Details: This is the default landing page and the only route into a
+ *   notebook, so cards must be fully keyboard operable (role=button, Enter and
+ *   Space). Delete uses a two-step inline confirm because window.confirm() is a
+ *   silent no-op in the macOS webview, and the copy warns that notes and
+ *   documents are removed with the notebook. Create and delete failures render
+ *   inline instead of disappearing into the console.
  */
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { formatError } from "@/lib/format-error";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { useNotebooks, useCreateNotebook, useDeleteNotebook } from "../hooks/use-notebooks";
 
@@ -24,6 +28,7 @@ export function NotebooksPage() {
 
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
 
   const handleCreate = () => {
     if (!newName.trim()) return;
@@ -39,6 +44,11 @@ export function NotebooksPage() {
     );
   };
 
+  const openNotebook = (id: string) => {
+    setActiveNotebook(id);
+    navigate(`/notebooks/${id}`);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full text-text-3">
@@ -50,7 +60,7 @@ export function NotebooksPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-full text-error">
-        Failed to load notebooks
+        {formatError(error)}
       </div>
     );
   }
@@ -71,7 +81,11 @@ export function NotebooksPage() {
       {/* Create notebook inline form */}
       {showCreate && (
         <div className="mb-6 p-4 border border-border bg-surface-2">
+          <label htmlFor="new-notebook-name" className="sr-only">
+            Notebook name
+          </label>
           <input
+            id="new-notebook-name"
             type="text"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
@@ -86,7 +100,7 @@ export function NotebooksPage() {
               type="button"
               onClick={handleCreate}
               disabled={createMutation.isPending}
-              className="px-3 py-1 text-xs font-mono bg-accent-dim text-text-1"
+              className="px-3 py-1 text-xs font-mono bg-accent-dim text-text-1 disabled:opacity-50"
             >
               Create
             </button>
@@ -98,6 +112,11 @@ export function NotebooksPage() {
               Cancel
             </button>
           </div>
+          {createMutation.isError && (
+            <p role="alert" className="mt-3 text-xs text-error">
+              {formatError(createMutation.error)}
+            </p>
+          )}
         </div>
       )}
 
@@ -118,16 +137,29 @@ export function NotebooksPage() {
         </div>
       )}
 
+      {deleteMutation.isError && (
+        <p role="alert" className="mb-4 text-xs text-error">
+          {formatError(deleteMutation.error)}
+        </p>
+      )}
+
       {/* Notebook grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {notebooks?.map((nb) => (
           <div
             key={nb.id}
+            role="button"
+            tabIndex={0}
+            aria-label={`Open notebook ${nb.name}`}
             className="group border border-border bg-surface p-5 cursor-pointer
-                       hover:border-accent-dim transition-colors"
-            onClick={() => {
-              setActiveNotebook(nb.id);
-              navigate(`/notebooks/${nb.id}`);
+                       hover:border-accent-dim focus-visible:border-accent
+                       outline-none transition-colors"
+            onClick={() => openNotebook(nb.id)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                openNotebook(nb.id);
+              }
             }}
           >
             <div className="flex items-start justify-between mb-3">
@@ -135,20 +167,46 @@ export function NotebooksPage() {
                 className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
                 style={{ backgroundColor: nb.color }}
               />
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (confirm(`Delete "${nb.name}"?`)) {
-                    deleteMutation.mutate(nb.id);
-                  }
-                }}
-                className="opacity-0 group-hover:opacity-100 text-xs text-text-4
-                           hover:text-error transition-all"
-                aria-label={`Delete ${nb.name}`}
-              >
-                Delete
-              </button>
+              {confirmingDelete === nb.id ? (
+                <span
+                  className="flex items-center gap-2 text-xs"
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                >
+                  <span className="text-text-3">Delete with all notes?</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      deleteMutation.mutate(nb.id);
+                      setConfirmingDelete(null);
+                    }}
+                    className="font-mono text-error hover:underline"
+                  >
+                    Yes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingDelete(null)}
+                    className="font-mono text-text-4 hover:text-text-2"
+                  >
+                    No
+                  </button>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setConfirmingDelete(nb.id);
+                  }}
+                  className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100
+                             focus-visible:opacity-100 text-xs text-text-4
+                             hover:text-error transition-all"
+                  aria-label={`Delete ${nb.name} and everything inside it`}
+                >
+                  Delete
+                </button>
+              )}
             </div>
             <h3 className="text-sm font-semibold text-text-1 mb-1">{nb.name}</h3>
             {nb.description && (

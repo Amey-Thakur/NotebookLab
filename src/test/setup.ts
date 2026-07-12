@@ -27,15 +27,3 @@ vi.mock("@tauri-apps/plugin-dialog", () => ({
   open: vi.fn().mockResolvedValue(null),
   save: vi.fn().mockResolvedValue(null),
 }));
-
-/* Mock Tauri shell plugin */
-vi.mock("@tauri-apps/plugin-shell", () => ({
-  Command: { sidecar: vi.fn() },
-}));
-
-/* Mock Tauri fs plugin */
-vi.mock("@tauri-apps/plugin-fs", () => ({
-  readFile: vi.fn(),
-  writeFile: vi.fn(),
-  exists: vi.fn().mockResolvedValue(false),
-}));

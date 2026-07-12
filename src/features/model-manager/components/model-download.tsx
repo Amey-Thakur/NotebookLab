@@ -14,6 +14,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
 import { formatBytes } from "@/lib/utils";
+import { formatError } from "@/lib/format-error";
 
 
 interface DownloadProgress {
@@ -63,9 +64,9 @@ export function ModelDownload({ onComplete }: ModelDownloadProps) {
 
   return (
     <div className="border border-border bg-surface-2 p-6 mb-6">
-      <h3 className="text-sm font-display font-bold text-text-1 mb-2">
+      <h2 className="text-sm font-display font-bold text-text-1 mb-2">
         Download AI Model
-      </h3>
+      </h2>
       <p className="text-xs text-text-3 mb-4">
         NotebookLab needs a local AI model (~2 GB download). This is a one-time download
         that runs entirely on your machine.
@@ -83,6 +84,12 @@ export function ModelDownload({ onComplete }: ModelDownloadProps) {
         </button>
       )}
 
+      {download.isError && (
+        <p role="alert" className="text-xs text-error mt-2 mb-2">
+          {formatError(download.error)}
+        </p>
+      )}
+
       {(isDownloading || download.isPending) && progress && (
         <div>
           <div className="flex justify-between text-xs text-text-3 mb-1">
@@ -91,9 +98,16 @@ export function ModelDownload({ onComplete }: ModelDownloadProps) {
               {formatBytes(progress.downloaded)} / {formatBytes(progress.total)}
             </span>
           </div>
-          <div className="w-full h-2 bg-surface border border-border overflow-hidden">
+          <div
+            role="progressbar"
+            aria-label="Model download progress"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(Math.min(progress.percent, 100))}
+            className="w-full h-2 bg-surface border border-border overflow-hidden"
+          >
             <div
-              className="h-full bg-accent transition-all duration-300"
+              className="h-full bg-accent transition-all duration-300 motion-reduce:transition-none"
               style={{ width: `${Math.min(progress.percent, 100)}%` }}
             />
           </div>

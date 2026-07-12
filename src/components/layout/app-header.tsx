@@ -2,9 +2,14 @@
  * Title: app-header.tsx
  * Tech Stack: React 19, Tailwind CSS, Tauri v2
  * Description: Top application bar with hamburger toggle, brand, and search trigger.
- * Important Details: Hamburger button visible only on mobile (<768px). Brand text
- *   is larger and bolder than nav items for clear visual hierarchy.
+ * Important Details: Hamburger button visible only on mobile (<768px). The
+ *   search button navigates to the Search page; the same route is bound to
+ *   Ctrl+K globally in AppShell, so the visible kbd hint is real.
  */
+
+import { useNavigate } from "react-router-dom";
+
+import { ROUTES } from "@/lib/constants";
 
 
 interface AppHeaderProps {
@@ -13,6 +18,8 @@ interface AppHeaderProps {
 
 
 export function AppHeader({ onToggleSidebar }: AppHeaderProps) {
+  const navigate = useNavigate();
+
   return (
     <header
       className="flex items-center justify-between h-10 px-4 border-b border-border bg-bg select-none"
@@ -40,11 +47,9 @@ export function AppHeader({ onToggleSidebar }: AppHeaderProps) {
         <button
           type="button"
           aria-label="Open search (Ctrl+K)"
-          className="hidden sm:flex px-3 py-1 text-xs font-mono text-text-4 bg-surface-2 border border-border
-                     hover:border-border-hover transition-colors"
-          onClick={() => {
-            /* Command palette will be wired here */
-          }}
+          className="hidden sm:flex px-3 py-1 text-xs font-mono text-text-3 bg-surface-2 border border-border
+                     hover:border-border-hover focus-visible:border-accent transition-colors"
+          onClick={() => navigate(ROUTES.SEARCH)}
         >
           Search...
           <kbd className="ml-2 text-text-4" aria-hidden="true">Ctrl+K</kbd>

@@ -3,7 +3,8 @@
  * Tech Stack: React 19, TanStack Query, React Router, Zustand
  * Description: Application entry point. Assembles the provider tree and mounts the router.
  * Important Details: Provider order matters. QueryClient wraps everything for async data.
- *   Theme provider reads from persisted user settings via Tauri IPC.
+ *   Theme provider persists the choice to localStorage; index.html applies it
+ *   before first paint to avoid a theme flash.
  */
 
 import React from "react";

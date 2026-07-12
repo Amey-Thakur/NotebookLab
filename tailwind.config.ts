@@ -44,15 +44,17 @@ export default {
       },
 
       fontSize: {
-        /* Strict typographic scale */
-        "2xs": ["10px", { lineHeight: "14px" }],
-        xs: ["12px", { lineHeight: "16px" }],
-        sm: ["14px", { lineHeight: "20px" }],
-        base: ["16px", { lineHeight: "24px" }],
-        lg: ["18px", { lineHeight: "28px" }],
-        xl: ["22px", { lineHeight: "30px" }],
-        "2xl": ["28px", { lineHeight: "36px" }],
-        "3xl": ["36px", { lineHeight: "44px" }],
+        /* Strict typographic scale in rem so OS and browser text-size
+           preferences scale the whole interface. 2xs (11px at default size)
+           is the legibility floor. */
+        "2xs": ["0.6875rem", { lineHeight: "1rem" }],
+        xs: ["0.75rem", { lineHeight: "1rem" }],
+        sm: ["0.875rem", { lineHeight: "1.25rem" }],
+        base: ["1rem", { lineHeight: "1.5rem" }],
+        lg: ["1.125rem", { lineHeight: "1.75rem" }],
+        xl: ["1.375rem", { lineHeight: "1.875rem" }],
+        "2xl": ["1.75rem", { lineHeight: "2.25rem" }],
+        "3xl": ["2.25rem", { lineHeight: "2.75rem" }],
       },
 
       borderColor: {
