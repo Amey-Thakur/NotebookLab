@@ -1,11 +1,11 @@
 /*
  * Name: note_commands.rs
- * Purpose: Tauri command handlers for note CRUD, wiki-link resolution, and
- *   backlink queries.
+ * Purpose: Tauri command handlers for note CRUD, wiki-link resolution,
+ *   backlink queries, and Markdown export.
  * Description: resolve_wiki_link finds a note by exact title or creates it,
  *   so clicking a [[link]] in the editor always lands somewhere
  *   useful. get_backlinks powers the backlinks panel under the
- *   editor.
+ *   editor. export_note writes a note to a user-chosen path.
  * Tech Stack: Rust, Tauri v2
  * License: MIT
  * Authors: Amey Thakur (https://github.com/Amey-Thakur)
@@ -48,16 +48,6 @@ pub fn update_note(state: State<'_, AppState>, id: String, input: UpdateNote) ->
 pub fn delete_note(state: State<'_, AppState>, id: String) -> AppResult<()> {
     let conn = state.conn()?;
     note_repository::delete(&conn, &id)
-}
-
-#[tauri::command(rename_all = "snake_case")]
-pub fn search_notes(
-    state: State<'_, AppState>,
-    notebook_id: String,
-    query: String,
-) -> AppResult<Vec<Note>> {
-    let conn = state.conn()?;
-    note_repository::search_by_title(&conn, &notebook_id, &query)
 }
 
 /// List notes that link to this note via [[wiki-links]].
