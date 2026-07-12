@@ -1,0 +1,21 @@
+## Name: config.yml
+## Purpose: Issue chooser configuration.
+## Description: Routes questions to Discussions and the FAQ so the issue
+##   tracker stays reserved for actionable bugs and feature requests.
+## Tech Stack: GitHub issue templates
+## License: MIT
+## Authors: Amey Thakur (https://github.com/Amey-Thakur)
+##          Archit Konde (https://github.com/Archit-Konde)
+## Date: 2026-07-12
+
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question
+    url: https://github.com/Amey-Thakur/NotebookLab/discussions
+    about: Questions, ideas, and show-and-tell live in Discussions.
+  - name: Read the FAQ
+    url: https://github.com/Amey-Thakur/NotebookLab/blob/main/docs/FAQ.md
+    about: The most common questions, answered directly.
+  - name: Report a security problem
+    url: https://github.com/Amey-Thakur/NotebookLab/security/advisories/new
+    about: Private reporting. Please never open a public issue for security.
