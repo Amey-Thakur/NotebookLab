@@ -5,14 +5,13 @@ node_modules/
 dist/
 target/
 
-# Tauri sidecar binaries (fetched by script, not committed)
+# Tauri sidecar binary + shared libraries (fetched by npm run sidecar:download)
 src-tauri/binaries/*.exe
 src-tauri/binaries/llama-server-*
+src-tauri/binaries/libs/
+src-tauri/binaries/llama-extract/
+src-tauri/binaries/*.zip
 !src-tauri/binaries/README.md
-
-# ONNX models (large files, downloaded by script)
-src-tauri/resources/models/embedding/*.onnx
-!src-tauri/resources/models/embedding/README.md
 
 # Environment
 .env
@@ -42,6 +41,5 @@ src-tauri/target/
 src-tauri/WixTools/
 src-tauri/gen/
 
-# Planning artifacts (not production code)
+# Third-party documents
 *.pdf
-.gstack/
