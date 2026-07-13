@@ -38,7 +38,9 @@ pub fn markdown_to_rtf(markdown: &str) -> String {
             body.push_str("{\\pntext\\bullet\\tab}");
             body.push_str(&inline(rest));
             body.push_str("\\par\n");
-        } else if let Some(rest) = numbered_item(trimmed) {
+        } else if let Some((number, rest)) = numbered_item(trimmed) {
+            body.push_str(number);
+            body.push_str(".\\tab ");
             body.push_str(&inline(rest));
             body.push_str("\\par\n");
         } else if trimmed == "---" || trimmed == "***" {
@@ -66,11 +68,12 @@ fn bullet_item(line: &str) -> Option<&str> {
     None
 }
 
-/// Strip a `N. ` numbered marker and return the item text.
-fn numbered_item(line: &str) -> Option<&str> {
+/// Split a `N. ` numbered marker into its number and the item text, so the
+/// number survives into the exported document instead of being dropped.
+fn numbered_item(line: &str) -> Option<(&str, &str)> {
     let dot = line.find(". ")?;
     if dot > 0 && line[..dot].chars().all(|c| c.is_ascii_digit()) {
-        Some(&line[dot + 2..])
+        Some((&line[..dot], &line[dot + 2..]))
     } else {
         None
     }
@@ -141,8 +144,17 @@ fn escape_char(c: char) -> String {
         '{' => "\\{".to_string(),
         '}' => "\\}".to_string(),
         c if (c as u32) < 128 => c.to_string(),
-        /* RTF encodes non-ASCII as signed 16-bit unicode escapes */
-        c => format!("\\u{}?", c as i32),
+        /* RTF \uN takes a signed 16-bit code unit. Encode the character as
+        UTF-16 (one unit in the BMP, a surrogate pair above it) and cast
+        each unit to i16, which is exactly the signed form RTF expects.
+        The trailing '?' is the fallback glyph for readers without \u. */
+        c => {
+            let mut buf = [0u16; 2];
+            c.encode_utf16(&mut buf)
+                .iter()
+                .map(|unit| format!("\\u{}?", *unit as i16))
+                .collect()
+        }
     }
 }
 
@@ -184,8 +196,30 @@ mod tests {
     }
 
     #[test]
+    fn numbered_lists_keep_their_numbers() {
+        let rtf = markdown_to_rtf("1. First\n2. Second\n3. Third");
+        assert!(rtf.contains("1.\\tab First"), "first item keeps its number");
+        assert!(rtf.contains("2.\\tab Second"));
+        assert!(rtf.contains("3.\\tab Third"));
+    }
+
+    #[test]
     fn non_ascii_is_escaped() {
         let rtf = markdown_to_rtf("caf\u{e9}");
         assert!(rtf.contains("\\u233?"));
+    }
+
+    #[test]
+    fn astral_characters_emit_a_surrogate_pair() {
+        /* An emoji is above the BMP; RTF needs two \u code units for it,
+        and each must be in the signed 16-bit range. */
+        let rtf = markdown_to_rtf("hi \u{1F600}");
+        assert!(rtf.contains("\\u-10179?"), "high surrogate present: {rtf}");
+        assert!(rtf.contains("\\u-8704?"), "low surrogate present");
+        /* No escape may exceed the signed 16-bit range */
+        for cap in rtf.split("\\u").skip(1) {
+            let num: i64 = cap.split('?').next().unwrap().parse().unwrap();
+            assert!((-32768..=32767).contains(&num), "in i16 range: {num}");
+        }
     }
 }

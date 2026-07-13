@@ -74,20 +74,26 @@ function compose(parts: PromptParts): string {
 
 export function PromptStudioPage() {
   const [parts, setParts] = useState<PromptParts>(EMPTY);
-  const [refined, setRefined] = useState<string | null>(null);
+  /* A refinement is tied to the exact draft it came from. When the user edits
+     afterward the source no longer matches, so the refinement falls away on
+     its own; a late result for an old draft can never clobber a new edit. */
+  const [refined, setRefined] = useState<{ text: string; source: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
   const composed = useMemo(() => compose(parts), [parts]);
-  const output = refined ?? composed;
+  const showingRefined = refined !== null && refined.source === composed;
+  const output = showingRefined ? refined.text : composed;
 
   const refine = useMutation({
-    mutationFn: () => tauriInvoke<string>("refine_prompt", { draft: composed }),
-    onSuccess: (result) => setRefined(result),
+    mutationFn: (draft: string) => tauriInvoke<string>("refine_prompt", { draft }),
+    onSuccess: (result, draft) => {
+      /* Ignore an empty rewrite so it never blanks the prompt */
+      if (result.trim()) setRefined({ text: result, source: draft });
+    },
   });
 
   const set = (key: keyof PromptParts, value: string) => {
     setParts((p) => ({ ...p, [key]: value }));
-    setRefined(null);
   };
 
   const copy = () => {
@@ -149,12 +155,12 @@ export function PromptStudioPage() {
         <div className="lg:sticky lg:top-4 self-start w-full">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-mono tracking-widest uppercase text-text-4">
-              Your prompt {refined && <span className="text-accent">refined</span>}
+              Your prompt {showingRefined && <span className="text-accent">refined</span>}
             </span>
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => refine.mutate()}
+                onClick={() => refine.mutate(composed)}
                 disabled={!parts.task.trim() || refine.isPending}
                 className="text-xs font-mono text-text-3 hover:text-text-1 disabled:opacity-40 transition-colors"
               >
@@ -182,7 +188,7 @@ export function PromptStudioPage() {
           {refine.isError && (
             <p role="alert" className="mt-2 text-xs text-error">{formatError(refine.error)}</p>
           )}
-          {refined && (
+          {showingRefined && (
             <button
               type="button"
               onClick={() => setRefined(null)}
