@@ -20,6 +20,8 @@ All notable changes to NotebookLab will be documented in this file.
 - About page: the people behind NotebookLab, why it exists, portraits pulled
   live from GitHub, and the Makers' Pledge, a certificate carrying the
   fingerprint of the key that signs every commit and release.
+- The Makers' Pledge as a signed certificate of authenticity: shown on the
+  website and in the README, and available as a one-click download.
 - A single brand mark component, drawn from the packaged app icon, now used
   consistently in the header, the welcome flow, and the About page.
 - A shared, accessible dialog primitive (focus trap, Escape to close, reduced

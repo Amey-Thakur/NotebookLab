@@ -93,4 +93,10 @@ First released to the public in 2026 &middot; MIT License
 
 `SHA256:h+W7L5p+iSLNi8FfG+Svgwtr/shv3l0JsCYq/o6VBis`
 
+<br>
+
+<a href="../site/makers-pledge.png"><img src="../site/makers-pledge.png" alt="The Makers' Pledge, a certificate of authenticity signed by Amey Thakur and Archit Konde" width="480"></a>
+
+[**Download the certificate**](https://raw.githubusercontent.com/Amey-Thakur/NotebookLab/main/site/makers-pledge.png)
+
 </div>
