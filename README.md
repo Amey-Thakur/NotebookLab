@@ -214,6 +214,23 @@ maintainers cut releases with [docs/RELEASING.md](docs/RELEASING.md).
 
 <br>
 
+## The Makers' Pledge
+
+Our promise to everyone who trusts NotebookLab with their thinking: your work
+stays on your machine, the source stays open, and we ship only what we run
+ourselves. It carries the fingerprint of the same key that signs every commit
+and release, so the promise can be checked, not merely trusted.
+
+<div align="center">
+
+<a href="site/makers-pledge.png"><img src="site/makers-pledge.png" alt="The Makers' Pledge, a certificate of authenticity signed by Amey Thakur and Archit Konde: your work stays on your machine, the source stays open, and they ship only what they run themselves" width="520"></a>
+
+[**Download the certificate**](https://raw.githubusercontent.com/Amey-Thakur/NotebookLab/main/site/makers-pledge.png) &nbsp;·&nbsp; [Read the full pledge](docs/AUTHORS.md)
+
+</div>
+
+<br>
+
 ## License and authors
 
 Released under the [MIT License](LICENSE).
