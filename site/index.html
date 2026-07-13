@@ -169,9 +169,11 @@
     .pledge-card{max-width:660px;margin:0 auto;border:1px solid var(--accent);border-radius:var(--r);padding:6px}
     .pledge-inner{border:1px solid var(--border);border-radius:calc(var(--r) - 2px);padding:52px 44px;background:var(--card)}
     .pledge-eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent-light)}
-    .pledge-title{font-size:30px;font-weight:700;color:var(--text);margin:14px 0 22px}
-    .pledge-intro{font-family:'Source Serif 4',serif;font-size:16px;line-height:1.6;color:var(--dim);max-width:460px;margin:0 auto 30px}
-    .pledge-promise{margin:18px 0}
+    .pledge-title{font-size:30px;font-weight:700;color:var(--text);margin:14px 0 26px}
+    .pledge-intro{font-family:'Source Serif 4',serif;font-size:16px;line-height:1.6;color:var(--dim);max-width:500px;margin:0 auto 18px}
+    .pledge-word{font-family:'Source Serif 4',serif;font-size:15px;color:var(--muted);max-width:480px;margin:8px auto 28px}
+    .pledge-signed{font-family:'Source Serif 4',serif;font-size:13px;line-height:1.6;color:var(--dim);max-width:440px;margin:30px auto 0}
+    .pledge-promise{margin:20px 0}
     .pledge-promise b{display:block;font-family:'Play',sans-serif;font-size:17px;color:var(--accent-light);margin-bottom:4px}
     .pledge-promise span{font-family:'Source Serif 4',serif;font-size:15px;color:var(--text)}
     .pledge-sign{display:flex;flex-wrap:wrap;justify-content:center;gap:20px 56px;margin:36px 0 4px}
@@ -409,21 +411,28 @@
         <p class="pledge-eyebrow">Certificate of Authenticity</p>
         <h2 class="pledge-title">The Makers&rsquo; Pledge</h2>
         <p class="pledge-intro">
-          Made by hand by two people who wanted their thinking partner back, and given
-          freely to anyone who needs the same. To everyone who trusts it with their
-          thinking, we give our word.
+          The tools we think with have quietly become products that watch us. The
+          notebook turned into a subscription, the private note into a data point, and
+          the quiet place to work into something that studies what you do inside it. We
+          wanted our thinking partner back, so we built one that answers only to you.
         </p>
+        <p class="pledge-intro">
+          Every part of NotebookLab was made by the two of us, by hand, one considered
+          commit at a time, each with a single clear purpose and read closely before it
+          was trusted. We made it the way we would want a tool made for us.
+        </p>
+        <p class="pledge-word">To everyone who makes it part of their work, we give our word.</p>
         <div class="pledge-promise">
           <b>Yours alone.</b>
-          <span>Your notes, documents, and questions never leave your machine.</span>
+          <span>Your notes, documents, and questions never leave this machine. No accounts, no telemetry, no quiet calls home.</span>
         </div>
         <div class="pledge-promise">
           <b>Open always.</b>
-          <span>Every line is open to read, question, and build upon.</span>
+          <span>Every line is here to be read, questioned, and made better by anyone who cares to look.</span>
         </div>
         <div class="pledge-promise">
           <b>Honest work.</b>
-          <span>We ship only what we run ourselves, and fix what we get wrong.</span>
+          <span>We ship only what we run ourselves, and when we get something wrong we say so plainly and fix it in the open.</span>
         </div>
         <div class="pledge-sign">
           <div>
@@ -435,6 +444,7 @@
             <div class="h">@Archit-Konde</div>
           </div>
         </div>
+        <p class="pledge-signed">Signed with our own hands, and with the key that signs every commit and release, so this promise can be checked and not merely trusted.</p>
         <p class="pledge-meta">First released to the public in 2026 &middot; MIT License</p>
         <p class="pledge-key">SHA256:h+W7L5p+iSLNi8FfG+Svgwtr/shv3l0JsCYq/o6VBis</p>
         <a class="pledge-dl" href="makers-pledge.png" download="NotebookLab-Makers-Pledge.png">Download the certificate</a>
