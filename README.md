@@ -72,6 +72,9 @@ help you think. Nothing leaves your computer.
   llama.cpp server, or connect Ollama, LM Studio, and other
   OpenAI-compatible providers.
 
+- **Move fast.** One keyboard-first search box, go-to shortcuts (`G` then a
+  key), and a cheat sheet on `?`. Press once, land anywhere.
+
 <br>
 
 ## Install
@@ -98,11 +101,13 @@ then, on first open right-click the app and choose Open, or run
 
 ## First run
 
-1. NotebookLab opens with a Getting Started notebook and two sample notes.
+1. A short welcome greets you on the first launch and opens with a Getting
+   Started notebook and two sample notes.
 2. Open **Models**, then either download the bundled model (one 2 GB download)
    or connect a provider you already run, like Ollama.
 3. Import a PDF, TXT, or Markdown file into a notebook.
 4. Open **Chat** and ask a question about it.
+5. Press `?` any time for the full list of keyboard shortcuts.
 
 <br>
 

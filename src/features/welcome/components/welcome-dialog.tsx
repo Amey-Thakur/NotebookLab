@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 
 import { Modal } from "@/components/shared/modal";
 import { KeyCaps } from "@/components/shared/key-caps";
+import { BrandMark } from "@/components/shared/brand-mark";
 import { ROUTES } from "@/lib/constants";
 import { SHORTCUTS, type Shortcut } from "@/lib/shortcuts";
 import { useTheme } from "@/components/providers/theme-context";
@@ -128,19 +129,11 @@ export function WelcomeDialog({ open, onFinish }: WelcomeDialogProps) {
   );
 }
 
-function BrandMark() {
-  return (
-    <span className="inline-flex h-11 w-11 items-center justify-center border border-accent-dim bg-surface-2">
-      <span className="font-display text-lg font-bold text-accent">N</span>
-    </span>
-  );
-}
-
 function WelcomeStep() {
   return (
     <div className="text-center">
       <div className="flex justify-center mb-5">
-        <BrandMark />
+        <BrandMark className="h-14 w-14 text-accent" />
       </div>
       <h2 className="font-display text-2xl font-bold text-text-1 mb-3">Welcome to NotebookLab</h2>
       <p className="text-sm text-text-2 leading-relaxed max-w-sm mx-auto">
@@ -210,7 +203,7 @@ function ReadyStep() {
   return (
     <div className="text-center">
       <div className="flex justify-center mb-5">
-        <BrandMark />
+        <BrandMark className="h-14 w-14 text-accent" />
       </div>
       <h2 className="font-display text-xl font-bold text-text-1 mb-3">You are ready</h2>
       <p className="text-sm text-text-2 leading-relaxed max-w-sm mx-auto">

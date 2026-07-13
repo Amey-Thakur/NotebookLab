@@ -13,6 +13,7 @@
  */
 
 import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { BrandMark } from "@/components/shared/brand-mark";
 import { IS_MAC } from "@/lib/shortcuts";
 
 
@@ -47,8 +48,11 @@ export function AppHeader({ sidebarOpen, onToggleSidebar, onOpenPalette }: AppHe
           </svg>
         </button>
 
-        <span className="font-display text-base font-bold tracking-tight text-text-1">
-          NotebookLab
+        <span className="flex items-center gap-2">
+          <BrandMark className="h-4 w-4 text-accent" />
+          <span className="font-display text-base font-bold tracking-tight text-text-1">
+            NotebookLab
+          </span>
         </span>
       </div>
 
