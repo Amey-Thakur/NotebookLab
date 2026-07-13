@@ -4,29 +4,22 @@
  *   sign their names to.
  * Description: This is the app's first release to the public, and this page is
  *   the two makers speaking for themselves: portraits pulled live from GitHub,
- *   their own words, and a certificate carrying the fingerprint of the key
- *   that signs every commit and release, so the promise on screen is checkable
- *   against the repository itself.
- * Tech Stack: React 19, TanStack Query, Tailwind CSS
+ *   their own words, and the Makers' Pledge set as a certificate. The pledge
+ *   uses the one shared certificate design, so it looks the same here, on the
+ *   website, and in the download.
+ * Tech Stack: React 19, Tailwind CSS
  * License: MIT
  * Authors: Amey Thakur (https://github.com/Amey-Thakur)
  *          Archit Konde (https://github.com/Archit-Konde)
  * Date: 2026-07-12
  */
 
-import { useQuery } from "@tanstack/react-query";
-
-import { tauriInvoke } from "@/services/tauri-client";
-import { QUERY_KEYS } from "@/lib/constants";
-import { BrandMark } from "@/components/shared/brand-mark";
+import { MakersCertificate } from "../components/makers-certificate";
 import { AuthorPortrait } from "../components/author-portrait";
 
-/* The fingerprint of the SSH key that signs every commit and release in the
-   NotebookLab repository. Printed on the pledge so the signature below is a
-   claim anyone can verify, not a decoration. */
-const RELEASE_KEY_FINGERPRINT = "SHA256:h+W7L5p+iSLNi8FfG+Svgwtr/shv3l0JsCYq/o6VBis";
-
 const REPOSITORY_URL = "https://github.com/Amey-Thakur/NotebookLab";
+const CERTIFICATE_URL =
+  "https://raw.githubusercontent.com/Amey-Thakur/NotebookLab/main/site/makers-pledge.png";
 
 interface Maker {
   name: string;
@@ -55,24 +48,8 @@ const MAKERS: Maker[] = [
 ];
 
 export function AboutPage() {
-  const { data: version } = useQuery({
-    queryKey: [QUERY_KEYS.SETTINGS, "version"],
-    queryFn: () => tauriInvoke<string>("get_app_version"),
-  });
-
   return (
     <div className="p-8 max-w-2xl mx-auto">
-      {/* Wordmark */}
-      <div className="mb-12 text-center">
-        <div className="flex justify-center mb-4">
-          <BrandMark className="h-16 w-16" />
-        </div>
-        <h1 className="font-display text-3xl font-bold text-text-1 mb-1">NotebookLab</h1>
-        <p className="text-xs font-mono text-text-4">
-          {version ? `Version ${version}` : " "}
-        </p>
-      </div>
-
       {/* Why this exists */}
       <section className="mb-14">
         <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-5 pb-2 border-b border-border">
@@ -126,83 +103,20 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* The pledge, set like a certificate */}
-      <section className="mb-10">
-        <div className="border border-border p-1.5">
-          <div className="border border-accent-dim px-8 py-10 text-center">
-            <p className="text-2xs font-mono tracking-[3px] uppercase text-text-4 mb-3">
-              Certificate of Authenticity
-            </p>
-            <h2 className="font-display text-xl font-bold text-text-1 mb-8">
-              The Makers&apos; Pledge
-            </h2>
-
-            <div className="font-body text-sm text-text-2 leading-relaxed max-w-md mx-auto space-y-5 text-left">
-              <p>
-                The tools we think with have quietly become products that watch us. The
-                notebook turned into a subscription, the private note into a data point,
-                and the quiet place to work into something that studies what you do inside
-                it. We wanted our thinking partner back, so we built one that answers only
-                to you.
-              </p>
-              <p>
-                Every part of NotebookLab was made by the two of us, by hand, one
-                considered commit at a time, each with a single clear purpose and read
-                closely before it was trusted. We made it the way we would want a tool
-                made for us.
-              </p>
-              <p className="text-text-3">To everyone who makes it part of their work, we give our word.</p>
-              <dl className="space-y-3">
-                <div>
-                  <dt className="font-display font-bold text-text-1">Yours alone.</dt>
-                  <dd>
-                    Your notes, documents, and questions never leave this machine. No
-                    accounts, no telemetry, no quiet calls home.
-                  </dd>
-                </div>
-                <div>
-                  <dt className="font-display font-bold text-text-1">Open always.</dt>
-                  <dd>
-                    Every line is here to be read, questioned, and made better by anyone
-                    who cares to look.
-                  </dd>
-                </div>
-                <div>
-                  <dt className="font-display font-bold text-text-1">Honest work.</dt>
-                  <dd>
-                    We ship only what we run ourselves, and when we get something wrong we
-                    say so plainly and fix it in the open.
-                  </dd>
-                </div>
-              </dl>
-            </div>
-
-            {/* Signatures */}
-            <div className="flex justify-center gap-12 mt-10 mb-8">
-              {MAKERS.map((maker) => (
-                <div key={maker.handle} className="text-center">
-                  <p className="font-body italic text-lg text-text-1 mb-2">{maker.name}</p>
-                  <div className="border-t border-border pt-1.5">
-                    <p className="text-2xs font-mono text-text-4">@{maker.handle}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <p className="font-body text-xs text-text-3 max-w-md mx-auto mb-6">
-              Signed with our own hands, and with the key that signs every commit and
-              release, so this promise can be checked and not merely trusted.
-            </p>
-            <p className="text-2xs font-mono text-text-4 leading-relaxed">
-              First released to the public in 2026 &middot; MIT License
-              <br />
-              <span className="text-text-3 break-all">{RELEASE_KEY_FINGERPRINT}</span>
-            </p>
-          </div>
-        </div>
+      {/* The pledge, as the shared certificate */}
+      <section className="mb-8">
+        <MakersCertificate />
       </section>
 
-      <p className="text-center text-xs text-text-4">
+      <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-center text-xs text-text-4">
+        <a
+          href={CERTIFICATE_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="hover:text-text-2 transition-colors"
+        >
+          Download the certificate
+        </a>
         <a
           href={REPOSITORY_URL}
           target="_blank"
@@ -211,7 +125,7 @@ export function AboutPage() {
         >
           Read the source on GitHub
         </a>
-      </p>
+      </div>
     </div>
   );
 }
