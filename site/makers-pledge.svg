@@ -24,8 +24,8 @@
   <rect width="1000" height="1660" fill="url(#bg)"/>
 
   <!-- Double frame -->
-  <rect x="34" y="34" width="932" height="1592" fill="none" stroke="#4A70A9" stroke-width="2"/>
-  <rect x="50" y="50" width="900" height="1560" fill="none" stroke="#8FABD4" stroke-width="1" opacity="0.4"/>
+  <rect x="34" y="34" width="932" height="1592" fill="none" stroke="#3f6cb5" stroke-width="2"/>
+  <rect x="50" y="50" width="900" height="1560" fill="none" stroke="#3f6cb5" stroke-width="1" opacity="0.5"/>
 
   <!-- Corner diamonds, 15u centered on each inner-frame corner -->
   <g fill="#8AB2EA">
@@ -52,7 +52,7 @@
     <tspan fill="#EAE6E0">Notebook</tspan><tspan fill="#8AB2EA">Lab</tspan>
   </text>
 
-  <text x="500" y="278" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="15" letter-spacing="5" fill="#8FABD4">CERTIFICATE OF AUTHENTICITY</text>
+  <text x="500" y="278" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="15" letter-spacing="5" fill="#8AB2EA">CERTIFICATE OF AUTHENTICITY</text>
   <line x1="440" y1="300" x2="560" y2="300" stroke="#3f6cb5" stroke-width="1"/>
 
   <text x="500" y="376" text-anchor="middle" font-size="46" font-weight="700" fill="#EAE6E0">The Makers&#8217; Pledge</text>
@@ -107,10 +107,10 @@
 
   <!-- Verification seal -->
   <g transform="translate(500,1348)">
-    <circle r="48" fill="none" stroke="#8AB2EA" stroke-width="2.5"/>
-    <circle r="40" fill="none" stroke="#4A70A9" stroke-width="1" opacity="0.6"/>
-    <path d="M-16,0 L-5,13 L17,-14" fill="none" stroke="#8AB2EA" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-    <text y="30" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="2" fill="#8AB2EA">SIGNED</text>
+    <circle r="62" fill="none" stroke="#8AB2EA" stroke-width="2.5"/>
+    <circle r="52" fill="none" stroke="#3f6cb5" stroke-width="1" opacity="0.7"/>
+    <path d="M-21,1 L-6,17 L22,-18" fill="none" stroke="#8AB2EA" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text y="40" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="2.5" fill="#8AB2EA">SIGNED</text>
   </g>
 
   <!-- Signed statement -->
@@ -121,5 +121,5 @@
   </g>
 
   <text x="500" y="1566" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" fill="#8A847D">First released to the public in 2026  &#183;  MIT License</text>
-  <text x="500" y="1592" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#8FABD4">SHA256:h+W7L5p+iSLNi8FfG+Svgwtr/shv3l0JsCYq/o6VBis</text>
+  <text x="500" y="1592" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#8AB2EA">SHA256:h+W7L5p+iSLNi8FfG+Svgwtr/shv3l0JsCYq/o6VBis</text>
 </svg>
