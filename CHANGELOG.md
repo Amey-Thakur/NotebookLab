@@ -6,6 +6,12 @@ All notable changes to NotebookLab will be documented in this file.
 
 ### Added
 
+- Share a notebook. Export any notebook to a single self-contained file that
+  holds the notebook, its notes, its documents (as their extracted, searchable
+  text), and its canvas, then import that file on another machine to recreate
+  the notebook, fully offline and with no original source files needed. Import
+  and export live on the Notebooks page; a half-finished import is rolled back
+  so nothing partial is left behind.
 - Audio overview formats. The audio overview (read aloud in the browser) can now
   be a two-host discussion, a one-minute brief from a single narrator, a debate
   between opposing speakers, or a critique that weighs the material's strengths

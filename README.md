@@ -63,6 +63,9 @@ help you think. Nothing leaves your computer.
 - **Sketch on a canvas.** One open space per notebook to draw, drop in images,
   add shapes and text, and arrange it all. It saves with the notebook.
 
+- **Share a notebook.** Export a notebook as one self-contained file and import
+  it on another machine. Offline, no source files needed.
+
 - **Transform documents.** Summaries, key points, or any custom instruction.
 
 - **Craft prompts.** Prompt Studio builds a clear prompt from simple parts and
