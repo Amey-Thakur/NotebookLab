@@ -114,15 +114,17 @@ export function MakersCertificate() {
   );
 }
 
-/* Small diamonds seated on the inner frame's corners */
+/* Small diamonds seated exactly on the inner frame's corners. The 10px square
+   is offset by half its size so its center sits on the corner, matching the
+   website and the downloadable certificate to the pixel. */
 function CornerMarks() {
-  const corner = "absolute h-2 w-2 rotate-45 bg-accent";
+  const corner = "absolute h-2.5 w-2.5 rotate-45 bg-accent";
   return (
     <>
-      <span aria-hidden="true" className={`${corner} -left-1 -top-1`} />
-      <span aria-hidden="true" className={`${corner} -right-1 -top-1`} />
-      <span aria-hidden="true" className={`${corner} -bottom-1 -left-1`} />
-      <span aria-hidden="true" className={`${corner} -bottom-1 -right-1`} />
+      <span aria-hidden="true" className={`${corner} -left-[5px] -top-[5px]`} />
+      <span aria-hidden="true" className={`${corner} -right-[5px] -top-[5px]`} />
+      <span aria-hidden="true" className={`${corner} -bottom-[5px] -left-[5px]`} />
+      <span aria-hidden="true" className={`${corner} -bottom-[5px] -right-[5px]`} />
     </>
   );
 }

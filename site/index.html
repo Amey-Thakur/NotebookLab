@@ -34,7 +34,7 @@
     :root{
       --bg:#08090a;--surface:#0f1012;--card:#131517;--border:#1e2024;
       --text:#e6e2dc;--dim:#8a857f;--muted:#8a857f;--inset:#1a1d20;
-      --accent:#3568c8;--accent-light:#8fb5f0;
+      --accent:#3568c8;--accent-light:#8fb5f0;--cert-accent:#8ab2ea;
       --nav-bg:rgba(8,9,10,.8);--em-glow:rgba(112,158,240,.45);
       --glow-a:rgba(53,104,200,.12);--glow-b:rgba(143,181,240,.07);
       --r:6px;--s:8px;
@@ -43,7 +43,7 @@
     [data-theme="light"]{
       --bg:#EFECE3;--surface:#E8E4DA;--card:#F5F3EC;--border:#CCC8BC;
       --text:#141414;--dim:#5d5852;--muted:#6f6a63;--inset:#DFDBCF;
-      --accent:#2f62b8;--accent-light:#274f96;
+      --accent:#2f62b8;--accent-light:#274f96;--cert-accent:#2f62b8;
       --nav-bg:rgba(239,236,227,.85);--em-glow:rgba(47,98,184,.22);
       --glow-a:rgba(47,98,184,.10);--glow-b:rgba(39,79,150,.06);
       color-scheme:light
@@ -166,29 +166,29 @@
 
     /* ── Makers' Pledge ── */
     .pledge{padding:80px 0;text-align:center}
-    .pledge-card{max-width:660px;margin:0 auto;border:1px solid var(--accent);border-radius:var(--r);padding:6px}
-    .pledge-inner{position:relative;border:1px solid var(--border);border-radius:calc(var(--r) - 2px);padding:56px 44px;background:var(--card)}
-    .pledge-corner{position:absolute;width:11px;height:11px;background:var(--accent-light);transform:rotate(45deg)}
-    .pledge-corner.tl{top:-6px;left:-6px}
-    .pledge-corner.tr{top:-6px;right:-6px}
-    .pledge-corner.bl{bottom:-6px;left:-6px}
-    .pledge-corner.br{bottom:-6px;right:-6px}
-    .pledge-seal{display:flex;justify-content:center;margin:36px 0 4px;color:var(--accent-light)}
+    .pledge-card{max-width:660px;margin:0 auto;border:1px solid var(--cert-accent);padding:6px}
+    .pledge-inner{position:relative;border:1px solid var(--border);padding:56px 44px;background:var(--card)}
+    .pledge-corner{position:absolute;width:10px;height:10px;background:var(--cert-accent);transform:rotate(45deg)}
+    .pledge-corner.tl{top:-5px;left:-5px}
+    .pledge-corner.tr{top:-5px;right:-5px}
+    .pledge-corner.bl{bottom:-5px;left:-5px}
+    .pledge-corner.br{bottom:-5px;right:-5px}
+    .pledge-seal{display:flex;justify-content:center;margin:36px 0 4px;color:var(--cert-accent)}
     .pledge-logo{display:block;margin:0 auto 12px}
     .pledge-wordmark{font-family:'Play',sans-serif;font-size:26px;font-weight:700;color:var(--text);margin-bottom:16px}
-    .pledge-wordmark span{color:var(--accent-light)}
-    .pledge-eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent-light)}
+    .pledge-wordmark span{color:var(--cert-accent)}
+    .pledge-eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--cert-accent)}
     .pledge-title{font-size:30px;font-weight:700;color:var(--text);margin:14px 0 26px}
     .pledge-intro{font-family:'Source Serif 4',serif;font-size:16px;line-height:1.6;color:var(--dim);max-width:500px;margin:0 auto 18px}
     .pledge-word{font-family:'Source Serif 4',serif;font-size:15px;color:var(--muted);max-width:480px;margin:8px auto 28px}
     .pledge-signed{font-family:'Source Serif 4',serif;font-size:13px;line-height:1.6;color:var(--dim);max-width:440px;margin:30px auto 0}
     .pledge-promise{margin:20px 0}
-    .pledge-promise b{display:block;font-family:'Play',sans-serif;font-size:17px;color:var(--accent-light);margin-bottom:4px}
+    .pledge-promise b{display:block;font-family:'Play',sans-serif;font-size:17px;color:var(--cert-accent);margin-bottom:4px}
     .pledge-promise span{font-family:'Source Serif 4',serif;font-size:15px;color:var(--text)}
     .pledge-sign{display:flex;flex-wrap:wrap;justify-content:center;gap:20px 56px;margin:36px 0 4px}
     .pledge-sign .n{font-family:'Source Serif 4',serif;font-style:italic;font-size:22px;color:var(--text)}
     .pledge-sign .h{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:6px;margin-top:6px}
-    .pledge-key{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent-light);word-break:break-all;margin-top:24px}
+    .pledge-key{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cert-accent);word-break:break-all;margin-top:24px}
     .pledge-meta{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-top:6px}
     .pledge-dl{display:inline-block;margin-top:28px;padding:11px 22px;background:var(--accent);color:#fff;border-radius:var(--r);font-family:'Play',sans-serif;font-weight:700;font-size:13px;text-decoration:none;transition:opacity .2s}
     .pledge-dl:hover{opacity:.9}
