@@ -1,11 +1,15 @@
 /*
  * Name: podcast_commands.rs
- * Purpose: Tauri commands for AI podcast script generation.
- * Description: Uses the active LLM provider to generate a 2-speaker
- *   discussion script from document context. The Rust backend
- *   handles script generation only. Audio synthesis is handled by
- *   the frontend using the browser's SpeechSynthesis API (offline,
- *   cross-platform, zero-config). This can be upgraded to
+ * Purpose: Tauri commands for AI audio-overview script generation.
+ * Description: Uses the active LLM provider to generate a spoken-overview script
+ *   from document context in one of several formats: a two-host
+ *   discussion, a single-narrator brief, a debate, or a critique.
+ *   The chosen format's prompt is loaded from a file and the
+ *   document text is passed as data inside <document_context>, so
+ *   source content is never treated as instructions. The Rust
+ *   backend handles script generation only; audio synthesis is
+ *   handled by the frontend using the browser's SpeechSynthesis API
+ *   (offline, cross-platform, zero-config). This can be upgraded to
  *   Piper/Kokoro TTS later for higher quality voices.
  * Tech Stack: Rust, Tauri v2
  * License: MIT
@@ -19,6 +23,11 @@ use tauri::Manager;
 use crate::error::{AppError, AppResult};
 use crate::providers::traits::{ChatMessage, ChatRequest, MessageRole};
 use crate::state::AppState;
+
+const DISCUSSION_PROMPT: &str = include_str!("../../resources/prompts/podcast-discussion.txt");
+const BRIEF_PROMPT: &str = include_str!("../../resources/prompts/podcast-brief.txt");
+const DEBATE_PROMPT: &str = include_str!("../../resources/prompts/podcast-debate.txt");
+const CRITIQUE_PROMPT: &str = include_str!("../../resources/prompts/podcast-critique.txt");
 
 /// A single turn in the podcast script.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -42,6 +51,7 @@ pub async fn generate_podcast(
     app: tauri::AppHandle,
     notebook_id: String,
     topic: Option<String>,
+    format: Option<String>,
 ) -> AppResult<PodcastScript> {
     tauri::async_runtime::spawn_blocking(move || {
         let app_state: tauri::State<'_, AppState> = app.state();
@@ -72,23 +82,30 @@ pub async fn generate_podcast(
             ));
         }
 
-        let context = chunks.join("\n\n---\n\n");
-        let topic_str = topic.unwrap_or_else(|| "the key ideas in these documents".to_string());
+        let format = format.unwrap_or_else(|| "discussion".to_string());
+        let (system_prompt, label) = match format.as_str() {
+            "discussion" => (DISCUSSION_PROMPT, "Discussion"),
+            "brief" => (BRIEF_PROMPT, "Brief"),
+            "debate" => (DEBATE_PROMPT, "Debate"),
+            "critique" => (CRITIQUE_PROMPT, "Critique"),
+            other => {
+                return Err(AppError::InvalidInput(format!(
+                    "Unknown audio format: {other}"
+                )));
+            }
+        };
 
-        /* Generate script via LLM */
-        let prompt = format!(
-            "Create a natural podcast conversation between two speakers (A and B) about {}.\n\n\
-         Source material:\n{}\n\n\
-         Rules:\n\
-         - Write 8-12 turns\n\
-         - Speaker A asks questions and makes observations\n\
-         - Speaker B explains and provides insights\n\
-         - Keep each turn to 2-3 sentences, conversational tone\n\
-         - Start with a brief intro, end with a wrap-up\n\n\
-         Format each line as:\nA: [text]\nB: [text]\n\nOutput ONLY the dialogue.",
-            topic_str,
-            crate::utils::text_utils::truncate_to_char_boundary(&context, 4000)
-        );
+        /* Document text goes inside <document_context> and is treated as data;
+        the topic is a separate directive, matching the injection-safe pattern the
+        Studio prompts use. */
+        let joined = chunks.join("\n\n---\n\n");
+        let context = crate::utils::text_utils::truncate_to_char_boundary(&joined, 4000);
+        let directive = match topic.as_deref().map(str::trim) {
+            Some(t) if !t.is_empty() => format!("Focus especially on: {t}"),
+            _ => "Cover the key ideas across the documents.".to_string(),
+        };
+        let user_content =
+            format!("<document_context>\n{context}\n</document_context>\n\n{directive}");
 
         let response = {
             let providers = app_state.provider_read()?;
@@ -97,11 +114,11 @@ pub async fn generate_podcast(
                     messages: vec![
                         ChatMessage {
                             role: MessageRole::System,
-                            content: "You write podcast scripts as natural dialogue.".into(),
+                            content: system_prompt.to_string(),
                         },
                         ChatMessage {
                             role: MessageRole::User,
-                            content: prompt,
+                            content: user_content,
                         },
                     ],
                     max_tokens: Some(2000),
@@ -116,10 +133,11 @@ pub async fn generate_podcast(
             return Err(AppError::Internal("LLM generated an empty script".into()));
         }
 
-        Ok(PodcastScript {
-            title: format!("Podcast: {}", topic_str),
-            turns,
-        })
+        let title = match topic.as_deref().map(str::trim) {
+            Some(t) if !t.is_empty() => format!("{label}: {t}"),
+            _ => label.to_string(),
+        };
+        Ok(PodcastScript { title, turns })
     })
     .await
     .map_err(|e| AppError::Internal(format!("Podcast task failed: {e}")))?

@@ -47,7 +47,7 @@ const PAGES: Array<{ label: string; route: string }> = [
   { label: "Studio", route: ROUTES.STUDIO },
   { label: "Canvas", route: ROUTES.CANVAS },
   { label: "Transforms", route: ROUTES.TRANSFORMS },
-  { label: "Podcasts", route: ROUTES.PODCASTS },
+  { label: "Audio overview", route: ROUTES.PODCASTS },
   { label: "Prompt Studio", route: ROUTES.PROMPT_STUDIO },
   { label: "Connections", route: ROUTES.GRAPH },
   { label: "Models", route: ROUTES.MODELS },

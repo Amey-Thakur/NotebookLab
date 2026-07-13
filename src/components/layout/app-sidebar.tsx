@@ -30,7 +30,7 @@ const NAV_ITEMS = [
   { path: ROUTES.STUDIO, label: "Studio" },
   { path: ROUTES.CANVAS, label: "Canvas" },
   { path: ROUTES.TRANSFORMS, label: "Transform" },
-  { path: ROUTES.PODCASTS, label: "Podcasts" },
+  { path: ROUTES.PODCASTS, label: "Audio overview" },
   { path: ROUTES.PROMPT_STUDIO, label: "Prompt Studio" },
   { path: ROUTES.GRAPH, label: "Connections" },
   { path: ROUTES.MODELS, label: "Models" },
