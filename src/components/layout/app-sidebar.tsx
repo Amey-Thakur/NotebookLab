@@ -21,6 +21,7 @@ import { ROUTES } from "@/lib/constants";
 
 
 const NAV_ITEMS = [
+  { path: ROUTES.HOME, label: "Home" },
   { path: ROUTES.NOTEBOOKS, label: "Notebooks" },
   { path: ROUTES.DOCUMENTS, label: "Documents" },
   { path: ROUTES.SEARCH, label: "Search" },
@@ -81,6 +82,7 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
           <NavLink
             key={item.path}
             to={item.path}
+            end={item.path === ROUTES.HOME}
             onClick={onClose}
             className={({ isActive }) =>
               `block px-2 py-1.5 text-sm rounded-sm transition-colors ${

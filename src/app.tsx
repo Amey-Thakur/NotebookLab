@@ -11,10 +11,11 @@
  * Date: 2026-07-12
  */
 
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 import { ROUTES } from "./lib/constants";
 import { AppShell } from "./components/layout/app-shell";
+import { HomePage } from "./features/home/pages/home-page";
 import { NotebooksPage } from "./features/notebooks/pages/notebooks-page";
 import { NotebookDetailPage } from "./features/notebooks/pages/notebook-detail-page";
 import { EditorPage } from "./features/editor/pages/editor-page";
@@ -35,7 +36,7 @@ export function App() {
   return (
     <AppShell>
       <Routes>
-        <Route path="/" element={<Navigate to={ROUTES.NOTEBOOKS} replace />} />
+        <Route path={ROUTES.HOME} element={<HomePage />} />
         <Route path={ROUTES.NOTEBOOKS} element={<NotebooksPage />} />
         <Route path={ROUTES.NOTEBOOK_DETAIL} element={<NotebookDetailPage />} />
         <Route path={ROUTES.EDITOR} element={<EditorPage />} />
