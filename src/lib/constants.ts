@@ -12,6 +12,7 @@
  */
 
 export const ROUTES = {
+  HOME: "/",
   NOTEBOOKS: "/notebooks",
   NOTEBOOK_DETAIL: "/notebooks/:id",
   EDITOR: "/editor/:id",

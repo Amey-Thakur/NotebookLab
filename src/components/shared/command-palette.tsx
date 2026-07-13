@@ -38,6 +38,7 @@ interface CommandPaletteProps {
 
 
 const PAGES: Array<{ label: string; route: string }> = [
+  { label: "Home", route: ROUTES.HOME },
   { label: "Notebooks", route: ROUTES.NOTEBOOKS },
   { label: "Documents", route: ROUTES.DOCUMENTS },
   { label: "Search", route: ROUTES.SEARCH },

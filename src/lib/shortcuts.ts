@@ -42,6 +42,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: "keyboard-help", keys: ["?"], description: "Show keyboard shortcuts", group: "General" },
   { id: "close-dialog", keys: ["Esc"], description: "Close a dialog or the sidebar", group: "General" },
 
+  { id: "go-home", keys: ["G", "then", "H"], description: "Go to Home", group: "Navigation" },
   { id: "go-notebooks", keys: ["G", "then", "N"], description: "Go to Notebooks", group: "Navigation" },
   { id: "go-documents", keys: ["G", "then", "D"], description: "Go to Documents", group: "Navigation" },
   { id: "go-search", keys: ["G", "then", "F"], description: "Go to Search", group: "Navigation" },
@@ -61,6 +62,7 @@ export const SHORTCUTS: Shortcut[] = [
 export const GO_TO_LEADER = "g";
 
 export const GO_TO: Record<string, string> = {
+  h: ROUTES.HOME,
   n: ROUTES.NOTEBOOKS,
   d: ROUTES.DOCUMENTS,
   f: ROUTES.SEARCH,
