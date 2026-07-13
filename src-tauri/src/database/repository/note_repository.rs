@@ -82,6 +82,13 @@ pub fn update(conn: &Connection, id: &str, input: UpdateNote) -> AppResult<Note>
 }
 
 pub fn delete(conn: &Connection, id: &str) -> AppResult<()> {
+    /* The links table has no foreign key, so removing a note would otherwise
+    orphan every link that points at it. Clean both directions first. */
+    conn.execute(
+        "DELETE FROM links WHERE source_id = ?1 OR target_id = ?1",
+        params![id],
+    )?;
+
     let affected = conn.execute("DELETE FROM notes WHERE id = ?1", params![id])?;
 
     if affected == 0 {
@@ -255,10 +262,15 @@ pub fn notes_graph(conn: &Connection, notebook_id: &str) -> AppResult<NotesGraph
         })?
         .collect::<Result<Vec<_>, _>>()?;
 
-    /* Degree counts every link that touches a note, incoming or outgoing */
+    /* Degree counts every link touching a note, incoming or outgoing. Both
+    endpoints must still exist in this notebook, matching the edge query
+    exactly, so a degree can never exceed the number of drawn lines even if
+    an orphaned link survives (for example from a notebook cascade delete). */
     let mut node_stmt = conn.prepare(
         "SELECT n.id, n.title,
             (SELECT COUNT(*) FROM links l
+             INNER JOIN notes s ON l.source_id = s.id AND s.notebook_id = ?1
+             INNER JOIN notes t ON l.target_id = t.id AND t.notebook_id = ?1
              WHERE (l.source_id = n.id OR l.target_id = n.id)
                AND l.source_type = 'note' AND l.target_type = 'note') AS degree
          FROM notes n

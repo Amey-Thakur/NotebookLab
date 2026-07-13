@@ -182,6 +182,47 @@ fn editing_a_note_reflows_its_links() {
 }
 
 #[test]
+fn deleting_a_linked_note_leaves_no_phantom_connections() {
+    let conn = test_db();
+    let nb = make_notebook(&conn);
+
+    let target = note_repository::create(
+        &conn,
+        CreateNote {
+            notebook_id: nb.clone(),
+            title: Some("Target".into()),
+            content: None,
+        },
+    )
+    .unwrap();
+    let source = note_repository::create(
+        &conn,
+        CreateNote {
+            notebook_id: nb.clone(),
+            title: Some("Source".into()),
+            content: Some("Points at [[Target]].".into()),
+        },
+    )
+    .unwrap();
+
+    /* Both are linked: degree 1 each, one edge */
+    let before = note_repository::notes_graph(&conn, &nb).unwrap();
+    assert_eq!(before.edges.len(), 1);
+
+    /* Delete the target. The surviving source must not claim a phantom link. */
+    note_repository::delete(&conn, &target.id).unwrap();
+    let after = note_repository::notes_graph(&conn, &nb).unwrap();
+    assert_eq!(after.nodes.len(), 1, "only the source remains");
+    assert_eq!(after.edges.len(), 0, "no edge without both endpoints");
+    assert_eq!(
+        after.nodes[0].degree, 0,
+        "degree agrees with edges: zero connections drawn, zero reported"
+    );
+
+    let _ = source;
+}
+
+#[test]
 fn recent_notes_are_ordered_and_carry_notebook_name() {
     let conn = test_db();
     let nb = make_notebook(&conn);
