@@ -14,9 +14,9 @@
  * Date: 2026-07-13
  */
 
-import { useEffect, useId, useRef, useState } from "react";
+import { memo, useEffect, useId, useRef, useState } from "react";
 
-import type { Camera, CanvasElement, Tool } from "../types";
+import type { Camera, CanvasElement, TextElement, Tool } from "../types";
 import {
   elementBounds,
   hitTest,
@@ -63,6 +63,9 @@ export function CanvasBoard(props: CanvasBoardProps) {
   const [drag, setDrag] = useState<{ id: string; dx: number; dy: number } | null>(null);
   const dragRef = useRef<typeof drag>(null);
   const [editing, setEditing] = useState<{ id: string; value: string } | null>(null);
+  /* A newly placed text element, held here (not committed) until it is confirmed
+     with a non-empty value, so empty placements never enter history or the save. */
+  const [pendingText, setPendingText] = useState<TextElement | null>(null);
 
   const cameraRef = useRef(camera);
   useEffect(() => {
@@ -76,6 +79,14 @@ export function CanvasBoard(props: CanvasBoardProps) {
   const putDrag = (next: { id: string; dx: number; dy: number } | null) => {
     dragRef.current = next;
     setDrag(next);
+  };
+
+  /* Abandon the in-progress gesture without committing (a cancelled pointer, or
+     the button released without a pointerup ever reaching us). */
+  const cancelGesture = () => {
+    gesture.current = { kind: "none" };
+    putDraft(null);
+    putDrag(null);
   };
 
   /* Wheel zoom needs a non-passive listener to keep the page from scrolling. */
@@ -151,9 +162,8 @@ export function CanvasBoard(props: CanvasBoardProps) {
     }
 
     if (tool === "text") {
-      const id = newId();
-      const element: CanvasElement = {
-        id,
+      const element: TextElement = {
+        id: newId(),
         type: "text",
         x: world.x,
         y: world.y,
@@ -161,9 +171,9 @@ export function CanvasBoard(props: CanvasBoardProps) {
         color: props.color,
         fontSize: 20,
       };
-      props.onCommit([...elements, element]);
-      props.onSelect(id);
-      setEditing({ id, value: "" });
+      /* Held pending, not committed, until confirmed with text. */
+      setPendingText(element);
+      setEditing({ id: element.id, value: "" });
       props.onToolChange("select");
     }
   };
@@ -171,6 +181,12 @@ export function CanvasBoard(props: CanvasBoardProps) {
   const handlePointerMove = (e: React.PointerEvent) => {
     const g = gesture.current;
     if (g.kind === "none") return;
+    /* No button held mid-gesture means the pointer was cancelled; drop it rather
+    than letting a hovering pen keep extending the stroke. */
+    if (e.buttons === 0) {
+      cancelGesture();
+      return;
+    }
     const { screen, world, pressure } = pointFromEvent(e);
 
     if (g.kind === "pan") {
@@ -243,6 +259,20 @@ export function CanvasBoard(props: CanvasBoardProps) {
     if (!active) return;
     setEditing(null);
     const value = active.value.trim();
+
+    /* A brand-new text element: commit once on a non-empty value, otherwise
+    discard it entirely, so an empty placement leaves no trace. */
+    if (pendingText && pendingText.id === active.id) {
+      const created = pendingText;
+      setPendingText(null);
+      if (value.length > 0) {
+        props.onCommit([...elements, { ...created, text: value }]);
+        props.onSelect(created.id);
+      }
+      return;
+    }
+
+    /* Editing an existing text element: emptying it removes it. */
     if (value.length === 0) {
       props.onCommit(elements.filter((el) => el.id !== active.id));
       props.onSelect(null);
@@ -267,7 +297,11 @@ export function CanvasBoard(props: CanvasBoardProps) {
     drag && drag.id === el.id ? translateElement(el, drag.dx, drag.dy) : el,
   );
   const selected = selectedId ? rendered.find((el) => el.id === selectedId) ?? null : null;
-  const editingElement = editing ? rendered.find((el) => el.id === editing.id) ?? null : null;
+  const editingElement = editing
+    ? pendingText && pendingText.id === editing.id
+      ? pendingText
+      : rendered.find((el) => el.id === editing.id) ?? null
+    : null;
 
   const cursor =
     tool === "pen" || tool === "rectangle" || tool === "ellipse"
@@ -290,6 +324,7 @@ export function CanvasBoard(props: CanvasBoardProps) {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
+        onPointerCancel={cancelGesture}
         onDoubleClick={handleDoubleClick}
       >
         <defs>
@@ -346,7 +381,10 @@ export function CanvasBoard(props: CanvasBoardProps) {
   );
 }
 
-function CanvasElementView({ element }: { element: CanvasElement }) {
+/* Memoized so committed elements do not re-render (or re-run perfect-freehand)
+   on every pointer sample while a stroke is being drawn or an element dragged.
+   Element objects keep their identity across those updates, so memo bails out. */
+const CanvasElementView = memo(function CanvasElementView({ element }: { element: CanvasElement }) {
   switch (element.type) {
     case "stroke":
       return <path d={strokeToPath(element)} fill={element.color} />;
@@ -405,7 +443,7 @@ function CanvasElementView({ element }: { element: CanvasElement }) {
         />
       );
   }
-}
+});
 
 function SelectionOutline({ element, zoom }: { element: CanvasElement; zoom: number }) {
   const b = elementBounds(element);

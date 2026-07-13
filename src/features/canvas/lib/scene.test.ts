@@ -179,4 +179,22 @@ describe("geometry", () => {
   it("normalizeRect orders corners", () => {
     expect(normalizeRect(50, 40, 10, 10)).toEqual({ x: 10, y: 10, w: 40, h: 30 });
   });
+
+  it("multi-line text is selectable below the first line", () => {
+    const text: CanvasElement = {
+      id: "t",
+      type: "text",
+      x: 10,
+      y: 10,
+      text: "line one\nline two\nline three",
+      color: "#000",
+      fontSize: 20,
+    };
+    const bounds = elementBounds(text);
+    /* Three lines at 1.25em spacing should be far taller than one line. */
+    expect(bounds.h).toBeGreaterThan(20 * 2.5);
+    const scene: CanvasScene = { version: 1, camera: { x: 0, y: 0, zoom: 1 }, elements: [text] };
+    /* A click on the third line still hits the element. */
+    expect(hitTest(scene, 15, 10 + 20 * 2.5)?.id).toBe("t");
+  });
 });

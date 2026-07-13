@@ -16,9 +16,10 @@
  */
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
-import { ROUTES, EDITOR_AUTOSAVE_MS } from "@/lib/constants";
+import { ROUTES, EDITOR_AUTOSAVE_MS, QUERY_KEYS } from "@/lib/constants";
 import { debounce } from "@/lib/utils";
 import { useNotebookStore } from "@/stores/notebook-store";
 
@@ -72,6 +73,7 @@ export function CanvasPage() {
 }
 
 function CanvasEditor({ canvas }: { canvas: api.Canvas }) {
+  const queryClient = useQueryClient();
   const initialScene = useMemo(() => api.parseScene(canvas.scene), [canvas.scene]);
 
   const [history, dispatch] = useReducer(sceneReducer, initialScene.elements, initHistory);
@@ -95,29 +97,60 @@ function CanvasEditor({ canvas }: { canvas: api.Canvas }) {
     selectedRef.current = selectedId;
   });
 
-  const persistScene = useCallback((id: string, scene: string) => {
-    setSaveState("saving");
-    api
-      .updateCanvas(id, scene)
-      .then(() => setSaveState("saved"))
-      .catch(() => setSaveState("error"));
-  }, []);
+  /* Serialize elements once when they change, then recombine with the tiny
+     camera cheaply on every pan/zoom, so panning never re-stringifies image
+     data on the main thread. */
+  const elementsJson = useMemo(() => JSON.stringify(history.present), [history.present]);
+  const sceneString = useMemo(() => api.composeScene(camera, elementsJson), [camera, elementsJson]);
+
+  const persistScene = useCallback(
+    (scene: string) => {
+      setSaveState("saving");
+      api
+        .updateCanvas(canvas.id, scene)
+        .then((updated) => {
+          setSaveState("saved");
+          /* Mirror the saved scene into the query cache so a quick return does
+          not restore a stale copy over what was just written. */
+          queryClient.setQueryData([QUERY_KEYS.CANVAS, canvas.notebook_id], updated);
+        })
+        .catch(() => setSaveState("error"));
+    },
+    [queryClient, canvas.id, canvas.notebook_id],
+  );
 
   const saveScene = useMemo(
-    () => debounce((id: string, scene: string) => persistScene(id, scene), EDITOR_AUTOSAVE_MS),
+    () => debounce((scene: string) => persistScene(scene), EDITOR_AUTOSAVE_MS),
     [persistScene],
   );
 
-  /* Flush a pending save on the way out so the last edit is not lost. */
-  useEffect(() => () => saveScene.flush(), [saveScene]);
-
   /* Autosave whenever elements or camera change, skipping the seeded state. */
   useEffect(() => {
-    const scene = api.serializeScene({ version: 1, camera, elements: history.present });
-    if (scene === lastSavedRef.current) return;
-    lastSavedRef.current = scene;
-    saveScene(canvas.id, scene);
-  }, [history.present, camera, saveScene, canvas.id]);
+    if (sceneString === lastSavedRef.current) return;
+    lastSavedRef.current = sceneString;
+    saveScene(sceneString);
+  }, [sceneString, saveScene]);
+
+  /* A failed save clears the baseline so the next change, or the save on the way
+     out, retries instead of treating the unsaved scene as already saved. */
+  useEffect(() => {
+    if (saveState === "error") lastSavedRef.current = "";
+  }, [saveState]);
+
+  /* On the way out, cancel the pending debounce and force a final save if there
+     are unsaved changes, updating the cache so a quick return shows the latest. */
+  useEffect(() => {
+    return () => {
+      saveScene.cancel();
+      const scene = api.composeScene(cameraRef.current, JSON.stringify(presentRef.current));
+      if (scene !== lastSavedRef.current) {
+        queryClient.setQueryData([QUERY_KEYS.CANVAS, canvas.notebook_id], (old?: api.Canvas) =>
+          old ? { ...old, scene } : old,
+        );
+        api.updateCanvas(canvas.id, scene).catch(() => {});
+      }
+    };
+  }, [saveScene, queryClient, canvas.id, canvas.notebook_id]);
 
   const commit = useCallback((elements: CanvasElement[]) => {
     dispatch({ type: "commit", elements });
