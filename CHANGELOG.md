@@ -6,6 +6,14 @@ All notable changes to NotebookLab will be documented in this file.
 
 ### Added
 
+- Studio: turn a notebook's documents into study aids grounded in your own
+  sources. A structured study guide, interactive flashcards, a scored
+  multiple-choice quiz, and a real visual mind map. Add a focus to narrow it or
+  leave it blank to cover the whole notebook.
+- Visual mind maps: the mind map now renders as an actual tree of connected
+  ideas, in the Studio and in the Thinking Partner, replacing the text preview.
+- Home: a calm landing screen with a greeting, quick actions, your recent
+  notes, and a preview of your notebooks.
 - Universal search launcher: one keyboard-first box (Ctrl+K, or the header
   Search button) to reach any page, notebook, or action.
 - Keyboard shortcut system with a shared registry and a cheat sheet: press `?`
@@ -204,9 +212,3 @@ All notable changes to NotebookLab will be documented in this file.
 ### Known gaps in 0.1.0 (closed in 0.2.0)
 - AI podcasts, semantic vector search, and the auto-updater shipped after
   this release; see 0.2.0.
-
-### Not yet implemented
-- DOCX parser
-- Image OCR
-- Knowledge graph visualization
-- Spatial canvas view
