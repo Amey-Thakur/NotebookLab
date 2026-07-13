@@ -3,8 +3,8 @@
  * Purpose: Button that opens the native file picker to import a document.
  * Description: Uses Tauri's dialog plugin for OS-native file selection
  *   instead of a manual text input. Filters to supported file
- *   types (.txt, .md, .pdf). Disabled while an import is in
- *   progress.
+ *   types: text, Markdown, PDF, Word (.docx), and images read with
+ *   OCR. Disabled while an import is in progress.
  * Tech Stack: React 19, Tauri Dialog Plugin
  * License: MIT
  * Authors: Amey Thakur (https://github.com/Amey-Thakur)

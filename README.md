@@ -45,8 +45,11 @@ help you think. Nothing leaves your computer.
 
 ## What it does
 
-- **Ask your documents.** Chat grounded in your PDFs, notes, and Markdown files.
-  Every answer lists its sources with document, heading, and page.
+- **Ask your documents.** Chat grounded in your PDFs, Word files, notes, and
+  Markdown. Every answer lists its sources with document, heading, and page.
+
+- **Bring in anything.** Import PDF, Word (`.docx`), text, and Markdown, or an
+  image or scan of printed text that offline OCR turns into searchable content.
 
 - **Write connected notes.** A clean Markdown editor with `[[wiki-links]]`,
   backlinks, and auto-save.
@@ -105,7 +108,7 @@ then, on first open right-click the app and choose Open, or run
    Started notebook and two sample notes.
 2. Open **Models**, then either download the bundled model (one 2 GB download)
    or connect a provider you already run, like Ollama.
-3. Import a PDF, TXT, or Markdown file into a notebook.
+3. Import a PDF, Word, text, Markdown, or image file into a notebook.
 4. Open **Chat** and ask a question about it.
 5. Press `?` any time for the full list of keyboard shortcuts.
 
@@ -155,7 +158,7 @@ src-tauri/      Rust backend
   commands/       async IPC handlers
   services/       RAG, ingestion, search, embeddings, sidecar lifecycle
   providers/      LLM abstraction for any OpenAI-compatible API
-  parsers/        PDF, TXT, Markdown
+  parsers/        PDF, Word (.docx), text, Markdown, image OCR
   database/       SQLite repositories (WAL, FTS5, cascade deletes)
   api/            local REST server on 127.0.0.1:8484
 site/           landing page

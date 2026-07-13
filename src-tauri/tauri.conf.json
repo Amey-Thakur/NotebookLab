@@ -39,7 +39,8 @@
       "icons/icon.ico"
     ],
     "resources": {
-      "binaries/libs/": "llama-libs/"
+      "binaries/libs/": "llama-libs/",
+      "resources/models/ocr/": "models/ocr/"
     },
     "externalBin": [
       "binaries/llama-server"

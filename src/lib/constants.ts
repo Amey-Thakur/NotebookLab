@@ -50,13 +50,33 @@ export const QUERY_KEYS = {
 } as const;
 
 
-/* Must match parsers/mod.rs::parser_for_extension */
+/* Must match parsers/mod.rs::parser_for_extension. Images are read with OCR.
+   (.doc, the legacy binary Word format, is intentionally not supported.) */
 export const SUPPORTED_FILE_TYPES = [
   ".txt",
   ".text",
   ".md",
   ".markdown",
   ".pdf",
+  ".docx",
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".tiff",
+  ".tif",
+  ".webp",
+  ".bmp",
+] as const;
+
+/* The image formats above, read with OCR. Used to group the import picker. */
+export const OCR_IMAGE_TYPES = [
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".tiff",
+  ".tif",
+  ".webp",
+  ".bmp",
 ] as const;
 
 

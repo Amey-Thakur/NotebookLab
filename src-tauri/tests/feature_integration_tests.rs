@@ -278,7 +278,7 @@ fn document_ingestion_produces_searchable_chunks_with_headings() {
     )
     .unwrap();
 
-    let doc_id = ingestion_service::ingest_file(&conn, &nb, &path).expect("ingest");
+    let doc_id = ingestion_service::ingest_file(&conn, &nb, &path, None).expect("ingest");
 
     let chunks =
         notebooklab_lib::database::repository::chunk_repository::get_by_document(&conn, &doc_id)
@@ -312,8 +312,8 @@ fn duplicate_import_is_rejected() {
     let path = dir.join("dup.txt");
     std::fs::write(&path, "Some content to index.").unwrap();
 
-    ingestion_service::ingest_file(&conn, &nb, &path).expect("first import");
-    let second = ingestion_service::ingest_file(&conn, &nb, &path);
+    ingestion_service::ingest_file(&conn, &nb, &path, None).expect("first import");
+    let second = ingestion_service::ingest_file(&conn, &nb, &path, None);
     assert!(second.is_err(), "importing the same file twice is rejected");
 
     std::fs::remove_dir_all(&dir).ok();
@@ -392,7 +392,7 @@ fn studio_samples_a_notebooks_sources() {
     )
     .unwrap();
 
-    ingestion_service::ingest_file(&conn, &nb, &path).expect("ingest");
+    ingestion_service::ingest_file(&conn, &nb, &path, None).expect("ingest");
 
     /* The Studio pulls a spread of the notebook's own chunk text with no query */
     let sample = chunk_repository::sample_for_notebook(&conn, &nb, 20).unwrap();

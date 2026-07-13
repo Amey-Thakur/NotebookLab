@@ -13,12 +13,15 @@
  * Date: 2026-07-12
  */
 
-use std::sync::{Mutex, MutexGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use std::path::PathBuf;
+use std::sync::{Arc, Mutex, MutexGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use rusqlite::Connection;
+use tauri::path::BaseDirectory;
 use tauri::{AppHandle, Manager};
 
 use crate::error::{AppError, AppResult};
+use crate::parsers::image_ocr_parser::{OcrEngineHandle, DETECTION_MODEL_FILE};
 use crate::providers::ProviderRouter;
 
 pub struct AppState {
@@ -26,6 +29,11 @@ pub struct AppState {
     pub providers: RwLock<ProviderRouter>,
     /// Bearer token for the local REST API, generated fresh each session.
     pub api_token: String,
+    /// The OCR engine, built once on first image import and cached. `None` until
+    /// then, or whenever the models are not installed (image import degrades to
+    /// a clear error in that case). Loading the models is the expensive step, so
+    /// it happens lazily rather than at startup.
+    ocr: Mutex<Option<Arc<OcrEngineHandle>>>,
 }
 
 impl AppState {
@@ -50,6 +58,51 @@ impl AppState {
             .write()
             .map_err(|_| AppError::Internal("Provider lock poisoned".into()))
     }
+
+    /// The shared OCR engine, or `None` when the models are not installed.
+    ///
+    /// Built once from the model files and cached; a successful build is reused
+    /// for the session. Failures are not cached, so if the models appear later
+    /// (for example after a first-run download) a subsequent import can still
+    /// pick them up. The returned handle is an owned clone, so the state lock is
+    /// released before the caller goes on to touch the database.
+    pub fn ocr_engine(&self, app: &AppHandle) -> Option<Arc<OcrEngineHandle>> {
+        let mut cached = self.ocr.lock().ok()?;
+        if let Some(engine) = cached.as_ref() {
+            return Some(engine.clone());
+        }
+
+        let model_dir = resolve_ocr_model_dir(app)?;
+        match OcrEngineHandle::from_model_dir(&model_dir) {
+            Ok(handle) => {
+                let engine = Arc::new(handle);
+                *cached = Some(engine.clone());
+                Some(engine)
+            }
+            Err(e) => {
+                tracing::debug!("OCR engine unavailable: {e}");
+                None
+            }
+        }
+    }
+}
+
+/// Find the directory holding the OCR model files: the bundled resources first
+/// (always present after install), then the app data directory (dev or a
+/// first-run download). Returns `None` when neither has the models.
+fn resolve_ocr_model_dir(app: &AppHandle) -> Option<PathBuf> {
+    if let Ok(dir) = app.path().resolve("models/ocr", BaseDirectory::Resource) {
+        if dir.join(DETECTION_MODEL_FILE).exists() {
+            return Some(dir);
+        }
+    }
+    if let Ok(data_dir) = app.path().app_data_dir() {
+        let dir = data_dir.join("ocr");
+        if dir.join(DETECTION_MODEL_FILE).exists() {
+            return Some(dir);
+        }
+    }
+    None
 }
 
 impl AppState {
@@ -88,6 +141,7 @@ impl AppState {
             db: Mutex::new(conn),
             providers: RwLock::new(provider_router),
             api_token: format!("nbl-api-{}", uuid::Uuid::new_v4().simple()),
+            ocr: Mutex::new(None),
         })
     }
 
