@@ -92,7 +92,7 @@ export function NotebooksPage() {
         <button
           type="button"
           onClick={() => setShowCreate(true)}
-          className="px-4 py-2 text-sm font-mono bg-accent-dim text-text-1 hover:bg-accent transition-colors"
+          className="px-4 py-2 text-sm font-mono bg-primary text-on-primary hover:bg-primary-hover transition-colors"
         >
           + New Notebook
         </button>
@@ -120,7 +120,7 @@ export function NotebooksPage() {
               type="button"
               onClick={handleCreate}
               disabled={createMutation.isPending}
-              className="px-3 py-1 text-xs font-mono bg-accent-dim text-text-1 disabled:opacity-50"
+              className="px-3 py-1 text-xs font-mono bg-primary text-on-primary disabled:opacity-50"
             >
               Create
             </button>
@@ -175,7 +175,7 @@ export function NotebooksPage() {
           <button
             type="button"
             onClick={() => setShowCreate(true)}
-            className="px-4 py-2 text-sm font-mono bg-accent-dim text-text-1"
+            className="px-4 py-2 text-sm font-mono bg-primary text-on-primary"
           >
             Create Notebook
           </button>

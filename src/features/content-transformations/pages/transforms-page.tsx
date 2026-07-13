@@ -134,7 +134,7 @@ export function TransformsPage() {
           type="button"
           onClick={() => transform.mutate()}
           disabled={!selectedDoc || transform.isPending || (transformType === "custom" && !customPrompt.trim())}
-          className="px-4 py-2 text-sm font-mono bg-accent-dim text-text-1 disabled:opacity-50"
+          className="px-4 py-2 text-sm font-mono bg-primary text-on-primary disabled:opacity-50"
         >
           {transform.isPending ? "Processing..." : "Transform"}
         </button>

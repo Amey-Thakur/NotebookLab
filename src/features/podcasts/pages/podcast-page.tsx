@@ -168,8 +168,8 @@ export function PodcastPage() {
             type="button"
             onClick={() => generate.mutate()}
             disabled={generate.isPending}
-            className="px-4 py-2 text-sm font-mono bg-accent-dim text-text-1
-                       hover:bg-accent transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm font-mono bg-primary text-on-primary
+                       hover:bg-primary-hover transition-colors disabled:opacity-50"
           >
             {generate.isPending ? "Writing script..." : "Generate"}
           </button>
@@ -191,7 +191,7 @@ export function PodcastPage() {
                 <button
                   type="button"
                   onClick={playScript}
-                  className="px-3 py-1 text-xs font-mono bg-accent-dim text-text-1"
+                  className="px-3 py-1 text-xs font-mono bg-primary text-on-primary"
                 >
                   Play
                 </button>

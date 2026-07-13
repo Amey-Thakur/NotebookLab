@@ -104,7 +104,7 @@ export function ThinkingPartnerPage() {
             type="button"
             onClick={() => input.trim() && generate.mutate(input.trim())}
             disabled={generate.isPending || !input.trim()}
-            className="px-4 py-3 text-sm font-mono bg-accent-dim text-text-1 disabled:opacity-50"
+            className="px-4 py-3 text-sm font-mono bg-primary text-on-primary disabled:opacity-50"
           >
             {mode === "mindmap" ? "Generate" : "Ask"}
           </button>

@@ -302,8 +302,8 @@ export function ChatPage() {
               type="button"
               onClick={handleSend}
               disabled={sendMessage.isPending || !input.trim()}
-              className="px-4 py-3 text-sm font-mono bg-accent-dim text-text-1 disabled:opacity-50
-                         hover:bg-accent transition-colors"
+              className="px-4 py-3 text-sm font-mono bg-primary text-on-primary disabled:opacity-50
+                         hover:bg-primary-hover transition-colors"
             >
               {sendMessage.isPending ? "Waiting..." : "Send"}
             </button>

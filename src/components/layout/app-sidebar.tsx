@@ -85,7 +85,7 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
             className={({ isActive }) =>
               `block px-2 py-1.5 text-sm rounded-sm transition-colors ${
                 isActive
-                  ? "bg-accent-dim text-text-1 font-semibold"
+                  ? "bg-primary text-on-primary font-semibold"
                   : "text-text-3 hover:text-text-1 hover:bg-surface-2"
               }`
             }

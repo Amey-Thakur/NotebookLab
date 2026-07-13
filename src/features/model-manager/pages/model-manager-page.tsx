@@ -206,7 +206,7 @@ export function ModelManagerPage() {
           <div className="flex gap-2">
             <button type="button" onClick={handleAdvancedRegister}
               disabled={register.isPending || !name || !baseUrl || !model}
-              className="px-3 py-1 text-xs font-mono bg-accent-dim text-text-1 disabled:opacity-50">
+              className="px-3 py-1 text-xs font-mono bg-primary text-on-primary disabled:opacity-50">
               Register
             </button>
             <button type="button" onClick={() => setShowAdvanced(false)}
