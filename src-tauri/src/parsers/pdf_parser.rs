@@ -26,10 +26,6 @@ const MAX_FILE_SIZE: u64 = 50 * 1024 * 1024;
 pub struct PdfParser;
 
 impl DocumentParser for PdfParser {
-    fn supported_extensions(&self) -> &[&str] {
-        &["pdf"]
-    }
-
     fn parse(&self, file_path: &Path) -> AppResult<ParsedDocument> {
         let metadata = std::fs::metadata(file_path)?;
 

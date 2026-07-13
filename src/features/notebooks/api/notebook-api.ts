@@ -15,8 +15,6 @@
 import { tauriInvoke } from "@/services/tauri-client";
 import type { Notebook } from "@/types/models";
 
-export type { Notebook };
-
 export interface CreateNotebookInput {
   name: string;
   description?: string;
@@ -26,10 +24,6 @@ export interface CreateNotebookInput {
 
 export function listNotebooks(): Promise<Notebook[]> {
   return tauriInvoke<Notebook[]>("list_notebooks");
-}
-
-export function getNotebook(id: string): Promise<Notebook> {
-  return tauriInvoke<Notebook>("get_notebook", { id });
 }
 
 export function createNotebook(input: CreateNotebookInput): Promise<Notebook> {

@@ -138,20 +138,6 @@ pub fn search_similar(
     Ok(scored)
 }
 
-/// Check if embeddings exist for any chunks in a notebook.
-pub fn has_embeddings(conn: &Connection, notebook_id: &str) -> AppResult<bool> {
-    let count: i64 = conn.query_row(
-        "SELECT COUNT(*)
-         FROM embeddings e
-         INNER JOIN chunks c ON e.chunk_id = c.id
-         INNER JOIN documents d ON c.document_id = d.id
-         WHERE d.notebook_id = ?1",
-        params![notebook_id],
-        |row| row.get(0),
-    )?;
-    Ok(count > 0)
-}
-
 /// Cosine similarity between two vectors. Returns value in [-1, 1].
 fn cosine_similarity(a: &[f32], b: &[f32]) -> f64 {
     let mut dot = 0.0f64;

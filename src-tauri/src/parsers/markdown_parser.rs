@@ -24,10 +24,6 @@ const MAX_FILE_SIZE: u64 = 50 * 1024 * 1024;
 pub struct MarkdownParser;
 
 impl DocumentParser for MarkdownParser {
-    fn supported_extensions(&self) -> &[&str] {
-        &["md", "markdown"]
-    }
-
     fn parse(&self, file_path: &Path) -> AppResult<ParsedDocument> {
         /* Check size BEFORE reading to prevent memory exhaustion */
         let metadata = std::fs::metadata(file_path)?;

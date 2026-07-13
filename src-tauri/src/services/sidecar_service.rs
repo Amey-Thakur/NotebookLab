@@ -185,10 +185,6 @@ impl SidecarManager {
         let s = self.state.load(Ordering::Acquire);
         s == STATE_STARTING || s == STATE_READY
     }
-
-    pub fn base_url(&self) -> String {
-        format!("http://127.0.0.1:{}", self.port())
-    }
 }
 
 /// Serializable status for the frontend.

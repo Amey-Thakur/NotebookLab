@@ -31,9 +31,6 @@ pub struct ParsedPage {
 
 /// Every document parser implements this trait.
 pub trait DocumentParser: Send + Sync {
-    /// File extensions this parser handles (e.g., ["txt", "text"]).
-    fn supported_extensions(&self) -> &[&str];
-
     /// Parse a file at the given path and return structured text output.
     fn parse(&self, file_path: &std::path::Path) -> AppResult<ParsedDocument>;
 }
