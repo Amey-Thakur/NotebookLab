@@ -27,6 +27,7 @@ git clone https://github.com/Amey-Thakur/NotebookLab.git
 cd NotebookLab
 npm ci
 npm run sidecar:download
+npm run models:download
 npx tauri dev
 ```
 

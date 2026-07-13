@@ -131,6 +131,7 @@ cd NotebookLab
 
 npm ci                      # frontend dependencies
 npm run sidecar:download    # local AI server, checksum verified
+npm run models:download     # OCR models for image import, checksum verified
 
 npx tauri dev               # run the app
 ```
