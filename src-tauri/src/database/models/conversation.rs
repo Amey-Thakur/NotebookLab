@@ -56,14 +56,6 @@ impl Message {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Citation {
-    pub id: String,
-    pub message_id: String,
-    pub chunk_id: String,
-    pub relevance_score: f64,
-}
-
 #[derive(Debug, Deserialize)]
 pub struct CreateConversation {
     pub notebook_id: String,

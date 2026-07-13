@@ -21,7 +21,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS, ROUTES } from "@/lib/constants";
-import { GO_TO, isTypingTarget } from "@/lib/shortcuts";
+import { GO_TO, GO_TO_LEADER, isTypingTarget } from "@/lib/shortcuts";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { useNotebooks } from "@/features/notebooks/hooks/use-notebooks";
 import type { Note } from "@/types/models";
@@ -124,7 +124,7 @@ export function AppShell({ children }: AppShellProps) {
         }
         return;
       }
-      if (key === "g") {
+      if (key === GO_TO_LEADER) {
         goLeaderAt.current = Date.now();
       }
     };

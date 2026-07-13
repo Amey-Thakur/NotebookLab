@@ -40,9 +40,6 @@ pub enum AppError {
     #[error("Invalid input: {0}")]
     InvalidInput(String),
 
-    #[error("Sidecar error: {0}")]
-    Sidecar(String),
-
     #[error("{0}")]
     Internal(String),
 }
@@ -66,7 +63,6 @@ impl Serialize for AppError {
             Self::Database(_) => "A database error occurred",
             Self::Http(_) => "A network error occurred",
             Self::Io(_) => "A file system error occurred",
-            Self::Sidecar(s) => s.as_str(),
             Self::Serialization(_) | Self::Internal(_) => "An internal error occurred",
         };
 

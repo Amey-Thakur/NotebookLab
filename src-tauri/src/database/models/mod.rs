@@ -18,7 +18,7 @@ pub mod note;
 pub mod notebook;
 
 pub use chunk::{Chunk, CreateChunk};
-pub use conversation::{Citation, Conversation, CreateConversation, Message};
+pub use conversation::{Conversation, CreateConversation, Message};
 pub use document::{CreateDocument, Document, DocumentStatus};
 pub use note::{CreateNote, Note, UpdateNote};
 pub use notebook::{CreateNotebook, Notebook, UpdateNotebook};

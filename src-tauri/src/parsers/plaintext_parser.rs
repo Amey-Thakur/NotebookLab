@@ -24,10 +24,6 @@ const MAX_FILE_SIZE: u64 = 50 * 1024 * 1024; // 50MB
 pub struct PlaintextParser;
 
 impl DocumentParser for PlaintextParser {
-    fn supported_extensions(&self) -> &[&str] {
-        &["txt", "text"]
-    }
-
     fn parse(&self, file_path: &Path) -> AppResult<ParsedDocument> {
         let metadata = std::fs::metadata(file_path)?;
 

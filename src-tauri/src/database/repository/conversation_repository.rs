@@ -14,7 +14,7 @@
 use rusqlite::{params, Connection};
 use uuid::Uuid;
 
-use crate::database::models::{Citation, Conversation, CreateConversation, Message};
+use crate::database::models::{Conversation, CreateConversation, Message};
 use crate::error::{AppError, AppResult};
 
 pub fn create_conversation(
@@ -144,27 +144,6 @@ pub fn add_citation(
     )?;
 
     Ok(())
-}
-
-pub fn get_citations_for_message(conn: &Connection, message_id: &str) -> AppResult<Vec<Citation>> {
-    let mut stmt = conn.prepare(
-        "SELECT c.id, c.message_id, c.chunk_id, c.relevance_score
-         FROM citations c WHERE c.message_id = ?1
-         ORDER BY c.relevance_score DESC",
-    )?;
-
-    let citations = stmt
-        .query_map(params![message_id], |row| {
-            Ok(Citation {
-                id: row.get(0)?,
-                message_id: row.get(1)?,
-                chunk_id: row.get(2)?,
-                relevance_score: row.get(3)?,
-            })
-        })?
-        .collect::<Result<Vec<_>, _>>()?;
-
-    Ok(citations)
 }
 
 /// A citation joined with its chunk and document so the chat UI can render

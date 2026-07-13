@@ -18,7 +18,7 @@ use rusqlite::{params, Connection};
 use uuid::Uuid;
 
 use crate::database::models::{Chunk, CreateChunk};
-use crate::error::{AppError, AppResult};
+use crate::error::AppResult;
 
 /// Insert a batch of chunks within a single transaction.
 /// Used by the ingestion pipeline after document parsing and chunking.
@@ -55,31 +55,6 @@ pub fn get_by_document(conn: &Connection, document_id: &str) -> AppResult<Vec<Ch
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(chunks)
-}
-
-#[allow(dead_code)]
-pub fn get_by_id(conn: &Connection, id: &str) -> AppResult<Chunk> {
-    conn.query_row(
-        "SELECT id, document_id, content, position, page_number, heading_context, token_count, created_at
-         FROM chunks WHERE id = ?1",
-        params![id],
-        Chunk::from_row,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Chunk not found: {id}")),
-        other => AppError::Database(other),
-    })
-}
-
-/// Delete all chunks belonging to a document. Called before re-ingestion.
-#[allow(dead_code)]
-pub fn delete_by_document(conn: &Connection, document_id: &str) -> AppResult<usize> {
-    let affected = conn.execute(
-        "DELETE FROM chunks WHERE document_id = ?1",
-        params![document_id],
-    )?;
-
-    Ok(affected)
 }
 
 /// Count total chunks across all documents. Used for status bar display.
