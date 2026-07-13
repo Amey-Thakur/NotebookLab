@@ -82,9 +82,13 @@ export function elementBounds(el: CanvasElement): Rect {
       return { x: minX - pad, y: minY - pad, w: maxX - minX + pad * 2, h: maxY - minY + pad * 2 };
     }
     case "text": {
-      /* Approximate width from character count; enough for selection. */
-      const w = Math.max(el.text.length, 1) * el.fontSize * 0.6;
-      return { x: el.x, y: el.y, w, h: el.fontSize * 1.4 };
+      /* Approximate from the longest line and the line count, matching the
+      1.25em line spacing the text is rendered with, so every line is selectable. */
+      const lines = el.text.split("\n");
+      const longest = lines.reduce((max, line) => Math.max(max, line.length), 1);
+      const w = longest * el.fontSize * 0.6;
+      const h = Math.max(lines.length, 1) * el.fontSize * 1.25 + el.fontSize * 0.3;
+      return { x: el.x, y: el.y, w, h };
     }
     default:
       return { x: el.x, y: el.y, w: el.w, h: el.h };

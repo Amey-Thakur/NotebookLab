@@ -13,7 +13,7 @@
  */
 
 import { tauriInvoke } from "@/services/tauri-client";
-import { emptyScene, type CanvasScene } from "../types";
+import { emptyScene, type Camera, type CanvasScene } from "../types";
 
 export interface Canvas {
   id: string;
@@ -49,4 +49,13 @@ export function parseScene(raw: string): CanvasScene {
 
 export function serializeScene(scene: CanvasScene): string {
   return JSON.stringify(scene);
+}
+
+/**
+ * Build a scene string from already-serialized elements. Produces exactly what
+ * serializeScene would, so the elements (which may hold large embedded images)
+ * are stringified once and only the small camera is re-serialized on pan/zoom.
+ */
+export function composeScene(camera: Camera, elementsJson: string): string {
+  return `{"version":1,"camera":${JSON.stringify(camera)},"elements":${elementsJson}}`;
 }
