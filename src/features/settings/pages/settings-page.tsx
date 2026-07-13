@@ -15,10 +15,11 @@
  */
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
-import { QUERY_KEYS } from "@/lib/constants";
+import { QUERY_KEYS, ROUTES } from "@/lib/constants";
 import { SHORTCUTS, GROUP_ORDER } from "@/lib/shortcuts";
 import { KeyCaps } from "@/components/shared/key-caps";
 import { useTheme } from "@/components/providers/theme-context";
@@ -85,6 +86,22 @@ export function SettingsPage() {
         <p className="text-xs text-text-4 mt-2">
           Current: {resolvedTheme}
         </p>
+      </section>
+
+      {/* Documentation */}
+      <section className="mb-8">
+        <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-4 pb-2 border-b border-border">
+          Documentation
+        </h2>
+        <p className="text-sm text-text-3 mb-3">
+          A full guide to every feature lives inside the app, so it works offline.
+        </p>
+        <Link
+          to={ROUTES.HELP}
+          className="inline-block px-4 py-2 text-sm font-mono border border-border text-text-2 hover:border-accent-dim transition-colors"
+        >
+          Open the guide
+        </Link>
       </section>
 
       {/* About */}

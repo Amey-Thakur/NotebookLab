@@ -9,6 +9,8 @@ Offline-first AI knowledge workspace with thinking partner capabilities.
 - **Database:** SQLite (WAL, FTS5, cascade deletes)
 - **LLM:** bundled llama.cpp sidecar (GGUF models) + any OpenAI-compatible provider
 - **Embeddings:** provider /v1/embeddings + brute-force cosine search in Rust
+- **OCR:** bundled ocrs models on the pure-Rust rten runtime (offline, no system deps)
+- **Documents:** PDF, Word (.docx), text, Markdown, and images all parse to the same chunk shape
 
 ## Architecture
 

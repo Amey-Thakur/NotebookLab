@@ -35,6 +35,7 @@ const NAV_ITEMS = [
   { path: ROUTES.GRAPH, label: "Connections" },
   { path: ROUTES.MODELS, label: "Models" },
   { path: ROUTES.SETTINGS, label: "Settings" },
+  { path: ROUTES.HELP, label: "Help" },
   { path: ROUTES.ABOUT, label: "About" },
 ] as const;
 

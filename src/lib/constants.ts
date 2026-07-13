@@ -28,6 +28,7 @@ export const ROUTES = {
   GRAPH: "/graph",
   MODELS: "/models",
   SETTINGS: "/settings",
+  HELP: "/help",
   ABOUT: "/about",
 } as const;
 
