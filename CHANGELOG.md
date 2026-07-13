@@ -6,6 +6,11 @@ All notable changes to NotebookLab will be documented in this file.
 
 ### Added
 
+- Audio overview formats. The audio overview (read aloud in the browser) can now
+  be a two-host discussion, a one-minute brief from a single narrator, a debate
+  between opposing speakers, or a critique that weighs the material's strengths
+  and gaps. Each is grounded in the notebook's sources, and the prompts now keep
+  document text strictly as data.
 - More Studio formats. Alongside the study guide, flashcards, quiz, and mind
   map, the Studio can now turn a notebook's sources into a timeline, a slide
   deck, a data table, a briefing doc, and a blog post. Each one is grounded in

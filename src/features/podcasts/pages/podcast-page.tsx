@@ -35,10 +35,20 @@ interface PodcastScript {
   turns: PodcastTurn[];
 }
 
+type AudioFormat = "discussion" | "brief" | "debate" | "critique";
+
+const FORMATS: { id: AudioFormat; label: string; blurb: string }[] = [
+  { id: "discussion", label: "Discussion", blurb: "Two hosts explore the material together." },
+  { id: "brief", label: "Brief", blurb: "A single narrator, the gist in under a minute." },
+  { id: "debate", label: "Debate", blurb: "Two speakers argue opposing sides." },
+  { id: "critique", label: "Critique", blurb: "A careful look at strengths and gaps." },
+];
+
 
 export function PodcastPage() {
   const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
   const [topic, setTopic] = useState("");
+  const [format, setFormat] = useState<AudioFormat>("discussion");
   const [script, setScript] = useState<PodcastScript | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTurn, setCurrentTurn] = useState(-1);
@@ -67,6 +77,7 @@ export function PodcastPage() {
     mutationFn: () => tauriInvoke<PodcastScript>("generate_podcast", {
       notebook_id: activeNotebookId,
       topic: topic || null,
+      format,
     }),
     onSuccess: (result) => {
       setScript(result);
@@ -144,16 +155,37 @@ export function PodcastPage() {
 
   return (
     <div className="p-8 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-display font-bold text-text-1 mb-2">Podcasts</h1>
+      <h1 className="text-2xl font-display font-bold text-text-1 mb-2">Audio overview</h1>
       <p className="text-sm text-text-3 mb-6">
-        Generate AI conversations from your notebook documents.
+        Turn this notebook into a spoken overview, read aloud in your browser.
       </p>
 
       {/* Generation form */}
       <div className="border border-border bg-surface-2 p-4 mb-6">
         <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-3">
-          Generate Podcast
+          Generate audio
         </h2>
+
+        {/* Format picker */}
+        <div className="flex flex-wrap gap-2 mb-2" role="group" aria-label="Audio format">
+          {FORMATS.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              aria-pressed={format === f.id}
+              onClick={() => setFormat(f.id)}
+              className={`px-3 py-1.5 text-sm font-mono border transition-colors ${
+                format === f.id
+                  ? "border-accent-dim text-text-1 bg-surface"
+                  : "border-border text-text-3 hover:text-text-1"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-text-4 mb-3">{FORMATS.find((f) => f.id === format)?.blurb}</p>
+
         <div className="flex gap-2 mb-3">
           <input
             type="text"
