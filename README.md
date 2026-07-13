@@ -60,6 +60,9 @@ help you think. Nothing leaves your computer.
 - **Think out loud.** Mind maps generated from your research, or Socratic
   questions that push your thinking further.
 
+- **Sketch on a canvas.** One open space per notebook to draw, drop in images,
+  add shapes and text, and arrange it all. It saves with the notebook.
+
 - **Transform documents.** Summaries, key points, or any custom instruction.
 
 - **Craft prompts.** Prompt Studio builds a clear prompt from simple parts and

@@ -151,6 +151,7 @@ impl AppState {
             include_str!("../resources/migrations/002_chat_tables.sql"),
             include_str!("../resources/migrations/003_fts5_search.sql"),
             include_str!("../resources/migrations/004_embeddings.sql"),
+            include_str!("../resources/migrations/005_canvas.sql"),
         ];
 
         for sql in &migrations {

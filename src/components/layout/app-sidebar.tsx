@@ -28,6 +28,7 @@ const NAV_ITEMS = [
   { path: ROUTES.CHAT, label: "Chat" },
   { path: ROUTES.THINKING_PARTNER, label: "Think" },
   { path: ROUTES.STUDIO, label: "Studio" },
+  { path: ROUTES.CANVAS, label: "Canvas" },
   { path: ROUTES.TRANSFORMS, label: "Transform" },
   { path: ROUTES.PODCASTS, label: "Podcasts" },
   { path: ROUTES.PROMPT_STUDIO, label: "Prompt Studio" },

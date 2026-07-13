@@ -125,6 +125,8 @@ pub fn run() {
             commands::note_commands::export_note,
             commands::note_commands::list_recent_notes,
             commands::note_commands::get_notes_graph,
+            commands::canvas_commands::get_or_create_canvas,
+            commands::canvas_commands::update_canvas,
             commands::document_commands::import_document,
             commands::document_commands::list_documents,
             commands::document_commands::delete_document,

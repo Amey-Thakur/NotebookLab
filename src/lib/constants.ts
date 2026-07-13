@@ -20,6 +20,7 @@ export const ROUTES = {
   CHAT: "/chat",
   THINKING_PARTNER: "/thinking-partner",
   STUDIO: "/studio",
+  CANVAS: "/canvas",
   DOCUMENTS: "/documents",
   TRANSFORMS: "/transforms",
   PODCASTS: "/podcasts",
@@ -47,6 +48,7 @@ export const QUERY_KEYS = {
   CHUNK_COUNT: "chunk-count",
   SIDECAR: "sidecar",
   GRAPH: "graph",
+  CANVAS: "canvas",
 } as const;
 
 

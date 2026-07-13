@@ -11,6 +11,7 @@
  * Date: 2026-07-12
  */
 
+pub mod canvas_commands;
 pub mod chat_commands;
 pub mod document_commands;
 pub mod download_commands;
