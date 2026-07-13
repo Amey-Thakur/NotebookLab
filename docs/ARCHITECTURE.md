@@ -133,6 +133,7 @@ erDiagram
     NOTEBOOKS ||--o{ DOCUMENTS : contains
     NOTEBOOKS ||--o{ NOTES : contains
     NOTEBOOKS ||--o{ CONVERSATIONS : contains
+    NOTEBOOKS ||--o| CANVASES : "has one"
     DOCUMENTS ||--o{ CHUNKS : "split into"
     CHUNKS ||--o| EMBEDDINGS : "may have"
     CONVERSATIONS ||--o{ MESSAGES : holds
@@ -142,8 +143,13 @@ erDiagram
 ```
 
 Chunks carry their heading and page so citations can say where an answer
-came from. The links table is rebuilt from `[[wiki-link]]` syntax on every
-note save and powers the backlinks panel.
+came from. Documents are parsed from PDF, Word, text, Markdown, and images
+(read with offline OCR) into the same chunk shape, so everything downstream
+treats them alike. Each notebook has one canvas whose scene is stored as a
+JSON document. The links table is rebuilt from `[[wiki-link]]` syntax on every
+note save and powers the backlinks panel. A notebook can be exported to a
+single self-contained file (notebook, notes, documents as chunks, and canvas)
+and imported to recreate it on another machine.
 
 <br>
 
