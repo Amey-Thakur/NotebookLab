@@ -18,7 +18,9 @@
 use rusqlite::Connection;
 
 use notebooklab_lib::database::models::{CreateNote, CreateNotebook, UpdateNote};
-use notebooklab_lib::database::repository::{note_repository, notebook_repository};
+use notebooklab_lib::database::repository::{
+    canvas_repository, note_repository, notebook_repository,
+};
 use notebooklab_lib::services::ingestion_service;
 use notebooklab_lib::services::search_service;
 use notebooklab_lib::utils::rtf;
@@ -32,6 +34,7 @@ fn test_db() -> Connection {
         include_str!("../resources/migrations/002_chat_tables.sql"),
         include_str!("../resources/migrations/003_fts5_search.sql"),
         include_str!("../resources/migrations/004_embeddings.sql"),
+        include_str!("../resources/migrations/005_canvas.sql"),
     ] {
         conn.execute_batch(sql).expect("migration");
     }
@@ -49,6 +52,30 @@ fn make_notebook(conn: &Connection) -> String {
     )
     .expect("create notebook")
     .id
+}
+
+#[test]
+fn canvas_is_created_once_per_notebook_and_saves_its_scene() {
+    let conn = test_db();
+    let nb = make_notebook(&conn);
+
+    /* First open creates an empty canvas; opening again returns the same one. */
+    let canvas = canvas_repository::get_or_create(&conn, &nb).expect("create canvas");
+    assert_eq!(canvas.scene, "", "a fresh canvas starts empty");
+    let again = canvas_repository::get_or_create(&conn, &nb).expect("reopen canvas");
+    assert_eq!(again.id, canvas.id, "one canvas per notebook");
+
+    /* Saving a scene persists it and is readable back. */
+    let scene = r#"{"version":1,"elements":[{"id":"a","type":"rect"}]}"#;
+    let saved = canvas_repository::update_scene(&conn, &canvas.id, scene).expect("save scene");
+    assert_eq!(saved.scene, scene);
+    let reloaded = canvas_repository::get_or_create(&conn, &nb).expect("reopen");
+    assert_eq!(reloaded.scene, scene, "scene survives a reopen");
+
+    /* The canvas is removed when its notebook is deleted (cascade). */
+    notebook_repository::delete(&conn, &nb).expect("delete notebook");
+    let fresh = canvas_repository::get_or_create(&conn, &make_notebook(&conn)).expect("new canvas");
+    assert_ne!(fresh.id, canvas.id, "a new notebook gets its own canvas");
 }
 
 #[test]

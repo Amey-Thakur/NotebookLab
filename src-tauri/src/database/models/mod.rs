@@ -11,12 +11,14 @@
  * Date: 2026-07-12
  */
 
+pub mod canvas;
 pub mod chunk;
 pub mod conversation;
 pub mod document;
 pub mod note;
 pub mod notebook;
 
+pub use canvas::Canvas;
 pub use chunk::{Chunk, CreateChunk};
 pub use conversation::{Conversation, CreateConversation, Message};
 pub use document::{CreateDocument, Document, DocumentStatus};

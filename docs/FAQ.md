@@ -76,6 +76,13 @@ supported; save it as `.docx` first.
 No. The OCR models ship with the app and run entirely on your machine, like
 everything else in NotebookLab.
 
+**What is the Canvas?**
+Every notebook has one open canvas for visual thinking. Draw freehand with the
+pen, add rectangles, ellipses, and text, and drop in images, then pan, zoom,
+and rearrange. Drag the empty space to pan, scroll to zoom, and press Delete to
+remove a selected item; undo and redo work as usual. Everything you make is
+saved with the notebook and stays on your machine.
+
 **What is the Studio?**
 The Studio turns a notebook's documents into study aids: a structured study
 guide, flashcards, a multiple-choice quiz, and a visual mind map. Everything it

@@ -13,6 +13,7 @@
  * Date: 2026-07-12
  */
 
+pub mod canvas_repository;
 pub mod chunk_repository;
 pub mod conversation_repository;
 pub mod document_repository;

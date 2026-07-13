@@ -6,6 +6,14 @@ All notable changes to NotebookLab will be documented in this file.
 
 ### Added
 
+- Canvas workspace. Every notebook now has one open spatial canvas: draw
+  freehand with a pressure-aware pen, add rectangles, ellipses, and text, drop
+  in images, and arrange it all together. Pan by dragging the empty space, zoom
+  toward the cursor, select and move or delete anything, and undo/redo. The
+  whole scene, images included, is stored with the notebook and autosaves as you
+  work, so it stays self-contained and offline. Built on a small custom SVG
+  engine and perfect-freehand rather than a heavy whiteboard library, so it
+  matches the app's look and adds almost nothing to the bundle.
 - Word and image import. Bring in Word (`.docx`) files, and images or scans of
   printed text (`.png`, `.jpg`, `.jpeg`, `.tiff`, `.webp`, `.bmp`). Images are
   read with fully offline OCR, no cloud and no network, so a photo or scan
