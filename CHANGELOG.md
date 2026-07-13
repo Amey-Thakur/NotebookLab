@@ -2,6 +2,38 @@
 
 All notable changes to NotebookLab will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Universal search launcher: one keyboard-first box (Ctrl+K, or the header
+  Search button) to reach any page, notebook, or action.
+- Keyboard shortcut system with a shared registry and a cheat sheet: press `?`
+  anywhere to see every binding, grouped by area. Navigate by typing `G` then
+  a key (`G` `N` for Notebooks, `G` `A` for About, and so on). The Settings
+  page reads the same registry, so the list can never drift from what is wired.
+- First-run welcome: a short, spacious greeting on the first launch that
+  introduces the app, lets you pick a theme, and points out the keys worth
+  knowing. Shown once.
+- Animated light and dark toggle in the header: a real switch whose knob slides
+  between a sun and a moon, with the active side lit in the accent color.
+- About page: the people behind NotebookLab, why it exists, portraits pulled
+  live from GitHub, and the Makers' Pledge, a certificate carrying the
+  fingerprint of the key that signs every commit and release.
+- A single brand mark component, drawn from the packaged app icon, now used
+  consistently in the header, the welcome flow, and the About page.
+- A shared, accessible dialog primitive (focus trap, Escape to close, reduced
+  motion aware) behind the welcome and cheat sheet overlays.
+
+### Fixed
+
+- Word export kept the numbers on numbered lists and now emits emoji and other
+  characters beyond the basic range as valid document text.
+- The Connections graph no longer counts a phantom link after a linked note is
+  deleted; a note's connection count always matches the lines drawn.
+- Prompt Studio ignores an empty rewrite and never lets a slow refinement land
+  on top of an edit you made while it was running.
+
 ## [0.3.0] - 2026-07-12
 
 ### Added

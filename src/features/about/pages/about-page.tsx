@@ -18,6 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS } from "@/lib/constants";
+import { BrandMark } from "@/components/shared/brand-mark";
 import { AuthorPortrait } from "../components/author-portrait";
 
 /* The fingerprint of the SSH key that signs every commit and release in the
@@ -63,6 +64,9 @@ export function AboutPage() {
     <div className="p-8 max-w-2xl mx-auto">
       {/* Wordmark */}
       <div className="mb-12 text-center">
+        <div className="flex justify-center mb-4">
+          <BrandMark className="h-14 w-14 text-accent" />
+        </div>
         <h1 className="font-display text-3xl font-bold text-text-1 mb-1">NotebookLab</h1>
         <p className="text-xs font-mono text-text-4">
           {version ? `Version ${version}` : " "}
@@ -133,20 +137,37 @@ export function AboutPage() {
               The Makers&apos; Pledge
             </h2>
 
-            <div className="font-body text-sm text-text-2 leading-relaxed max-w-md mx-auto space-y-4 text-left">
+            <div className="font-body text-sm text-text-2 leading-relaxed max-w-md mx-auto space-y-5 text-left">
               <p>
-                We built NotebookLab with our own hands, and we stand behind every line
-                of it. To everyone who trusts it with their thinking, we promise:
+                NotebookLab was written one careful commit at a time, each with a single,
+                clear purpose and each read closely before it earned its place. This is
+                not throwaway software. It is the work of two people who wanted a better
+                place to think, and built it by hand.
               </p>
-              <ul className="space-y-2 list-none">
-                <li>
-                  Your work stays on your machine. No telemetry, no tracking, no quiet
-                  network calls.
-                </li>
-                <li>The source stays open, for anyone to read, question, and build upon.</li>
-                <li>We ship nothing we would not use ourselves.</li>
-                <li>When we get something wrong, we will say so plainly and fix it.</li>
-              </ul>
+              <p className="text-text-3">To everyone who makes it part of their work, we give our word.</p>
+              <dl className="space-y-3">
+                <div>
+                  <dt className="font-display font-bold text-text-1">Yours alone.</dt>
+                  <dd>
+                    Your notes, documents, and questions never leave this machine. No
+                    accounts, no telemetry, no quiet calls home.
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-display font-bold text-text-1">Open always.</dt>
+                  <dd>
+                    Every line is here to be read, questioned, and made better by anyone
+                    who cares to look.
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-display font-bold text-text-1">Honest to a fault.</dt>
+                  <dd>
+                    We ship only what we run ourselves, and when we get something wrong we
+                    say so plainly and fix it in the open.
+                  </dd>
+                </div>
+              </dl>
             </div>
 
             {/* Signatures */}
@@ -161,10 +182,12 @@ export function AboutPage() {
               ))}
             </div>
 
+            <p className="font-body text-xs text-text-3 max-w-md mx-auto mb-6">
+              Signed with our own hands, and with the key that signs every commit and
+              release, so this promise can be checked and not merely trusted.
+            </p>
             <p className="text-2xs font-mono text-text-4 leading-relaxed">
               First released to the public in 2026 &middot; MIT License
-              <br />
-              Every commit and release is signed with the project key
               <br />
               <span className="text-text-3 break-all">{RELEASE_KEY_FINGERPRINT}</span>
             </p>

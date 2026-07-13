@@ -62,25 +62,30 @@ place in how they work every day. That hope is why every line of it is open.
 
 ## The Makers' Pledge
 
-> We built NotebookLab with our own hands, and we stand behind every line of
-> it. To everyone who trusts it with their thinking, we promise:
+> NotebookLab was written one careful commit at a time, each with a single,
+> clear purpose and each read closely before it earned its place. This is not
+> throwaway software. It is the work of two people who wanted a better place to
+> think, and built it by hand.
 >
-> Your work stays on your machine. No telemetry, no tracking, no quiet
-> network calls.
+> To everyone who makes it part of their work, we give our word.
 >
-> The source stays open, for anyone to read, question, and build upon.
+> **Yours alone.** Your notes, documents, and questions never leave this
+> machine. No accounts, no telemetry, no quiet calls home.
 >
-> We ship nothing we would not use ourselves.
+> **Open always.** Every line is here to be read, questioned, and made better
+> by anyone who cares to look.
 >
-> When we get something wrong, we will say so plainly and fix it.
+> **Honest to a fault.** We ship only what we run ourselves, and when we get
+> something wrong we say so plainly and fix it in the open.
 
 <div align="center">
 
 *Amey Thakur* &nbsp;&nbsp;&middot;&nbsp;&nbsp; *Archit Konde*
 
-First released to the public in 2026 &middot; MIT License
+Signed with our own hands, and with the key that signs every commit and
+release, so this promise can be checked and not merely trusted.
 
-Every commit and release is signed with the project key
+First released to the public in 2026 &middot; MIT License
 
 `SHA256:h+W7L5p+iSLNi8FfG+Svgwtr/shv3l0JsCYq/o6VBis`
 
