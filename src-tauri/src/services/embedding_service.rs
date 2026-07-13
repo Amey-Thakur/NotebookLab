@@ -208,7 +208,7 @@ mod tests {
 
     #[test]
     fn blob_roundtrip() {
-        let original = vec![1.0f32, -2.5, 3.14, 0.0];
+        let original = vec![1.0f32, -2.5, 3.25, 0.0];
         let blob = floats_to_blob(&original);
         let restored = blob_to_floats(&blob, original.len());
         assert_eq!(original, restored);
