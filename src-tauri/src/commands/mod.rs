@@ -21,6 +21,7 @@ pub mod podcast_commands;
 pub mod prompt_commands;
 pub mod search_commands;
 pub mod sidecar_commands;
+pub mod studio_commands;
 pub mod system_commands;
 pub mod thinking_commands;
 pub mod transform_commands;
