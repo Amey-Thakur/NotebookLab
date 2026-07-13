@@ -214,4 +214,6 @@ maintainers cut releases with [docs/RELEASING.md](docs/RELEASING.md).
 Released under the [MIT License](LICENSE).
 
 Built by [Amey Thakur](https://github.com/Amey-Thakur) and
-[Archit Konde](https://github.com/Archit-Konde).
+[Archit Konde](https://github.com/Archit-Konde). Their story, and the
+pledge they sign their names to, is in [The Makers](docs/AUTHORS.md)
+and on the About page inside the app.

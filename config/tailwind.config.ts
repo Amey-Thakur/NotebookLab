@@ -66,6 +66,29 @@ export default {
       borderColor: {
         DEFAULT: "var(--color-border)",
       },
+
+      /* Motion primitives. Deliberately short and soft; the global
+         prefers-reduced-motion block in globals.css neutralizes them, and
+         staggered entrances are gated behind motion-safe: at the call site. */
+      keyframes: {
+        "fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+        "scale-in": {
+          from: { opacity: "0", transform: "scale(0.97)" },
+          to: { opacity: "1", transform: "scale(1)" },
+        },
+        "slide-up": {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+      },
+      animation: {
+        "fade-in": "fade-in 150ms ease-out",
+        "scale-in": "scale-in 170ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "slide-up": "slide-up 240ms cubic-bezier(0.16, 1, 0.3, 1) both",
+      },
     },
   },
 

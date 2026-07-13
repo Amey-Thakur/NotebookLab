@@ -15,12 +15,13 @@
  * Date: 2026-07-12
  */
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS, ROUTES } from "@/lib/constants";
+import { GO_TO, isTypingTarget } from "@/lib/shortcuts";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { useNotebooks } from "@/features/notebooks/hooks/use-notebooks";
 import type { Note } from "@/types/models";
@@ -29,6 +30,9 @@ import { AppSidebar } from "./app-sidebar";
 import { AppHeader } from "./app-header";
 import { StatusBar } from "./status-bar";
 import { CommandPalette } from "@/components/shared/command-palette";
+import { ShortcutsSheet } from "@/components/shared/shortcuts-sheet";
+import { WelcomeDialog } from "@/features/welcome/components/welcome-dialog";
+import { useFirstRun } from "@/features/welcome/hooks/use-first-run";
 
 
 interface AppShellProps {
@@ -39,11 +43,17 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
   const setActiveNotebook = useNotebookStore((s) => s.setActiveNotebook);
   const { data: notebooks } = useNotebooks();
+  const welcome = useFirstRun();
+
+  /* Timestamp of the last "g" leader press, so a following key completes a
+     go-to sequence only if it lands within the window below. */
+  const goLeaderAt = useRef(0);
 
   /* Drop a persisted active notebook that no longer exists (fresh database,
      data reset) so scoped pages show their real empty states. */
@@ -53,35 +63,75 @@ export function AppShell({ children }: AppShellProps) {
     }
   }, [activeNotebookId, notebooks, setActiveNotebook]);
 
-  /* Global shortcuts. Skipped while typing in the editor body so Ctrl+N there
-     is not surprising; Ctrl+S is handled by the editor page itself. */
+  /* Global shortcuts. Modifier chords work while typing but stand down when a
+     dialog is open above them; single-key and "g then key" navigation defer to
+     typing and to any open dialog. Nothing ever acts behind an overlay or
+     hijacks a letter meant for an input. Ctrl+S is handled by the editor page
+     itself. */
   useEffect(() => {
+    const GO_WINDOW_MS = 900;
+
     const handleKeydown = (event: KeyboardEvent) => {
-      if (!(event.ctrlKey || event.metaKey)) return;
+      const dialogAbovePalette = shortcutsOpen || welcome.shouldShow;
+
+      if (event.ctrlKey || event.metaKey) {
+        const key = event.key.toLowerCase();
+        if (key === "k") {
+          /* Toggling the palette under another open dialog would mount it
+             behind the scrim and steal focus into an invisible input. */
+          if (dialogAbovePalette) return;
+          event.preventDefault();
+          setPaletteOpen((current) => !current);
+        } else if (key === "n") {
+          /* Creating and navigating behind an open dialog would act on a
+             page the user cannot see. */
+          if (paletteOpen || dialogAbovePalette) return;
+          event.preventDefault();
+          const notebookId = useNotebookStore.getState().activeNotebookId;
+          if (!notebookId) {
+            navigate(ROUTES.NOTEBOOKS);
+            return;
+          }
+          tauriInvoke<Note>("create_note", { input: { notebook_id: notebookId } })
+            .then((note) => {
+              queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.NOTES, notebookId] });
+              navigate(`/editor/${note.id}`);
+            })
+            .catch(() => navigate(ROUTES.NOTEBOOKS));
+        }
+        return;
+      }
+
+      /* Below here: no modifier. Never steal a key from a field or a dialog. */
+      if (event.altKey || isTypingTarget(event.target)) return;
+      if (paletteOpen || shortcutsOpen || welcome.shouldShow) return;
+
+      if (event.key === "?") {
+        event.preventDefault();
+        goLeaderAt.current = 0;
+        setShortcutsOpen(true);
+        return;
+      }
 
       const key = event.key.toLowerCase();
-      if (key === "k") {
-        event.preventDefault();
-        setPaletteOpen((current) => !current);
-      } else if (key === "n") {
-        event.preventDefault();
-        const notebookId = useNotebookStore.getState().activeNotebookId;
-        if (!notebookId) {
-          navigate(ROUTES.NOTEBOOKS);
-          return;
+      const armed = Date.now() - goLeaderAt.current < GO_WINDOW_MS;
+      if (armed) {
+        goLeaderAt.current = 0;
+        const route = GO_TO[key];
+        if (route) {
+          event.preventDefault();
+          navigate(route);
         }
-        tauriInvoke<Note>("create_note", { input: { notebook_id: notebookId } })
-          .then((note) => {
-            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.NOTES, notebookId] });
-            navigate(`/editor/${note.id}`);
-          })
-          .catch(() => navigate(ROUTES.NOTEBOOKS));
+        return;
+      }
+      if (key === "g") {
+        goLeaderAt.current = Date.now();
       }
     };
 
     window.addEventListener("keydown", handleKeydown);
     return () => window.removeEventListener("keydown", handleKeydown);
-  }, [navigate, queryClient]);
+  }, [navigate, queryClient, paletteOpen, shortcutsOpen, welcome.shouldShow]);
 
   /* Escape closes the mobile drawer */
   useEffect(() => {
@@ -96,11 +146,14 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <div className="flex flex-col h-screen bg-bg text-text-1 overflow-hidden">
       <AppHeader
+        sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         onOpenPalette={() => setPaletteOpen(true)}
       />
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      <ShortcutsSheet open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      <WelcomeDialog open={welcome.shouldShow} onFinish={welcome.dismiss} />
 
       <div className="flex flex-1 overflow-hidden relative">
         {/* Mobile overlay */}

@@ -49,6 +49,7 @@ const PAGES: Array<{ label: string; route: string }> = [
   { label: "Connections", route: ROUTES.GRAPH },
   { label: "Models", route: ROUTES.MODELS },
   { label: "Settings", route: ROUTES.SETTINGS },
+  { label: "About", route: ROUTES.ABOUT },
 ];
 
 
