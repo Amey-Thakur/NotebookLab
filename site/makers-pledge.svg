@@ -1,9 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1400" role="img" aria-labelledby="cert-t cert-d" font-family="Play, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1500" role="img" aria-labelledby="cert-t cert-d" font-family="Play, sans-serif">
   <title id="cert-t">NotebookLab Makers' Pledge, Certificate of Authenticity</title>
   <desc id="cert-d">A signed pledge from the makers of NotebookLab: your work stays on your machine, the source stays open, and they ship only what they run themselves.</desc>
 
   <defs>
-    <radialGradient id="bg" cx="50%" cy="30%" r="90%">
+    <radialGradient id="bg" cx="50%" cy="26%" r="90%">
       <stop offset="0" stop-color="#16181c"/>
       <stop offset="1" stop-color="#0d0e10"/>
     </radialGradient>
@@ -21,23 +21,14 @@
     </radialGradient>
   </defs>
 
-  <!-- Paper -->
-  <rect width="1000" height="1400" fill="url(#bg)"/>
+  <rect width="1000" height="1500" fill="url(#bg)"/>
 
   <!-- Double frame -->
-  <rect x="34" y="34" width="932" height="1332" fill="none" stroke="#4A70A9" stroke-width="2"/>
-  <rect x="50" y="50" width="900" height="1300" fill="none" stroke="#8FABD4" stroke-width="1" opacity="0.45"/>
-
-  <!-- Corner diamonds -->
-  <g fill="#8AB2EA">
-    <rect x="46" y="46" width="8" height="8" transform="rotate(45 50 50)"/>
-    <rect x="946" y="46" width="8" height="8" transform="rotate(45 950 50)"/>
-    <rect x="46" y="1346" width="8" height="8" transform="rotate(45 50 1350)"/>
-    <rect x="946" y="1346" width="8" height="8" transform="rotate(45 950 1350)"/>
-  </g>
+  <rect x="34" y="34" width="932" height="1432" fill="none" stroke="#4A70A9" stroke-width="2"/>
+  <rect x="50" y="50" width="900" height="1400" fill="none" stroke="#8FABD4" stroke-width="1" opacity="0.4"/>
 
   <!-- Logo -->
-  <g transform="translate(460,96) scale(1.25)">
+  <g transform="translate(460,84) scale(1.25)">
     <rect x="18" y="8" width="34" height="46" rx="5" fill="url(#back)" opacity=".45"/>
     <rect x="12" y="13" width="34" height="46" rx="5" fill="url(#page)"/>
     <rect x="12" y="13" width="5" height="46" rx="2.5" fill="#ffffff" opacity=".14"/>
@@ -49,54 +40,70 @@
     <circle cx="40" cy="48" r="2.2" fill="#1d3f7e"/>
   </g>
 
-  <text x="500" y="255" text-anchor="middle" font-size="40" font-weight="700">
+  <text x="500" y="226" text-anchor="middle" font-size="38" font-weight="700">
     <tspan fill="#EAE6E0">Notebook</tspan><tspan fill="#8AB2EA">Lab</tspan>
   </text>
 
-  <text x="500" y="305" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="15" letter-spacing="5" fill="#8FABD4">CERTIFICATE OF AUTHENTICITY</text>
-  <line x1="440" y1="330" x2="560" y2="330" stroke="#3f6cb5" stroke-width="1"/>
+  <text x="500" y="278" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="15" letter-spacing="5" fill="#8FABD4">CERTIFICATE OF AUTHENTICITY</text>
+  <line x1="440" y1="300" x2="560" y2="300" stroke="#3f6cb5" stroke-width="1"/>
 
-  <text x="500" y="410" text-anchor="middle" font-size="52" font-weight="700" fill="#EAE6E0">The Makers&#8217; Pledge</text>
+  <text x="500" y="376" text-anchor="middle" font-size="46" font-weight="700" fill="#EAE6E0">The Makers&#8217; Pledge</text>
 
-  <!-- Intro -->
-  <g font-family="'Source Serif 4', serif" fill="#BFB9B2" font-size="21" text-anchor="middle">
-    <text x="500" y="480">Made by hand by two people who wanted their thinking partner back,</text>
-    <text x="500" y="512">and given freely to anyone who needs the same.</text>
+  <!-- Intro, word for word with the app -->
+  <g font-family="'Source Serif 4', serif" font-size="20" fill="#BFB9B2" text-anchor="middle">
+    <text x="500" y="446">The tools we think with have quietly become products that watch us.</text>
+    <text x="500" y="476">The notebook turned into a subscription, the private note into a</text>
+    <text x="500" y="506">data point, and the quiet place to work into something that studies</text>
+    <text x="500" y="536">what you do inside it. We wanted our thinking partner back, so we</text>
+    <text x="500" y="566">built one that answers only to you.</text>
+
+    <text x="500" y="618">Every part of NotebookLab was made by the two of us, by hand, one</text>
+    <text x="500" y="648">considered commit at a time, each with a single clear purpose and</text>
+    <text x="500" y="678">read closely before it was trusted. We made it the way we would</text>
+    <text x="500" y="708">want a tool made for us.</text>
   </g>
-  <text x="500" y="562" text-anchor="middle" font-family="'Source Serif 4', serif" font-style="italic" font-size="19" fill="#8A847D">To everyone who trusts it with their thinking, we give our word.</text>
 
-  <!-- Promises -->
+  <text x="500" y="758" text-anchor="middle" font-family="'Source Serif 4', serif" font-size="19" fill="#8A847D">To everyone who makes it part of their work, we give our word.</text>
+
+  <!-- Promises, word for word with the app -->
   <g text-anchor="middle">
-    <text x="500" y="650" font-size="24" font-weight="700" fill="#8AB2EA">Yours alone.</text>
-    <text x="500" y="682" font-family="'Source Serif 4', serif" font-size="19" fill="#D8D3CC">Your notes, documents, and questions never leave your machine.</text>
+    <text x="500" y="822" font-size="23" font-weight="700" fill="#8AB2EA">Yours alone.</text>
+    <g font-family="'Source Serif 4', serif" font-size="19" fill="#D8D3CC">
+      <text x="500" y="852">Your notes, documents, and questions never leave this machine.</text>
+      <text x="500" y="880">No accounts, no telemetry, no quiet calls home.</text>
+    </g>
 
-    <text x="500" y="754" font-size="24" font-weight="700" fill="#8AB2EA">Open always.</text>
-    <text x="500" y="786" font-family="'Source Serif 4', serif" font-size="19" fill="#D8D3CC">Every line is open to read, question, and build upon.</text>
+    <text x="500" y="942" font-size="23" font-weight="700" fill="#8AB2EA">Open always.</text>
+    <g font-family="'Source Serif 4', serif" font-size="19" fill="#D8D3CC">
+      <text x="500" y="972">Every line is here to be read, questioned, and made better</text>
+      <text x="500" y="1000">by anyone who cares to look.</text>
+    </g>
 
-    <text x="500" y="858" font-size="24" font-weight="700" fill="#8AB2EA">Honest work.</text>
-    <text x="500" y="890" font-family="'Source Serif 4', serif" font-size="19" fill="#D8D3CC">We ship only what we run ourselves, and fix what we get wrong.</text>
+    <text x="500" y="1062" font-size="23" font-weight="700" fill="#8AB2EA">Honest work.</text>
+    <g font-family="'Source Serif 4', serif" font-size="19" fill="#D8D3CC">
+      <text x="500" y="1092">We ship only what we run ourselves, and when we get something</text>
+      <text x="500" y="1120">wrong we say so plainly and fix it in the open.</text>
+    </g>
   </g>
 
   <!-- Signatures -->
   <g text-anchor="middle">
-    <text x="322" y="1044" font-family="'Source Serif 4', serif" font-style="italic" font-size="30" fill="#EAE6E0">Amey Thakur</text>
-    <line x1="212" y1="1064" x2="432" y2="1064" stroke="#3a3a3a" stroke-width="1"/>
-    <text x="322" y="1088" font-family="JetBrains Mono, monospace" font-size="13" fill="#8A847D">@Amey-Thakur</text>
+    <text x="322" y="1208" font-family="'Source Serif 4', serif" font-style="italic" font-size="28" fill="#EAE6E0">Amey Thakur</text>
+    <line x1="222" y1="1228" x2="422" y2="1228" stroke="#3a3a3a" stroke-width="1"/>
+    <text x="322" y="1252" font-family="JetBrains Mono, monospace" font-size="12" fill="#8A847D">@Amey-Thakur</text>
 
-    <text x="678" y="1044" font-family="'Source Serif 4', serif" font-style="italic" font-size="30" fill="#EAE6E0">Archit Konde</text>
-    <line x1="568" y1="1064" x2="788" y2="1064" stroke="#3a3a3a" stroke-width="1"/>
-    <text x="678" y="1088" font-family="JetBrains Mono, monospace" font-size="13" fill="#8A847D">@Archit-Konde</text>
+    <text x="678" y="1208" font-family="'Source Serif 4', serif" font-style="italic" font-size="28" fill="#EAE6E0">Archit Konde</text>
+    <line x1="578" y1="1228" x2="778" y2="1228" stroke="#3a3a3a" stroke-width="1"/>
+    <text x="678" y="1252" font-family="JetBrains Mono, monospace" font-size="12" fill="#8A847D">@Archit-Konde</text>
   </g>
 
-  <!-- Seal -->
-  <g transform="translate(500,1180)">
-    <circle r="46" fill="none" stroke="#4A70A9" stroke-width="2"/>
-    <circle r="38" fill="none" stroke="#8FABD4" stroke-width="1" opacity="0.5"/>
-    <path d="M-14,2 L-4,13 L16,-11" fill="none" stroke="#8AB2EA" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <text y="30" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5" fill="#8FABD4">SIGNED</text>
+  <!-- Signed statement, word for word with the app -->
+  <g font-family="'Source Serif 4', serif" font-size="15" fill="#A09A93" text-anchor="middle">
+    <text x="500" y="1316">Signed with our own hands, and with the key that signs every</text>
+    <text x="500" y="1340">commit and release, so this promise can be checked and not</text>
+    <text x="500" y="1364">merely trusted.</text>
   </g>
 
-  <!-- Footer -->
-  <text x="500" y="1274" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" fill="#8A847D">First released to the public in 2026  &#183;  MIT License</text>
-  <text x="500" y="1300" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#8FABD4">SHA256:h+W7L5p+iSLNi8FfG+Svgwtr/shv3l0JsCYq/o6VBis</text>
+  <text x="500" y="1414" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" fill="#8A847D">First released to the public in 2026  &#183;  MIT License</text>
+  <text x="500" y="1440" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#8FABD4">SHA256:h+W7L5p+iSLNi8FfG+Svgwtr/shv3l0JsCYq/o6VBis</text>
 </svg>
