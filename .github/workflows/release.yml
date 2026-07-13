@@ -111,6 +111,9 @@ jobs:
           SIDECAR_TRIPLE: ${{ matrix.target }}
         run: npm run sidecar:download
 
+      - name: Download OCR models (checksum verified)
+        run: npm run models:download
+
       # macOS code signing and notarization activate automatically once the
       # six APPLE_* secrets exist (see docs/RELEASING.md). The variables are
       # exported to the build environment ONLY when a certificate is present:
