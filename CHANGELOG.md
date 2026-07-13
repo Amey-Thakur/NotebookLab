@@ -4,6 +4,8 @@ All notable changes to NotebookLab will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-13
+
 ### Added
 
 - Share a notebook. Export any notebook to a single self-contained file that
