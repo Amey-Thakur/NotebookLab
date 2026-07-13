@@ -27,12 +27,12 @@
   <rect x="34" y="34" width="932" height="1592" fill="none" stroke="#4A70A9" stroke-width="2"/>
   <rect x="50" y="50" width="900" height="1560" fill="none" stroke="#8FABD4" stroke-width="1" opacity="0.4"/>
 
-  <!-- Corner diamonds -->
+  <!-- Corner diamonds, 15u centered on each inner-frame corner -->
   <g fill="#8AB2EA">
-    <rect x="43" y="43" width="14" height="14" transform="rotate(45 50 50)"/>
-    <rect x="943" y="43" width="14" height="14" transform="rotate(45 950 50)"/>
-    <rect x="43" y="1603" width="14" height="14" transform="rotate(45 50 1610)"/>
-    <rect x="943" y="1603" width="14" height="14" transform="rotate(45 950 1610)"/>
+    <rect x="42.5" y="42.5" width="15" height="15" transform="rotate(45 50 50)"/>
+    <rect x="942.5" y="42.5" width="15" height="15" transform="rotate(45 950 50)"/>
+    <rect x="42.5" y="1602.5" width="15" height="15" transform="rotate(45 50 1610)"/>
+    <rect x="942.5" y="1602.5" width="15" height="15" transform="rotate(45 950 1610)"/>
   </g>
 
   <!-- Logo -->
