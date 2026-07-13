@@ -27,6 +27,11 @@ const STUDY_GUIDE_PROMPT: &str = include_str!("../../resources/prompts/studio-st
 const FLASHCARDS_PROMPT: &str = include_str!("../../resources/prompts/studio-flashcards.txt");
 const QUIZ_PROMPT: &str = include_str!("../../resources/prompts/studio-quiz.txt");
 const MIND_MAP_PROMPT: &str = include_str!("../../resources/prompts/mind-map.txt");
+const TIMELINE_PROMPT: &str = include_str!("../../resources/prompts/studio-timeline.txt");
+const SLIDE_DECK_PROMPT: &str = include_str!("../../resources/prompts/studio-slide-deck.txt");
+const DATA_TABLE_PROMPT: &str = include_str!("../../resources/prompts/studio-data-table.txt");
+const BRIEFING_PROMPT: &str = include_str!("../../resources/prompts/studio-briefing.txt");
+const BLOG_POST_PROMPT: &str = include_str!("../../resources/prompts/studio-blog-post.txt");
 
 /// Generate one Studio format grounded in a notebook's sources.
 ///
@@ -44,6 +49,11 @@ pub async fn generate_studio(
         "flashcards" => FLASHCARDS_PROMPT,
         "quiz" => QUIZ_PROMPT,
         "mind_map" => MIND_MAP_PROMPT,
+        "timeline" => TIMELINE_PROMPT,
+        "slide_deck" => SLIDE_DECK_PROMPT,
+        "data_table" => DATA_TABLE_PROMPT,
+        "briefing" => BRIEFING_PROMPT,
+        "blog_post" => BLOG_POST_PROMPT,
         other => {
             return Err(AppError::InvalidInput(format!(
                 "Unknown Studio format: {other}"

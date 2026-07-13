@@ -6,6 +6,11 @@ All notable changes to NotebookLab will be documented in this file.
 
 ### Added
 
+- More Studio formats. Alongside the study guide, flashcards, quiz, and mind
+  map, the Studio can now turn a notebook's sources into a timeline, a slide
+  deck, a data table, a briefing doc, and a blog post. Each one is grounded in
+  your own documents and renders in its own real view, with the timeline, deck,
+  and table laid out visually and the reports read as formatted prose.
 - Canvas workspace. Every notebook now has one open spatial canvas: draw
   freehand with a pressure-aware pen, add rectangles, ellipses, and text, drop
   in images, and arrange it all together. Pan by dragging the empty space, zoom
