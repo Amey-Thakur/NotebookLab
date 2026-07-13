@@ -11,7 +11,13 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { ROUTES, QUERY_KEYS, SUPPORTED_FILE_TYPES, EDITOR_AUTOSAVE_MS } from "./constants";
+import {
+  ROUTES,
+  QUERY_KEYS,
+  SUPPORTED_FILE_TYPES,
+  OCR_IMAGE_TYPES,
+  EDITOR_AUTOSAVE_MS,
+} from "./constants";
 
 
 describe("ROUTES", () => {
@@ -58,11 +64,23 @@ describe("SUPPORTED_FILE_TYPES", () => {
     expect(SUPPORTED_FILE_TYPES).toContain(".txt");
     expect(SUPPORTED_FILE_TYPES).toContain(".md");
     expect(SUPPORTED_FILE_TYPES).toContain(".pdf");
+    expect(SUPPORTED_FILE_TYPES).toContain(".docx");
+    expect(SUPPORTED_FILE_TYPES).toContain(".png");
+  });
+
+  it("does not include legacy binary Word (.doc)", () => {
+    expect(SUPPORTED_FILE_TYPES as readonly string[]).not.toContain(".doc");
   });
 
   it("all start with a dot", () => {
     for (const ext of SUPPORTED_FILE_TYPES) {
       expect(ext).toMatch(/^\./);
+    }
+  });
+
+  it("every OCR image type is a supported type", () => {
+    for (const ext of OCR_IMAGE_TYPES) {
+      expect(SUPPORTED_FILE_TYPES as readonly string[]).toContain(ext);
     }
   });
 });

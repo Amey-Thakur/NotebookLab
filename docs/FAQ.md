@@ -65,7 +65,16 @@ you find passages that match your meaning, not just your words.
 ## Using the app
 
 **What file types can I import?**
-PDF, TXT, and Markdown, up to 50 MB per file.
+PDF, Word (`.docx`), plain text, Markdown, and images (`.png`, `.jpg`, `.jpeg`,
+`.tiff`, `.webp`, `.bmp`), up to 50 MB per file. Images are read with offline
+OCR, so a photo or scan of printed text becomes searchable like any other
+source. OCR works best on clear, printed text; handwriting and very low
+resolution scans read less reliably. Legacy binary Word (`.doc`) is not
+supported; save it as `.docx` first.
+
+**Does OCR need the internet?**
+No. The OCR models ship with the app and run entirely on your machine, like
+everything else in NotebookLab.
 
 **What is the Studio?**
 The Studio turns a notebook's documents into study aids: a structured study

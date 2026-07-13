@@ -72,18 +72,37 @@ describe("pickDocumentFile", () => {
     expect(result).toBe("/path/to/doc.pdf");
   });
 
-  it("calls open with correct filters", async () => {
+  it("calls open with grouped supported filters", async () => {
     vi.mocked(open).mockResolvedValue(null);
     await pickDocumentFile();
 
-    expect(open).toHaveBeenCalledWith({
-      multiple: false,
-      filters: [
-        {
-          name: "Documents",
-          extensions: expect.arrayContaining(["txt", "md", "pdf"]),
-        },
-      ],
-    });
+    expect(open).toHaveBeenCalledWith(
+      expect.objectContaining({
+        multiple: false,
+        filters: expect.arrayContaining([
+          expect.objectContaining({
+            name: "All supported",
+            extensions: expect.arrayContaining(["txt", "md", "pdf", "docx", "png"]),
+          }),
+          expect.objectContaining({
+            name: "Documents",
+            extensions: expect.arrayContaining(["txt", "md", "pdf", "docx"]),
+          }),
+          expect.objectContaining({
+            name: "Images",
+            extensions: expect.arrayContaining(["png", "jpg", "jpeg"]),
+          }),
+        ]),
+      }),
+    );
+
+    /* Documents and Images stay disjoint: no image in Documents, no doc in Images. */
+    const call = vi.mocked(open).mock.calls[0][0] as {
+      filters: { name: string; extensions: string[] }[];
+    };
+    const documents = call.filters.find((f) => f.name === "Documents");
+    const images = call.filters.find((f) => f.name === "Images");
+    expect(documents?.extensions).not.toContain("png");
+    expect(images?.extensions).not.toContain("docx");
   });
 });

@@ -15,8 +15,10 @@ description = "Your thinking partner, on your machine."
 authors = ["Amey Thakur", "Archit Konde"]
 license = "MIT"
 repository = "https://github.com/Amey-Thakur/NotebookLab"
+# The OCR stack sets the floor: rten 0.24 requires 1.89, and some transitive
+# crates use edition 2024. Keep this honest so a stated minimum actually builds.
 edition = "2021"
-rust-version = "1.77"
+rust-version = "1.89"
 
 [lib]
 name = "notebooklab_lib"
@@ -65,9 +67,27 @@ pdf-extract = "0.10"
 # Local REST API server for automation
 tiny_http = "0.12"
 
+# DOCX text extraction: a .docx is a ZIP of XML. `zip` opens the container
+# (pure-Rust DEFLATE via flate2/miniz_oxide, no C codecs) and `quick-xml`
+# pull-parses word/document.xml.
+zip = { version = "4.2.0", default-features = false, features = ["deflate-flate2"] }
+quick-xml = "0.39.4"
+
+# Offline OCR for images. ocrs is a pure-Rust OCR engine on the rten ML runtime
+# (no ONNXRuntime, no system libraries), so it cross-compiles cleanly. The two
+# model files are bundled as resources and loaded at runtime, never at compile
+# time. Pin ocrs and rten together: .rten is rten's own serialized model format.
+ocrs = "0.12.2"
+rten = "0.24"
+# Decode the image formats OCR accepts. webp/tiff/bmp are non-default in 0.25.
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "tiff", "bmp"] }
+
 [features]
 default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]
+# Enables the end-to-end OCR test that needs the real .rten model files present.
+# Off in CI (models are absent there); on locally after `npm run models:download`.
+ocr-models-present = []
 
 # panic stays "unwind" so catch_unwind can contain parser panics (see
 # pdf_parser.rs) instead of aborting the whole app on a malformed file.

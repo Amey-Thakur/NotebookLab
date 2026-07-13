@@ -13,6 +13,10 @@ src-tauri/binaries/llama-extract/
 src-tauri/binaries/*.zip
 !src-tauri/binaries/README.md
 
+# OCR model weights (fetched by npm run models:download); keep the folder + docs
+src-tauri/resources/models/ocr/*.rten
+!src-tauri/resources/models/ocr/README.md
+
 # Environment
 .env
 .env.local

@@ -6,6 +6,13 @@ All notable changes to NotebookLab will be documented in this file.
 
 ### Added
 
+- Word and image import. Bring in Word (`.docx`) files, and images or scans of
+  printed text (`.png`, `.jpg`, `.jpeg`, `.tiff`, `.webp`, `.bmp`). Images are
+  read with fully offline OCR, no cloud and no network, so a photo or scan
+  becomes searchable content like every other source and flows into search,
+  chat, and the Studio. The OCR models are bundled and verified by checksum; if
+  they are ever missing, image import degrades to a clear message instead of
+  failing quietly. Word and text formats never load the models.
 - Studio: turn a notebook's documents into study aids grounded in your own
   sources. A structured study guide, interactive flashcards, a scored
   multiple-choice quiz, and a real visual mind map. Add a focus to narrow it or

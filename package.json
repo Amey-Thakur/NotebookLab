@@ -16,7 +16,8 @@
     "tauri": "tauri",
     "test": "vitest run --config config/vite.config.ts",
     "test:watch": "vitest --config config/vite.config.ts",
-    "sidecar:download": "node scripts/download-sidecar.cjs"
+    "sidecar:download": "node scripts/download-sidecar.cjs",
+    "models:download": "node scripts/download-models.cjs"
   },
   "dependencies": {
     "@milkdown/core": "^7.20.0",

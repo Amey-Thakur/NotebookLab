@@ -15,7 +15,7 @@
 import { open } from "@tauri-apps/plugin-dialog";
 
 import { tauriInvoke } from "@/services/tauri-client";
-import { SUPPORTED_FILE_TYPES } from "@/lib/constants";
+import { SUPPORTED_FILE_TYPES, OCR_IMAGE_TYPES } from "@/lib/constants";
 import type { Document as AppDocument, Chunk } from "@/types/models";
 
 
@@ -36,17 +36,23 @@ export function getDocumentChunks(documentId: string): Promise<Chunk[]> {
 }
 
 /**
- * Open a native file picker dialog filtered to supported document types.
- * Returns the selected file path, or null if cancelled.
+ * Open a native file picker dialog filtered to supported types. Documents and
+ * images are offered as separate groups, with an "All supported" group first so
+ * everything shows by default. Returns the selected file path, or null if
+ * cancelled.
  */
 export async function pickDocumentFile(): Promise<string | null> {
+  const strip = (ext: string) => ext.replace(".", "");
+  const imageSet = new Set<string>(OCR_IMAGE_TYPES);
+  const documentExtensions = SUPPORTED_FILE_TYPES.filter((ext) => !imageSet.has(ext)).map(strip);
+  const imageExtensions = OCR_IMAGE_TYPES.map(strip);
+
   const result = await open({
     multiple: false,
     filters: [
-      {
-        name: "Documents",
-        extensions: SUPPORTED_FILE_TYPES.map((ext) => ext.replace(".", "")),
-      },
+      { name: "All supported", extensions: SUPPORTED_FILE_TYPES.map(strip) },
+      { name: "Documents", extensions: documentExtensions },
+      { name: "Images", extensions: imageExtensions },
     ],
   });
 

@@ -47,8 +47,42 @@ pub async fn import_document(
 
         let document_id = {
             let state: State<'_, AppState> = app.state();
-            let conn = state.conn()?;
-            ingestion_service::ingest_file(&conn, &notebook_id, &canonical)?
+
+            /* Build the OCR engine only for image imports so text formats never
+            pay to load the models. This runs before the database lock is taken. */
+            let is_image = canonical
+                .extension()
+                .and_then(|e| e.to_str())
+                .is_some_and(crate::parsers::is_ocr_image_extension);
+            let ocr = if is_image {
+                state.ocr_engine(&app)
+            } else {
+                None
+            };
+
+            /* Run the pipeline in three phases so the database lock is released
+            across the parse. Parsing a large PDF or running OCR on an image can
+            take seconds; holding the single shared connection lock that whole
+            time would freeze every other database command. */
+            let prepared = {
+                let conn = state.conn()?;
+                ingestion_service::prepare_ingest(&conn, &notebook_id, &canonical)?
+            };
+
+            match ingestion_service::parse_and_chunk(&prepared.doc_id, &canonical, ocr) {
+                Ok(chunks) => {
+                    let conn = state.conn()?;
+                    ingestion_service::finalize_ingest(&conn, &prepared.doc_id, chunks)?;
+                }
+                Err(e) => {
+                    if let Ok(conn) = state.conn() {
+                        ingestion_service::mark_ingest_error(&conn, &prepared.doc_id);
+                    }
+                    return Err(e);
+                }
+            }
+
+            prepared.doc_id
         };
 
         /* Embed the new chunks in the background so semantic search covers
