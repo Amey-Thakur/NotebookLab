@@ -36,7 +36,7 @@ npx tauri dev
 src/                 React frontend, organized by feature
 src-tauri/src/       Rust backend: commands -> services -> repositories
 site/                Static landing page (GitHub Pages)
-scripts/             Build helpers (sidecar download, icon generation)
+scripts/             Build helpers (sidecar download)
 .github/workflows/   CI, release, and pages pipelines
 ```
 
@@ -57,8 +57,8 @@ cargo test
 
 ## Conventions
 
-- **Every file starts with a header block**: Title, Tech Stack, Description,
-  Important Details. Look at any existing file for the shape.
+- **Every file starts with a header block**: Name, Purpose, Description, Tech
+  Stack, License, Authors, Date. Look at any existing file for the shape.
 - **Comments explain why, not what.** If a comment restates the code, delete it.
 - **Complete naming, no abbreviations.** `notebook_id`, not `nb_id`.
 - **IPC arguments are snake_case** on both sides. Every Tauri command declares
