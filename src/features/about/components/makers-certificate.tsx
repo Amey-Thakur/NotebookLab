@@ -45,7 +45,7 @@ export function MakersCertificate() {
         <CornerMarks />
 
         <div className="flex justify-center">
-          <BrandMark className="h-14 w-14" />
+          <BrandMark className="h-12 w-12" />
         </div>
         <p className="mt-4 font-display text-2xl font-bold">
           <span className="text-text-1">Notebook</span>
@@ -133,15 +133,15 @@ function CornerMarks() {
 function VerificationSeal() {
   return (
     <span
-      className="relative flex h-24 w-24 items-center justify-center rounded-full border-2 border-accent"
+      className="relative flex h-[74px] w-[74px] items-center justify-center rounded-full border-2 border-accent"
       aria-hidden="true"
     >
-      <span className="absolute h-[76px] w-[76px] rounded-full border border-accent-dim" />
+      <span className="absolute h-[60px] w-[60px] rounded-full border border-accent-dim" />
       <span className="flex flex-col items-center">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent">
           <path d="M5 12.5l4.2 4.5L19 6.5" />
         </svg>
-        <span className="mt-1 text-[7px] font-mono uppercase tracking-[2px] text-accent">Signed</span>
+        <span className="mt-0.5 text-[7px] font-mono uppercase tracking-[2px] text-accent">Signed</span>
       </span>
     </span>
   );
