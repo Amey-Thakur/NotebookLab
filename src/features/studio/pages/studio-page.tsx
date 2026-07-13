@@ -28,17 +28,28 @@ import {
   type Flashcard,
   type QuizQuestion,
   type MindMap,
+  type Timeline,
+  type SlideDeck,
+  type DataTable,
 } from "../api/studio-api";
 import { StudyGuideView } from "../components/study-guide-view";
 import { FlashcardsView } from "../components/flashcards-view";
 import { QuizView } from "../components/quiz-view";
 import { MindMapView } from "../components/mind-map-view";
+import { TimelineView } from "../components/timeline-view";
+import { SlideDeckView } from "../components/slide-deck-view";
+import { DataTableView } from "../components/data-table-view";
 
 const FORMATS: { id: StudioFormat; label: string; blurb: string }[] = [
   { id: "study_guide", label: "Study guide", blurb: "A structured overview with key terms and questions." },
   { id: "flashcards", label: "Flashcards", blurb: "Flip through the key facts and definitions." },
   { id: "quiz", label: "Quiz", blurb: "Test yourself with multiple-choice questions." },
   { id: "mind_map", label: "Mind map", blurb: "See how the main ideas connect." },
+  { id: "timeline", label: "Timeline", blurb: "Lay the events out in the order they happened." },
+  { id: "slide_deck", label: "Slide deck", blurb: "Walk the material as a deck of slides." },
+  { id: "data_table", label: "Data table", blurb: "Organize the key facts into a table." },
+  { id: "briefing", label: "Briefing doc", blurb: "A concise briefing for a busy reader." },
+  { id: "blog_post", label: "Blog post", blurb: "An accessible write-up for a general audience." },
 ];
 
 export function StudioPage() {
@@ -150,7 +161,8 @@ export function StudioPage() {
    recoverable message instead of a crash. Parsing happens in safeJson so no
    try/catch sits in the render path. */
 function StudioResult({ format, text }: { format: StudioFormat; text: string }) {
-  if (format === "study_guide") {
+  /* The study guide and the two report styles are Markdown. */
+  if (format === "study_guide" || format === "briefing" || format === "blog_post") {
     return <StudyGuideView markdown={text} />;
   }
   if (format === "flashcards") {
@@ -160,6 +172,18 @@ function StudioResult({ format, text }: { format: StudioFormat; text: string }) 
   if (format === "quiz") {
     const parsed = safeJson<QuizQuestion[]>(text);
     return "error" in parsed ? <ResultError message={parsed.error} /> : <QuizView questions={parsed.data} />;
+  }
+  if (format === "timeline") {
+    const parsed = safeJson<Timeline>(text);
+    return "error" in parsed ? <ResultError message={parsed.error} /> : <TimelineView data={parsed.data} />;
+  }
+  if (format === "slide_deck") {
+    const parsed = safeJson<SlideDeck>(text);
+    return "error" in parsed ? <ResultError message={parsed.error} /> : <SlideDeckView data={parsed.data} />;
+  }
+  if (format === "data_table") {
+    const parsed = safeJson<DataTable>(text);
+    return "error" in parsed ? <ResultError message={parsed.error} /> : <DataTableView data={parsed.data} />;
   }
   const parsed = safeJson<MindMap>(text);
   return "error" in parsed ? <ResultError message={parsed.error} /> : <MindMapView data={parsed.data} />;

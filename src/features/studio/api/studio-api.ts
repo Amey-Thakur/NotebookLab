@@ -16,7 +16,16 @@
 
 import { tauriInvoke } from "@/services/tauri-client";
 
-export type StudioFormat = "study_guide" | "flashcards" | "quiz" | "mind_map";
+export type StudioFormat =
+  | "study_guide"
+  | "flashcards"
+  | "quiz"
+  | "mind_map"
+  | "timeline"
+  | "slide_deck"
+  | "data_table"
+  | "briefing"
+  | "blog_post";
 
 export function generateStudio(
   notebookId: string,
@@ -54,6 +63,33 @@ export interface MindMapBranch {
 export interface MindMap {
   title: string;
   branches: MindMapBranch[];
+}
+
+export interface TimelineEvent {
+  date: string;
+  title: string;
+  description: string;
+}
+
+export interface Timeline {
+  title: string;
+  events: TimelineEvent[];
+}
+
+export interface Slide {
+  title: string;
+  bullets: string[];
+}
+
+export interface SlideDeck {
+  title: string;
+  slides: Slide[];
+}
+
+export interface DataTable {
+  title: string;
+  columns: string[];
+  rows: string[][];
 }
 
 /**

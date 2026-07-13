@@ -84,9 +84,10 @@ remove a selected item; undo and redo work as usual. Everything you make is
 saved with the notebook and stays on your machine.
 
 **What is the Studio?**
-The Studio turns a notebook's documents into study aids: a structured study
-guide, flashcards, a multiple-choice quiz, and a visual mind map. Everything it
-makes is grounded in your own sources. Open a notebook, open Studio, choose a
+The Studio turns a notebook's documents into study aids and write-ups: a
+structured study guide, flashcards, a multiple-choice quiz, a visual mind map, a
+timeline, a slide deck, a data table, a briefing doc, and a blog post. Everything
+it makes is grounded in your own sources. Open a notebook, open Studio, choose a
 format, and generate. Add a focus to narrow it, or leave it blank to cover the
 whole notebook.
 
