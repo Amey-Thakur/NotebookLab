@@ -22,6 +22,7 @@ import { EditorPage } from "./features/editor/pages/editor-page";
 import { SearchPage } from "./features/search/pages/search-page";
 import { ChatPage } from "./features/chat/pages/chat-page";
 import { ThinkingPartnerPage } from "./features/thinking-partner/pages/thinking-partner-page";
+import { StudioPage } from "./features/studio/pages/studio-page";
 import { DocumentsPage } from "./features/documents/pages/documents-page";
 import { TransformsPage } from "./features/content-transformations/pages/transforms-page";
 import { ModelManagerPage } from "./features/model-manager/pages/model-manager-page";
@@ -44,6 +45,7 @@ export function App() {
         <Route path={ROUTES.DOCUMENTS} element={<DocumentsPage />} />
         <Route path={ROUTES.CHAT} element={<ChatPage />} />
         <Route path={ROUTES.THINKING_PARTNER} element={<ThinkingPartnerPage />} />
+        <Route path={ROUTES.STUDIO} element={<StudioPage />} />
         <Route path={ROUTES.TRANSFORMS} element={<TransformsPage />} />
         <Route path={ROUTES.PODCASTS} element={<PodcastPage />} />
         <Route path={ROUTES.PROMPT_STUDIO} element={<PromptStudioPage />} />

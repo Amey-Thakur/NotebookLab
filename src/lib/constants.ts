@@ -19,6 +19,7 @@ export const ROUTES = {
   SEARCH: "/search",
   CHAT: "/chat",
   THINKING_PARTNER: "/thinking-partner",
+  STUDIO: "/studio",
   DOCUMENTS: "/documents",
   TRANSFORMS: "/transforms",
   PODCASTS: "/podcasts",

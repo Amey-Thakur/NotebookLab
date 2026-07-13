@@ -139,6 +139,7 @@ pub fn run() {
             commands::search_commands::search,
             commands::thinking_commands::generate_mind_map,
             commands::thinking_commands::generate_socratic_questions,
+            commands::studio_commands::generate_studio,
             commands::transform_commands::transform_document,
             commands::prompt_commands::refine_prompt,
             commands::model_commands::list_providers,

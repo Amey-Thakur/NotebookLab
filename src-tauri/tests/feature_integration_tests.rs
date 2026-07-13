@@ -375,3 +375,41 @@ fn deleting_a_notebook_cascades_to_notes() {
         "notes are removed with their notebook"
     );
 }
+
+#[test]
+fn studio_samples_a_notebooks_sources() {
+    use notebooklab_lib::database::repository::chunk_repository;
+
+    let conn = test_db();
+    let nb = make_notebook(&conn);
+
+    let dir = std::env::temp_dir().join(format!("nbl-studio-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("study.md");
+    std::fs::write(
+        &path,
+        "# Topic\n\nA first idea worth remembering.\n\n# More\n\nA second idea to study.\n",
+    )
+    .unwrap();
+
+    ingestion_service::ingest_file(&conn, &nb, &path).expect("ingest");
+
+    /* The Studio pulls a spread of the notebook's own chunk text with no query */
+    let sample = chunk_repository::sample_for_notebook(&conn, &nb, 20).unwrap();
+    assert!(
+        !sample.is_empty(),
+        "sample returns the notebook's chunk text"
+    );
+    assert!(
+        sample.iter().any(|c| c.contains("idea")),
+        "sample carries the real document content"
+    );
+
+    /* A notebook with no documents yields nothing to work from */
+    let empty = make_notebook(&conn);
+    assert!(chunk_repository::sample_for_notebook(&conn, &empty, 20)
+        .unwrap()
+        .is_empty());
+
+    std::fs::remove_dir_all(&dir).ok();
+}

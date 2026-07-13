@@ -62,3 +62,28 @@ pub fn count_all(conn: &Connection) -> AppResult<i64> {
     let count: i64 = conn.query_row("SELECT COUNT(*) FROM chunks", [], |row| row.get(0))?;
     Ok(count)
 }
+
+/// A representative spread of chunk text across a whole notebook, used by the
+/// Studio when no specific focus is given so generation covers all sources.
+pub fn sample_for_notebook(
+    conn: &Connection,
+    notebook_id: &str,
+    limit: usize,
+) -> AppResult<Vec<String>> {
+    let mut stmt = conn.prepare(
+        "SELECT c.content
+         FROM chunks c
+         INNER JOIN documents d ON c.document_id = d.id
+         WHERE d.notebook_id = ?1
+         ORDER BY d.created_at DESC, c.position ASC
+         LIMIT ?2",
+    )?;
+
+    let rows = stmt
+        .query_map(params![notebook_id, limit as i64], |row| {
+            row.get::<_, String>(0)
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(rows)
+}

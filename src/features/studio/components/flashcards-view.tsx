@@ -1,0 +1,76 @@
+/*
+ * Name: flashcards-view.tsx
+ * Purpose: Study the generated flashcards one at a time.
+ * Description: One card fills the space; clicking it (or pressing Enter or
+ *   Space) flips between the prompt and the answer, and the arrows move through
+ *   the set. A live region announces each side so the deck is usable by screen
+ *   reader and keyboard alone. Nothing here is decorative; every card is real
+ *   content drawn from the notebook's own sources.
+ * Tech Stack: React 19, Tailwind CSS
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-13
+ */
+
+import { useState } from "react";
+
+import type { Flashcard } from "../api/studio-api";
+
+export function FlashcardsView({ cards }: { cards: Flashcard[] }) {
+  const [index, setIndex] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+
+  if (cards.length === 0) {
+    return <p className="text-sm text-text-3">No cards came back. Try a broader focus.</p>;
+  }
+
+  const card = cards[index];
+  const move = (delta: number) => {
+    setIndex((i) => (i + delta + cards.length) % cards.length);
+    setFlipped(false);
+  };
+
+  return (
+    <div className="max-w-xl mx-auto">
+      <button
+        type="button"
+        onClick={() => setFlipped((f) => !f)}
+        aria-label={flipped ? "Card answer, click to see the prompt" : "Card prompt, click to reveal the answer"}
+        className="w-full min-h-[220px] p-8 flex flex-col items-center justify-center text-center
+                   border border-border bg-surface hover:border-accent-dim focus-visible:border-accent
+                   outline-none transition-colors"
+      >
+        <span className="text-2xs font-mono uppercase tracking-widest text-text-4 mb-4">
+          {flipped ? "Answer" : "Prompt"}
+        </span>
+        <span aria-live="polite" className="font-body text-lg text-text-1 leading-relaxed">
+          {flipped ? card.back : card.front}
+        </span>
+        {!flipped && <span className="mt-5 text-xs text-text-4">Click to flip</span>}
+      </button>
+
+      <div className="flex items-center justify-between mt-4">
+        <button
+          type="button"
+          onClick={() => move(-1)}
+          className="px-3 py-1.5 text-xs font-mono text-text-3 border border-border
+                     hover:text-text-1 hover:border-border-hover transition-colors"
+        >
+          Previous
+        </button>
+        <span className="text-xs font-mono text-text-4">
+          {index + 1} of {cards.length}
+        </span>
+        <button
+          type="button"
+          onClick={() => move(1)}
+          className="px-3 py-1.5 text-xs font-mono text-text-3 border border-border
+                     hover:text-text-1 hover:border-border-hover transition-colors"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+}

@@ -3,10 +3,9 @@
  * Purpose: Thinking Partner page.
  * Description: Two modes: mind map generation from documents, and Socratic
  *   questioning to challenge the user's thinking. Requires an
- *   active notebook with imported documents. Mind map output is
- *   displayed as formatted text (d3 visualization deferred to
- *   Phase 2). Socratic mode returns probing questions the user can
- *   reflect on.
+ *   active notebook with imported documents. The mind map renders
+ *   as a real visual tree through the shared Studio view; Socratic
+ *   mode returns probing questions the user can reflect on.
  * Tech Stack: React 19, TanStack Query, Tailwind CSS
  * License: MIT
  * Authors: Amey Thakur (https://github.com/Amey-Thakur)
@@ -22,6 +21,8 @@ import { tauriInvoke } from "@/services/tauri-client";
 import { ROUTES } from "@/lib/constants";
 import { formatError } from "@/lib/format-error";
 import { useNotebookStore } from "@/stores/notebook-store";
+import { safeJson, type MindMap } from "@/features/studio/api/studio-api";
+import { MindMapView } from "@/features/studio/components/mind-map-view";
 
 
 type Mode = "mindmap" | "socratic";
@@ -130,9 +131,13 @@ export function ThinkingPartnerPage() {
             <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-4">
               {mode === "mindmap" ? "Mind Map" : "Socratic Questions"}
             </h2>
-            <pre className="text-sm font-body text-text-2 whitespace-pre-wrap leading-relaxed">
-              {result}
-            </pre>
+            {mode === "mindmap" ? (
+              <MindMapResult text={result} />
+            ) : (
+              <pre className="text-sm font-body text-text-2 whitespace-pre-wrap leading-relaxed">
+                {result}
+              </pre>
+            )}
           </div>
         )}
 
@@ -148,4 +153,19 @@ export function ThinkingPartnerPage() {
       </div>
     </div>
   );
+}
+
+/* Parse the generated mind map and draw it, falling back to a plain message if
+   the model's reply was not usable. Parsing is in safeJson so no try/catch
+   sits in the render path. */
+function MindMapResult({ text }: { text: string }) {
+  const parsed = safeJson<MindMap>(text);
+  if ("error" in parsed) {
+    return (
+      <p role="alert" className="text-sm text-error">
+        {parsed.error} Generate it again.
+      </p>
+    );
+  }
+  return <MindMapView data={parsed.data} />;
 }
