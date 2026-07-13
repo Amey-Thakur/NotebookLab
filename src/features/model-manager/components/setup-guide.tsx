@@ -34,7 +34,7 @@ export function SetupGuide({ onDetect, isDetecting }: SetupGuideProps) {
 
       <div className="space-y-4">
         <div className="flex gap-3">
-          <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-xs font-mono font-bold bg-accent-dim text-text-1">
+          <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-xs font-mono font-bold bg-primary text-on-primary">
             1
           </span>
           <div>
@@ -55,7 +55,7 @@ export function SetupGuide({ onDetect, isDetecting }: SetupGuideProps) {
         </div>
 
         <div className="flex gap-3">
-          <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-xs font-mono font-bold bg-accent-dim text-text-1">
+          <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-xs font-mono font-bold bg-primary text-on-primary">
             2
           </span>
           <div>
@@ -70,7 +70,7 @@ export function SetupGuide({ onDetect, isDetecting }: SetupGuideProps) {
         </div>
 
         <div className="flex gap-3">
-          <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-xs font-mono font-bold bg-accent-dim text-text-1">
+          <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-xs font-mono font-bold bg-primary text-on-primary">
             3
           </span>
           <div>
@@ -86,8 +86,8 @@ export function SetupGuide({ onDetect, isDetecting }: SetupGuideProps) {
         type="button"
         onClick={onDetect}
         disabled={isDetecting}
-        className="mt-6 px-4 py-2 text-sm font-mono bg-accent-dim text-text-1
-                   hover:bg-accent transition-colors disabled:opacity-50"
+        className="mt-6 px-4 py-2 text-sm font-mono bg-primary text-on-primary
+                   hover:bg-primary-hover transition-colors disabled:opacity-50"
       >
         {isDetecting ? "Checking..." : "Check for providers"}
       </button>

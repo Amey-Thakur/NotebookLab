@@ -65,7 +65,7 @@ export function AboutPage() {
       {/* Wordmark */}
       <div className="mb-12 text-center">
         <div className="flex justify-center mb-4">
-          <BrandMark className="h-14 w-14 text-accent" />
+          <BrandMark className="h-16 w-16" />
         </div>
         <h1 className="font-display text-3xl font-bold text-text-1 mb-1">NotebookLab</h1>
         <p className="text-xs font-mono text-text-4">
@@ -139,10 +139,17 @@ export function AboutPage() {
 
             <div className="font-body text-sm text-text-2 leading-relaxed max-w-md mx-auto space-y-5 text-left">
               <p>
-                NotebookLab was written one careful commit at a time, each with a single,
-                clear purpose and each read closely before it earned its place. This is
-                not throwaway software. It is the work of two people who wanted a better
-                place to think, and built it by hand.
+                The tools we think with have quietly become products that watch us. The
+                notebook turned into a subscription, the private note into a data point,
+                and the quiet place to work into something that studies what you do inside
+                it. We wanted our thinking partner back, so we built one that answers only
+                to you.
+              </p>
+              <p>
+                Every part of NotebookLab was made by the two of us, by hand, one
+                considered commit at a time, each with a single clear purpose and read
+                closely before it was trusted. We made it the way we would want a tool
+                made for us.
               </p>
               <p className="text-text-3">To everyone who makes it part of their work, we give our word.</p>
               <dl className="space-y-3">
@@ -161,7 +168,7 @@ export function AboutPage() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="font-display font-bold text-text-1">Honest to a fault.</dt>
+                  <dt className="font-display font-bold text-text-1">Honest work.</dt>
                   <dd>
                     We ship only what we run ourselves, and when we get something wrong we
                     say so plainly and fix it in the open.

@@ -117,8 +117,8 @@ export function LocalServerCard() {
             type="button"
             onClick={() => start.mutate()}
             disabled={start.isPending}
-            className="px-4 py-2 text-sm font-mono bg-accent-dim text-text-1
-                       hover:bg-accent transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm font-mono bg-primary text-on-primary
+                       hover:bg-primary-hover transition-colors disabled:opacity-50"
           >
             {state === "crashed" ? "Restart Server" : "Start Server"}
           </button>

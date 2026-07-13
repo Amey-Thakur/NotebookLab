@@ -49,7 +49,7 @@ export class ErrorBoundary extends Component<Props, State> {
           </p>
           <button
             type="button"
-            className="px-4 py-2 text-sm bg-accent-dim text-bg font-medium"
+            className="px-4 py-2 text-sm bg-primary text-on-primary font-medium"
             onClick={() => {
               this.setState({ hasError: false, error: null });
               window.location.reload();

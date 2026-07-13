@@ -62,10 +62,14 @@ place in how they work every day. That hope is why every line of it is open.
 
 ## The Makers' Pledge
 
-> NotebookLab was written one careful commit at a time, each with a single,
-> clear purpose and each read closely before it earned its place. This is not
-> throwaway software. It is the work of two people who wanted a better place to
-> think, and built it by hand.
+> The tools we think with have quietly become products that watch us. The
+> notebook turned into a subscription, the private note into a data point, and
+> the quiet place to work into something that studies what you do inside it. We
+> wanted our thinking partner back, so we built one that answers only to you.
+>
+> Every part of NotebookLab was made by the two of us, by hand, one considered
+> commit at a time, each with a single clear purpose and read closely before it
+> was trusted. We made it the way we would want a tool made for us.
 >
 > To everyone who makes it part of their work, we give our word.
 >
@@ -75,7 +79,7 @@ place in how they work every day. That hope is why every line of it is open.
 > **Open always.** Every line is here to be read, questioned, and made better
 > by anyone who cares to look.
 >
-> **Honest to a fault.** We ship only what we run ourselves, and when we get
+> **Honest work.** We ship only what we run ourselves, and when we get
 > something wrong we say so plainly and fix it in the open.
 
 <div align="center">

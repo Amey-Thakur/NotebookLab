@@ -134,7 +134,7 @@ export function NotebookDetailPage() {
           <button
             type="button"
             onClick={() => createNote.mutate()}
-            className="px-3 py-1.5 text-xs font-mono bg-accent-dim text-text-1"
+            className="px-3 py-1.5 text-xs font-mono bg-primary text-on-primary"
           >
             + New Note
           </button>
@@ -222,7 +222,7 @@ export function NotebookDetailPage() {
             type="button"
             onClick={handleImport}
             disabled={importDoc.isPending}
-            className="px-3 py-1.5 text-xs font-mono bg-accent-dim text-text-1 disabled:opacity-50"
+            className="px-3 py-1.5 text-xs font-mono bg-primary text-on-primary disabled:opacity-50"
           >
             {importDoc.isPending ? "Importing..." : "+ Import Document"}
           </button>

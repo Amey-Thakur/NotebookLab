@@ -108,7 +108,7 @@ export function WelcomeDialog({ open, onFinish }: WelcomeDialogProps) {
             <button
               type="button"
               onClick={() => finishInto(ROUTES.NOTEBOOKS)}
-              className="px-4 py-2 text-sm font-mono bg-accent-dim text-text-1 hover:bg-accent
+              className="px-4 py-2 text-sm font-mono bg-primary text-on-primary hover:bg-primary-hover
                          transition-colors"
             >
               Open my notebooks
@@ -117,7 +117,7 @@ export function WelcomeDialog({ open, onFinish }: WelcomeDialogProps) {
             <button
               type="button"
               onClick={next}
-              className="px-4 py-2 text-sm font-mono bg-accent-dim text-text-1 hover:bg-accent
+              className="px-4 py-2 text-sm font-mono bg-primary text-on-primary hover:bg-primary-hover
                          transition-colors"
             >
               Next
@@ -133,7 +133,7 @@ function WelcomeStep() {
   return (
     <div className="text-center">
       <div className="flex justify-center mb-5">
-        <BrandMark className="h-14 w-14 text-accent" />
+        <BrandMark className="h-14 w-14" />
       </div>
       <h2 className="font-display text-2xl font-bold text-text-1 mb-3">Welcome to NotebookLab</h2>
       <p className="text-sm text-text-2 leading-relaxed max-w-sm mx-auto">
@@ -203,7 +203,7 @@ function ReadyStep() {
   return (
     <div className="text-center">
       <div className="flex justify-center mb-5">
-        <BrandMark className="h-14 w-14 text-accent" />
+        <BrandMark className="h-14 w-14" />
       </div>
       <h2 className="font-display text-xl font-bold text-text-1 mb-3">You are ready</h2>
       <p className="text-sm text-text-2 leading-relaxed max-w-sm mx-auto">

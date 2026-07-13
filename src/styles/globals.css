@@ -102,6 +102,12 @@
     --color-accent-dim: #3f6cb5;
     --color-mark: #5f8ed6;
     --color-error: #d97f7a;
+    /* Selected and primary surfaces: the same solid blue the website uses,
+       always with white text on top. Hover deepens to the favicon's dark
+       gradient stop so white stays readable. */
+    --color-primary: #3568c8;
+    --color-primary-hover: #2b57a8;
+    --color-on-primary: #ffffff;
   }
 
   /* ---- LIGHT THEME ---- */
@@ -120,6 +126,10 @@
     --color-accent-dim: #274f96;
     --color-mark: #2f62b8;
     --color-error: #8f3a3a;
+    /* Same solid blue the website uses for selected and primary surfaces */
+    --color-primary: #2f62b8;
+    --color-primary-hover: #274f96;
+    --color-on-primary: #ffffff;
   }
 
 

@@ -49,7 +49,7 @@ export function AppHeader({ sidebarOpen, onToggleSidebar, onOpenPalette }: AppHe
         </button>
 
         <span className="flex items-center gap-2">
-          <BrandMark className="h-4 w-4 text-accent" />
+          <BrandMark className="h-5 w-5" />
           <span className="font-display text-base font-bold tracking-tight text-text-1">
             NotebookLab
           </span>
