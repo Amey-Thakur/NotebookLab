@@ -1,0 +1,336 @@
+/*
+ * Name: feature_integration_tests.rs
+ * Purpose: Exercise the real data code paths end to end against a live SQLite
+ *   database, the way the app does at runtime.
+ * Description: These tests drive the actual repository and service functions
+ *   against a temporary database created from the bundled migrations, with no
+ *   mocks. They cover the paths that do not need an LLM: notebook and note
+ *   CRUD, wiki-link extraction and backlinks, recent notes, the notes graph,
+ *   document ingestion and chunking, search, and RTF export. If a feature is
+ *   wired wrong, one of these fails.
+ * Tech Stack: Rust, rusqlite, integration tests
+ * License: MIT
+ * Authors: Amey Thakur (https://github.com/Amey-Thakur)
+ *          Archit Konde (https://github.com/Archit-Konde)
+ * Date: 2026-07-12
+ */
+
+use rusqlite::Connection;
+
+use notebooklab_lib::database::models::{CreateNote, CreateNotebook, UpdateNote};
+use notebooklab_lib::database::repository::{note_repository, notebook_repository};
+use notebooklab_lib::services::ingestion_service;
+use notebooklab_lib::services::search_service;
+use notebooklab_lib::utils::rtf;
+
+/// Build a fresh in-memory database with the real migrations applied.
+fn test_db() -> Connection {
+    let conn = Connection::open_in_memory().expect("open db");
+    conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+    for sql in [
+        include_str!("../resources/migrations/001_initial_schema.sql"),
+        include_str!("../resources/migrations/002_chat_tables.sql"),
+        include_str!("../resources/migrations/003_fts5_search.sql"),
+        include_str!("../resources/migrations/004_embeddings.sql"),
+    ] {
+        conn.execute_batch(sql).expect("migration");
+    }
+    conn
+}
+
+fn make_notebook(conn: &Connection) -> String {
+    notebook_repository::create(
+        conn,
+        CreateNotebook {
+            name: "Research".into(),
+            description: None,
+            color: None,
+        },
+    )
+    .expect("create notebook")
+    .id
+}
+
+#[test]
+fn notebook_and_note_crud_round_trip() {
+    let conn = test_db();
+    let nb = make_notebook(&conn);
+
+    let note = note_repository::create(
+        &conn,
+        CreateNote {
+            notebook_id: nb.clone(),
+            title: Some("First".into()),
+            content: Some("Hello world".into()),
+        },
+    )
+    .unwrap();
+
+    let fetched = note_repository::get_by_id(&conn, &note.id).unwrap();
+    assert_eq!(fetched.title, "First");
+    assert_eq!(fetched.content, "Hello world");
+
+    let updated = note_repository::update(
+        &conn,
+        &note.id,
+        UpdateNote {
+            title: Some("Renamed".into()),
+            content: None,
+        },
+    )
+    .unwrap();
+    assert_eq!(updated.title, "Renamed");
+    assert_eq!(
+        updated.content, "Hello world",
+        "content preserved on title-only update"
+    );
+
+    note_repository::delete(&conn, &note.id).unwrap();
+    assert!(
+        note_repository::get_by_id(&conn, &note.id).is_err(),
+        "note gone after delete"
+    );
+}
+
+#[test]
+fn wiki_links_populate_backlinks_and_graph() {
+    let conn = test_db();
+    let nb = make_notebook(&conn);
+
+    let target = note_repository::create(
+        &conn,
+        CreateNote {
+            notebook_id: nb.clone(),
+            title: Some("Cognitive Load".into()),
+            content: Some("A theory.".into()),
+        },
+    )
+    .unwrap();
+
+    let source = note_repository::create(
+        &conn,
+        CreateNote {
+            notebook_id: nb.clone(),
+            title: Some("Study Notes".into()),
+            content: Some("See [[Cognitive Load]] for details.".into()),
+        },
+    )
+    .unwrap();
+
+    /* The source links to the target, so the target has one backlink */
+    let backlinks = note_repository::get_backlinks(&conn, &target.id).unwrap();
+    assert_eq!(backlinks.len(), 1, "target has one backlink");
+    assert_eq!(backlinks[0].id, source.id);
+
+    /* The graph has both notes and one edge between them */
+    let graph = note_repository::notes_graph(&conn, &nb).unwrap();
+    assert_eq!(graph.nodes.len(), 2, "two notes in the graph");
+    assert_eq!(graph.edges.len(), 1, "one link edge");
+    assert_eq!(graph.edges[0].source, source.id);
+    assert_eq!(graph.edges[0].target, target.id);
+
+    /* Both endpoints report degree 1 */
+    for node in &graph.nodes {
+        assert_eq!(node.degree, 1, "each linked note has degree 1");
+    }
+}
+
+#[test]
+fn editing_a_note_reflows_its_links() {
+    let conn = test_db();
+    let nb = make_notebook(&conn);
+
+    let a = note_repository::create(
+        &conn,
+        CreateNote {
+            notebook_id: nb.clone(),
+            title: Some("Alpha".into()),
+            content: None,
+        },
+    )
+    .unwrap();
+    let source = note_repository::create(
+        &conn,
+        CreateNote {
+            notebook_id: nb.clone(),
+            title: Some("Source".into()),
+            content: Some("Links to [[Alpha]].".into()),
+        },
+    )
+    .unwrap();
+
+    assert_eq!(
+        note_repository::get_backlinks(&conn, &a.id).unwrap().len(),
+        1
+    );
+
+    /* Remove the link; the backlink must disappear */
+    note_repository::update(
+        &conn,
+        &source.id,
+        UpdateNote {
+            title: None,
+            content: Some("No links now.".into()),
+        },
+    )
+    .unwrap();
+    assert_eq!(
+        note_repository::get_backlinks(&conn, &a.id).unwrap().len(),
+        0,
+        "backlink removed after the link is deleted"
+    );
+}
+
+#[test]
+fn recent_notes_are_ordered_and_carry_notebook_name() {
+    let conn = test_db();
+    let nb = make_notebook(&conn);
+
+    let _older = note_repository::create(
+        &conn,
+        CreateNote {
+            notebook_id: nb.clone(),
+            title: Some("Older".into()),
+            content: None,
+        },
+    )
+    .unwrap();
+    let newer = note_repository::create(
+        &conn,
+        CreateNote {
+            notebook_id: nb.clone(),
+            title: Some("Newer".into()),
+            content: None,
+        },
+    )
+    .unwrap();
+    /* Touch the newer note so its updated_at is latest */
+    note_repository::update(
+        &conn,
+        &newer.id,
+        UpdateNote {
+            title: None,
+            content: Some("edited".into()),
+        },
+    )
+    .unwrap();
+
+    let recent = note_repository::list_recent(&conn, 5).unwrap();
+    assert_eq!(recent.len(), 2);
+    assert_eq!(recent[0].note.title, "Newer", "most recently edited first");
+    assert_eq!(recent[0].notebook_name, "Research", "notebook name joined");
+}
+
+#[test]
+fn document_ingestion_produces_searchable_chunks_with_headings() {
+    let conn = test_db();
+    let nb = make_notebook(&conn);
+
+    /* Write a small Markdown file to ingest */
+    let dir = std::env::temp_dir().join(format!("nbl-test-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("sample.md");
+    std::fs::write(
+        &path,
+        "# Introduction\n\nNeural pathways form through repeated activation.\n\n\
+         # Results\n\nRetention improved over the trial period.\n",
+    )
+    .unwrap();
+
+    let doc_id = ingestion_service::ingest_file(&conn, &nb, &path).expect("ingest");
+
+    let chunks =
+        notebooklab_lib::database::repository::chunk_repository::get_by_document(&conn, &doc_id)
+            .unwrap();
+    assert!(!chunks.is_empty(), "ingestion produced chunks");
+    assert!(
+        chunks
+            .iter()
+            .any(|c| c.heading_context.contains("Introduction")),
+        "a chunk carries the Introduction heading for the outline"
+    );
+
+    /* The indexed content is findable by keyword search */
+    let hits = search_service::search_chunks(&conn, &nb, "neural pathways", 10).unwrap();
+    assert!(!hits.is_empty(), "search finds the ingested content");
+    assert_eq!(
+        hits[0].document_title, "sample",
+        "search result carries the document title"
+    );
+
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
+fn duplicate_import_is_rejected() {
+    let conn = test_db();
+    let nb = make_notebook(&conn);
+
+    let dir = std::env::temp_dir().join(format!("nbl-dup-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("dup.txt");
+    std::fs::write(&path, "Some content to index.").unwrap();
+
+    ingestion_service::ingest_file(&conn, &nb, &path).expect("first import");
+    let second = ingestion_service::ingest_file(&conn, &nb, &path);
+    assert!(second.is_err(), "importing the same file twice is rejected");
+
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
+fn rtf_export_is_a_real_word_document() {
+    let markdown = "# Report\n\nThis is **important** and *emphasized*.\n\n- one\n- two\n";
+    let rtf = rtf::markdown_to_rtf(markdown);
+
+    assert!(rtf.starts_with("{\\rtf1"), "valid RTF envelope");
+    assert!(
+        rtf.contains("\\b\\fs34 Report"),
+        "heading is bold and large"
+    );
+    assert!(rtf.contains("{\\b important}"), "bold renders");
+    assert!(rtf.contains("{\\i emphasized}"), "italic renders");
+    assert_eq!(rtf.matches("\\bullet").count(), 2, "both bullets present");
+}
+
+#[test]
+fn find_by_title_is_case_insensitive() {
+    let conn = test_db();
+    let nb = make_notebook(&conn);
+    note_repository::create(
+        &conn,
+        CreateNote {
+            notebook_id: nb.clone(),
+            title: Some("My Note".into()),
+            content: None,
+        },
+    )
+    .unwrap();
+
+    let found = note_repository::find_by_title(&conn, &nb, "my note").unwrap();
+    assert!(
+        found.is_some(),
+        "wiki-link resolution matches title case-insensitively"
+    );
+}
+
+#[test]
+fn deleting_a_notebook_cascades_to_notes() {
+    let conn = test_db();
+    let nb = make_notebook(&conn);
+    let note = note_repository::create(
+        &conn,
+        CreateNote {
+            notebook_id: nb.clone(),
+            title: Some("Doomed".into()),
+            content: None,
+        },
+    )
+    .unwrap();
+
+    notebook_repository::delete(&conn, &nb).unwrap();
+    assert!(
+        note_repository::get_by_id(&conn, &note.id).is_err(),
+        "notes are removed with their notebook"
+    );
+}
