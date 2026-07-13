@@ -19,14 +19,20 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS } from "@/lib/constants";
 import { formatError } from "@/lib/format-error";
 import { useNotebookStore } from "@/stores/notebook-store";
-import { useNotebooks, useCreateNotebook, useDeleteNotebook } from "../hooks/use-notebooks";
-import type { RecentNote } from "@/types/models";
+import {
+  useNotebooks,
+  useCreateNotebook,
+  useDeleteNotebook,
+  useImportNotebook,
+} from "../hooks/use-notebooks";
+import { exportNotebook, pickExportPath, pickImportFile } from "../api/notebook-api";
+import type { Notebook, RecentNote } from "@/types/models";
 
 
 export function NotebooksPage() {
@@ -35,6 +41,10 @@ export function NotebooksPage() {
   const { data: notebooks, isLoading, error } = useNotebooks();
   const createMutation = useCreateNotebook();
   const deleteMutation = useDeleteNotebook();
+  const importMutation = useImportNotebook();
+  const exportMutation = useMutation({
+    mutationFn: ({ id, path }: { id: string; path: string }) => exportNotebook(id, path),
+  });
 
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
@@ -69,6 +79,16 @@ export function NotebooksPage() {
     navigate(`/notebooks/${id}`);
   };
 
+  const handleImport = async () => {
+    const path = await pickImportFile();
+    if (path) importMutation.mutate(path);
+  };
+
+  const handleExport = async (nb: Notebook) => {
+    const path = await pickExportPath(nb.name);
+    if (path) exportMutation.mutate({ id: nb.id, path });
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full text-text-3">
@@ -89,14 +109,30 @@ export function NotebooksPage() {
     <div className="p-8 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-display font-bold text-text-1">Notebooks</h1>
-        <button
-          type="button"
-          onClick={() => setShowCreate(true)}
-          className="px-4 py-2 text-sm font-mono bg-primary text-on-primary hover:bg-primary-hover transition-colors"
-        >
-          + New Notebook
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleImport}
+            disabled={importMutation.isPending}
+            className="px-4 py-2 text-sm font-mono border border-border text-text-2 hover:border-accent-dim transition-colors disabled:opacity-50"
+          >
+            {importMutation.isPending ? "Importing..." : "Import"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowCreate(true)}
+            className="px-4 py-2 text-sm font-mono bg-primary text-on-primary hover:bg-primary-hover transition-colors"
+          >
+            + New Notebook
+          </button>
+        </div>
       </div>
+
+      {(importMutation.isError || exportMutation.isError) && (
+        <p role="alert" className="mb-4 text-xs text-error">
+          {formatError(importMutation.error ?? exportMutation.error)}
+        </p>
+      )}
 
       {/* Create notebook inline form */}
       {showCreate && (
@@ -238,20 +274,36 @@ export function NotebooksPage() {
                   </button>
                 </span>
               ) : (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setConfirmingDelete(nb.id);
-                  }}
-                  onKeyDown={(e) => e.stopPropagation()}
-                  className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100
-                             focus-visible:opacity-100 text-xs text-text-4
-                             hover:text-error transition-all"
-                  aria-label={`Delete ${nb.name} and everything inside it`}
-                >
-                  Delete
-                </button>
+                <span className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleExport(nb);
+                    }}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100
+                               focus-visible:opacity-100 text-xs font-mono text-text-4
+                               hover:text-text-1 transition-all"
+                    aria-label={`Export ${nb.name} to a file`}
+                  >
+                    Export
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConfirmingDelete(nb.id);
+                    }}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100
+                               focus-visible:opacity-100 text-xs text-text-4
+                               hover:text-error transition-all"
+                    aria-label={`Delete ${nb.name} and everything inside it`}
+                  >
+                    Delete
+                  </button>
+                </span>
               )}
             </div>
             <h3 className="text-sm font-semibold text-text-1 mb-1">{nb.name}</h3>

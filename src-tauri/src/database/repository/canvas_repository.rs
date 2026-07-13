@@ -35,7 +35,7 @@ pub fn get_or_create(conn: &Connection, notebook_id: &str) -> AppResult<Canvas> 
     get_by_id(conn, &id)
 }
 
-fn find_by_notebook(conn: &Connection, notebook_id: &str) -> AppResult<Option<Canvas>> {
+pub fn find_by_notebook(conn: &Connection, notebook_id: &str) -> AppResult<Option<Canvas>> {
     let mut stmt = conn.prepare(
         "SELECT id, notebook_id, scene, created_at, updated_at
          FROM canvases WHERE notebook_id = ?1",

@@ -19,6 +19,7 @@ import {
   listNotebooks,
   createNotebook,
   deleteNotebook,
+  importNotebook,
   type CreateNotebookInput,
 } from "../api/notebook-api";
 
@@ -36,6 +37,18 @@ export function useCreateNotebook() {
 
   return useMutation({
     mutationFn: (input: CreateNotebookInput) => createNotebook(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.NOTEBOOKS] });
+    },
+  });
+}
+
+
+export function useImportNotebook() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (srcPath: string) => importNotebook(srcPath),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.NOTEBOOKS] });
     },

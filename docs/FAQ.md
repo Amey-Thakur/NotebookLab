@@ -76,6 +76,13 @@ supported; save it as `.docx` first.
 No. The OCR models ship with the app and run entirely on your machine, like
 everything else in NotebookLab.
 
+**Can I share a notebook or move it to another computer?**
+Yes. On the Notebooks page, hover a notebook and choose Export to save it as a
+single `.nblab` file. That file is self-contained: it holds the notebook, its
+notes, its documents (as searchable text), and its canvas, with no original
+source files needed. On the other machine, use Import on the Notebooks page to
+recreate the notebook. It all works offline.
+
 **What is the Canvas?**
 Every notebook has one open canvas for visual thinking. Draw freehand with the
 pen, add rectangles, ellipses, and text, and drop in images, then pan, zoom,

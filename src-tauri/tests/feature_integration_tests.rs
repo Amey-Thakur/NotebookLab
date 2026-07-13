@@ -17,9 +17,12 @@
 
 use rusqlite::Connection;
 
-use notebooklab_lib::database::models::{CreateNote, CreateNotebook, UpdateNote};
+use notebooklab_lib::commands::share_commands::{build_bundle, write_bundle};
+use notebooklab_lib::database::models::{
+    CreateChunk, CreateDocument, CreateNote, CreateNotebook, UpdateNote,
+};
 use notebooklab_lib::database::repository::{
-    canvas_repository, note_repository, notebook_repository,
+    canvas_repository, chunk_repository, document_repository, note_repository, notebook_repository,
 };
 use notebooklab_lib::services::ingestion_service;
 use notebooklab_lib::services::search_service;
@@ -52,6 +55,88 @@ fn make_notebook(conn: &Connection) -> String {
     )
     .expect("create notebook")
     .id
+}
+
+#[test]
+fn export_and_import_round_trips_a_notebook() {
+    let conn = test_db();
+    let nb = make_notebook(&conn);
+
+    note_repository::create(
+        &conn,
+        CreateNote {
+            notebook_id: nb.clone(),
+            title: Some("My note".into()),
+            content: Some("Some content.".into()),
+        },
+    )
+    .unwrap();
+
+    let doc = document_repository::create(
+        &conn,
+        CreateDocument {
+            notebook_id: nb.clone(),
+            title: "Doc".into(),
+            file_path: "/x/doc.txt".into(),
+            file_type: "txt".into(),
+            file_hash: "hash123".into(),
+            file_size: 42,
+        },
+    )
+    .unwrap();
+    chunk_repository::bulk_create(
+        &conn,
+        vec![
+            CreateChunk {
+                document_id: doc.id.clone(),
+                content: "chunk one".into(),
+                position: 0,
+                page_number: Some(1),
+                heading_context: "Intro".into(),
+                token_count: 2,
+            },
+            CreateChunk {
+                document_id: doc.id.clone(),
+                content: "chunk two".into(),
+                position: 1,
+                page_number: None,
+                heading_context: String::new(),
+                token_count: 2,
+            },
+        ],
+    )
+    .unwrap();
+
+    let canvas = canvas_repository::get_or_create(&conn, &nb).unwrap();
+    canvas_repository::update_scene(&conn, &canvas.id, r#"{"version":1,"elements":[]}"#).unwrap();
+
+    /* Export to a bundle, then import into a brand-new notebook. */
+    let bundle = build_bundle(&conn, &nb).expect("build bundle");
+    assert_eq!(bundle.notes.len(), 1);
+    assert_eq!(bundle.documents.len(), 1);
+    assert_eq!(bundle.documents[0].chunks.len(), 2);
+
+    let new_id = write_bundle(&conn, bundle).expect("write bundle");
+    assert_ne!(new_id, nb, "import creates a new notebook");
+
+    let notes = note_repository::list_by_notebook(&conn, &new_id).unwrap();
+    assert_eq!(notes.len(), 1);
+    assert_eq!(notes[0].title, "My note");
+
+    let docs = document_repository::list_by_notebook(&conn, &new_id).unwrap();
+    assert_eq!(docs.len(), 1);
+    let new_chunks = chunk_repository::get_by_document(&conn, &docs[0].id).unwrap();
+    assert_eq!(new_chunks.len(), 2);
+    assert!(new_chunks.iter().any(|c| c.content == "chunk one"));
+
+    let new_canvas = canvas_repository::find_by_notebook(&conn, &new_id)
+        .unwrap()
+        .expect("canvas copied");
+    assert!(new_canvas.scene.contains("\"version\":1"));
+
+    /* Imported chunks are searchable, so the copy is a real, usable notebook. */
+    let hits = search_service::search_chunks(&conn, &new_id, "chunk", 10).unwrap();
+    assert!(!hits.is_empty(), "imported content is searchable");
 }
 
 #[test]
