@@ -163,7 +163,10 @@ jobs:
             | macOS (Intel) | `x64.dmg` |
             | Linux | `.deb` or `.rpm` |
 
-            Verify downloads against `SHA256SUMS`.
+            Verify downloads against `SHA256SUMS`. Every commit and release is
+            signed; `NotebookLab-Makers-Pledge.png` is our
+            [certificate of authenticity](https://github.com/${{ github.repository }}/blob/main/docs/AUTHORS.md),
+            attached here so the promise travels with the download.
           releaseDraft: true
           prerelease: false
           args: --target ${{ matrix.target }} ${{ matrix.args }}
@@ -173,6 +176,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
       - name: Generate SHA256SUMS and publish the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -181,8 +186,12 @@ jobs:
         run: |
           mkdir assets && cd assets
           gh release download "$TAG" --repo "$REPO" --pattern '*'
-          # Checksums cover installers and update bundles, not signatures
+          # The Makers' Pledge certificate rides with every release so the trust
+          # promise it carries travels with the download, not just the website.
+          cp ../site/makers-pledge.png NotebookLab-Makers-Pledge.png
+          # Checksums cover installers, update bundles, and the certificate,
+          # not signatures
           sha256sum $(ls | grep -v -E '\.sig$|^latest\.json$|^SHA256SUMS$') > SHA256SUMS
           cat SHA256SUMS
-          gh release upload "$TAG" SHA256SUMS --repo "$REPO" --clobber
+          gh release upload "$TAG" SHA256SUMS NotebookLab-Makers-Pledge.png --repo "$REPO" --clobber
           gh release edit "$TAG" --repo "$REPO" --draft=false --latest
