@@ -244,6 +244,7 @@ export function NotebooksPage() {
                     e.stopPropagation();
                     setConfirmingDelete(nb.id);
                   }}
+                  onKeyDown={(e) => e.stopPropagation()}
                   className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100
                              focus-visible:opacity-100 text-xs text-text-4
                              hover:text-error transition-all"

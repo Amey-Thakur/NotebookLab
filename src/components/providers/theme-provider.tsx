@@ -42,6 +42,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (theme !== "system") return;
     const mql = window.matchMedia("(prefers-color-scheme: dark)");
     const handler = () => setSystemTheme(mql.matches ? "dark" : "light");
+    /* Re-read the OS preference the moment system mode is chosen, so it cannot
+       show a stale value carried over from a manual choice. */
+    handler();
     mql.addEventListener("change", handler);
     return () => mql.removeEventListener("change", handler);
   }, [theme]);
