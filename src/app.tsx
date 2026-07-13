@@ -28,6 +28,7 @@ import { PodcastPage } from "./features/podcasts/pages/podcast-page";
 import { PromptStudioPage } from "./features/prompt-studio/pages/prompt-studio-page";
 import { GraphPage } from "./features/graph/pages/graph-page";
 import { SettingsPage } from "./features/settings/pages/settings-page";
+import { AboutPage } from "./features/about/pages/about-page";
 
 
 export function App() {
@@ -48,6 +49,7 @@ export function App() {
         <Route path={ROUTES.GRAPH} element={<GraphPage />} />
         <Route path={ROUTES.MODELS} element={<ModelManagerPage />} />
         <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
+        <Route path={ROUTES.ABOUT} element={<AboutPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </AppShell>

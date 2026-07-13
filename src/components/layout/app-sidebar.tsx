@@ -32,6 +32,7 @@ const NAV_ITEMS = [
   { path: ROUTES.GRAPH, label: "Connections" },
   { path: ROUTES.MODELS, label: "Models" },
   { path: ROUTES.SETTINGS, label: "Settings" },
+  { path: ROUTES.ABOUT, label: "About" },
 ] as const;
 
 
@@ -65,6 +66,7 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
   return (
     <aside
       ref={asideRef}
+      id="app-sidebar"
       className={`
         w-[200px] flex-shrink-0 border-r border-border bg-bg overflow-y-auto
         transition-transform duration-200 ease-out motion-reduce:transition-none

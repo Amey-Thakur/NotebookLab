@@ -25,6 +25,7 @@ export const ROUTES = {
   GRAPH: "/graph",
   MODELS: "/models",
   SETTINGS: "/settings",
+  ABOUT: "/about",
 } as const;
 
 

@@ -4,9 +4,9 @@
  *   REST API access, and keyboard shortcuts.
  * Description: Theme preference persists via localStorage. The REST API token
  *   is generated fresh each session; the copy button hands users a
- *   ready-to-run curl command. Every shortcut listed here is
- *   implemented (Ctrl+K and Ctrl+N in AppShell, Ctrl+S in the
- *   editor page).
+ *   ready-to-run curl command. The shortcut list is read from the
+ *   shared registry in lib/shortcuts.ts, the same source the shell
+ *   key handler honors, so it can never drift out of sync.
  * Tech Stack: React 19, Tailwind CSS
  * License: MIT
  * Authors: Amey Thakur (https://github.com/Amey-Thakur)
@@ -19,6 +19,8 @@ import { useQuery } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS } from "@/lib/constants";
+import { SHORTCUTS, GROUP_ORDER } from "@/lib/shortcuts";
+import { KeyCaps } from "@/components/shared/key-caps";
 import { useTheme } from "@/components/providers/theme-context";
 
 
@@ -133,24 +135,35 @@ export function SettingsPage() {
         </div>
       </section>
 
-      {/* Keyboard shortcuts */}
+      {/* Keyboard shortcuts, read from the shared registry so this list can
+          never claim a shortcut the app does not actually run. */}
       <section>
         <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-4 pb-2 border-b border-border">
           Keyboard Shortcuts
         </h2>
-        <div className="space-y-1">
-          {[
-            ["Ctrl+K", "Open the command palette"],
-            ["Ctrl+N", "New note in the active notebook"],
-            ["Ctrl+S", "Save the open note now (also auto-saves every 2s)"],
-          ].map(([key, desc]) => (
-            <div key={key} className="flex justify-between text-sm py-1">
-              <span className="text-text-3">{desc}</span>
-              <kbd className="font-mono text-xs text-text-4 bg-surface-2 px-2 py-0.5 border border-border">
-                {key}
-              </kbd>
-            </div>
-          ))}
+        <p className="text-xs text-text-4 mb-4">
+          Press{" "}
+          <kbd className="font-mono text-xs text-text-2 bg-surface-2 border border-border px-1.5 py-0.5">?</kbd>{" "}
+          anywhere to bring these up.
+        </p>
+        <div className="space-y-5">
+          {GROUP_ORDER.map((group) => {
+            const rows = SHORTCUTS.filter((s) => s.group === group);
+            if (rows.length === 0) return null;
+            return (
+              <div key={group}>
+                <h3 className="text-2xs font-mono uppercase tracking-widest text-text-4 mb-2">{group}</h3>
+                <div className="space-y-1">
+                  {rows.map((shortcut) => (
+                    <div key={shortcut.id} className="flex items-center justify-between gap-4 text-sm py-1">
+                      <span className="text-text-2">{shortcut.description}</span>
+                      <KeyCaps keys={shortcut.keys} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
     </div>
