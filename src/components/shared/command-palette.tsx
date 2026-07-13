@@ -163,6 +163,13 @@ function PaletteDialog({ onClose }: { onClose: () => void }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  /* Hand focus back to whatever opened the palette when it closes, so keyboard
+     users are not dropped at the top of the page. */
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    return () => opener?.focus?.();
+  }, []);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -176,6 +183,10 @@ function PaletteDialog({ onClose }: { onClose: () => void }) {
     } else if (e.key === "Escape") {
       e.preventDefault();
       onClose();
+    } else if (e.key === "Tab") {
+      /* The input is the only focusable control; keep Tab from escaping the
+         open dialog to the page behind the scrim. */
+      e.preventDefault();
     }
   };
 
@@ -198,17 +209,22 @@ function PaletteDialog({ onClose }: { onClose: () => void }) {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Jump to a page or notebook, or run an action..."
           aria-label="Search commands"
+          role="combobox"
+          aria-expanded="true"
+          aria-controls="palette-listbox"
+          aria-activedescendant={filtered.length > 0 ? `palette-option-${selected}` : undefined}
           autoFocus
           className="w-full px-4 py-3 text-sm bg-surface text-text-1 border-b border-border
                      placeholder:text-text-4 outline-none"
         />
-        <ul ref={listRef} role="listbox" aria-label="Commands" className="max-h-72 overflow-y-auto py-1">
+        <ul id="palette-listbox" ref={listRef} role="listbox" aria-label="Commands" className="max-h-72 overflow-y-auto py-1">
           {filtered.length === 0 && (
             <li className="px-4 py-3 text-sm text-text-4">Nothing matches. Try fewer letters.</li>
           )}
           {filtered.map((item, index) => (
             <li
               key={item.id}
+              id={`palette-option-${index}`}
               role="option"
               aria-selected={index === selected}
               className={`flex items-center justify-between px-4 py-2 text-sm cursor-pointer ${
