@@ -65,8 +65,14 @@ you find passages that match your meaning, not just your words.
 ## Using the app
 
 **What file types can I import?**
-PDF, TXT, and Markdown, up to 50 MB per file. DOCX and OCR for scanned
-documents are on the roadmap.
+PDF, TXT, and Markdown, up to 50 MB per file.
+
+**What is the Studio?**
+The Studio turns a notebook's documents into study aids: a structured study
+guide, flashcards, a multiple-choice quiz, and a visual mind map. Everything it
+makes is grounded in your own sources. Open a notebook, open Studio, choose a
+format, and generate. Add a focus to narrow it, or leave it blank to cover the
+whole notebook.
 
 **How do wiki-links work?**
 Type `[[Note Title]]` in any note. Clicking it opens that note, creating
