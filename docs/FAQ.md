@@ -74,9 +74,11 @@ it first if needed. The backlinks panel under the editor shows every note
 that links to the one you are reading.
 
 **What keyboard shortcuts exist?**
-Ctrl+K opens search, Ctrl+N creates a note in the active notebook, and
-Ctrl+S saves the open note immediately. Auto-save also runs every two
-seconds. On macOS, use Cmd instead of Ctrl.
+Press `?` anywhere to see the full list. Ctrl+K opens search, Ctrl+N creates
+a note in the active notebook, and Ctrl+S saves the open note immediately.
+Type `G` then a key to jump between pages, for example `G` then `N` for
+Notebooks. Auto-save also runs every two seconds. On macOS, use Cmd instead
+of Ctrl.
 
 **Does it update itself?**
 Yes, on Windows and macOS the app checks GitHub Releases and updates
