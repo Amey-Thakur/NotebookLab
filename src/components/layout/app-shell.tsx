@@ -20,6 +20,7 @@ import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
+import { bindExternalLinks } from "@/services/external-link";
 import { QUERY_KEYS, ROUTES } from "@/lib/constants";
 import { GO_TO, GO_TO_LEADER, isTypingTarget } from "@/lib/shortcuts";
 import { useNotebookStore } from "@/stores/notebook-store";
@@ -54,6 +55,10 @@ export function AppShell({ children }: AppShellProps) {
   /* Timestamp of the last "g" leader press, so a following key completes a
      go-to sequence only if it lands within the window below. */
   const goLeaderAt = useRef(0);
+
+  /* Route external http(s) link clicks through the system browser. In a Tauri
+     webview a plain anchor to an external origin does nothing otherwise. */
+  useEffect(() => bindExternalLinks(), []);
 
   /* Drop a persisted active notebook that no longer exists (fresh database,
      data reset) so scoped pages show their real empty states. */

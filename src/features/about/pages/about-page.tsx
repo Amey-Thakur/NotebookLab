@@ -16,10 +16,9 @@
 
 import { MakersCertificate } from "../components/makers-certificate";
 import { AuthorPortrait } from "../components/author-portrait";
+import certificateImage from "@/assets/makers-pledge.png";
 
 const REPOSITORY_URL = "https://github.com/Amey-Thakur/NotebookLab";
-const CERTIFICATE_URL =
-  "https://raw.githubusercontent.com/Amey-Thakur/NotebookLab/main/site/makers-pledge.png";
 
 interface Maker {
   name: string;
@@ -110,19 +109,13 @@ export function AboutPage() {
 
       <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-center text-xs text-text-4">
         <a
-          href={CERTIFICATE_URL}
-          target="_blank"
-          rel="noreferrer"
+          href={certificateImage}
+          download="NotebookLab-Makers-Pledge.png"
           className="hover:text-text-2 transition-colors"
         >
           Download the certificate
         </a>
-        <a
-          href={REPOSITORY_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="hover:text-text-2 transition-colors"
-        >
+        <a href={REPOSITORY_URL} rel="noreferrer" className="hover:text-text-2 transition-colors">
           Read the source on GitHub
         </a>
       </div>
