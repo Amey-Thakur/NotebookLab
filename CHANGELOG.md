@@ -6,6 +6,10 @@ All notable changes to NotebookLab will be documented in this file.
 
 ### Added
 
+- Guided "how it works" tour. On the first launch, right after the welcome, a
+  short coach-mark tour points out where everything is (the grouped sidebar,
+  Notebooks, Chat, the Studio, universal search, and the activity indicator),
+  with Skip and Back. Replay it any time from Settings.
 - Sample content on first launch. The Getting Started notebook now ships with
   two short sample documents, already indexed, alongside its notes, so you can
   try search, chat, the Studio, and transforms before importing anything of
