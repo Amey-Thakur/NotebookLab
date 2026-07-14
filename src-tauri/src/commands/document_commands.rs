@@ -101,6 +101,17 @@ pub fn list_documents(state: State<'_, AppState>, notebook_id: String) -> AppRes
     document_repository::list_by_notebook(&conn, &notebook_id)
 }
 
+/// The most recently added documents across all notebooks, with notebook names.
+/// Powers the home screen's "jump back in" section.
+#[tauri::command(rename_all = "snake_case")]
+pub fn list_recent_documents(
+    state: State<'_, AppState>,
+    limit: u32,
+) -> AppResult<Vec<document_repository::RecentDocument>> {
+    let conn = state.conn()?;
+    document_repository::list_recent(&conn, (limit as usize).min(20))
+}
+
 #[tauri::command(rename_all = "snake_case")]
 pub fn delete_document(state: State<'_, AppState>, id: String) -> AppResult<()> {
     let conn = state.conn()?;

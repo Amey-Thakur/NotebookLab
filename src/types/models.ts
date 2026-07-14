@@ -105,6 +105,10 @@ export interface RecentNote extends Note {
   notebook_name: string;
 }
 
+export interface RecentDocument extends Document {
+  notebook_name: string;
+}
+
 export interface GraphNode {
   id: string;
   title: string;

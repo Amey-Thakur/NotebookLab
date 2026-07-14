@@ -131,6 +131,7 @@ pub fn run() {
             commands::share_commands::import_notebook,
             commands::document_commands::import_document,
             commands::document_commands::list_documents,
+            commands::document_commands::list_recent_documents,
             commands::document_commands::delete_document,
             commands::document_commands::get_document_chunks,
             commands::document_commands::get_chunk_count,
