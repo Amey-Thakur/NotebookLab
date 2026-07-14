@@ -39,36 +39,36 @@ interface NavGroup {
 const NAV_GROUPS: NavGroup[] = [
   {
     label: null,
-    items: [{ path: ROUTES.HOME, label: "Home", icon: "home" }],
+    items: [{ path: ROUTES.HOME, label: "Home", icon: "home", tour: "nav-home" }],
   },
   {
     label: "Library",
     items: [
       { path: ROUTES.NOTEBOOKS, label: "Notebooks", icon: "notebooks", tour: "nav-notebooks" },
-      { path: ROUTES.DOCUMENTS, label: "Documents", icon: "documents" },
-      { path: ROUTES.SEARCH, label: "Search", icon: "search" },
-      { path: ROUTES.GRAPH, label: "Connections", icon: "connections" },
+      { path: ROUTES.DOCUMENTS, label: "Documents", icon: "documents", tour: "nav-documents" },
+      { path: ROUTES.SEARCH, label: "Search", icon: "search", tour: "nav-search" },
+      { path: ROUTES.GRAPH, label: "Connections", icon: "connections", tour: "nav-connections" },
     ],
   },
   {
     label: "Tools",
     items: [
       { path: ROUTES.CHAT, label: "Chat", icon: "chat", tour: "nav-chat" },
-      { path: ROUTES.THINKING_PARTNER, label: "Think", icon: "think" },
+      { path: ROUTES.THINKING_PARTNER, label: "Think", icon: "think", tour: "nav-think" },
       { path: ROUTES.STUDIO, label: "Studio", icon: "studio", tour: "nav-studio" },
-      { path: ROUTES.CANVAS, label: "Canvas", icon: "canvas" },
-      { path: ROUTES.TRANSFORMS, label: "Transform", icon: "transform" },
-      { path: ROUTES.PODCASTS, label: "Audio overview", icon: "audio" },
-      { path: ROUTES.PROMPT_STUDIO, label: "Prompt Studio", icon: "prompt" },
+      { path: ROUTES.CANVAS, label: "Canvas", icon: "canvas", tour: "nav-canvas" },
+      { path: ROUTES.TRANSFORMS, label: "Transform", icon: "transform", tour: "nav-transform" },
+      { path: ROUTES.PODCASTS, label: "Audio overview", icon: "audio", tour: "nav-audio" },
+      { path: ROUTES.PROMPT_STUDIO, label: "Prompt Studio", icon: "prompt", tour: "nav-prompt" },
     ],
   },
   {
     label: "System",
     items: [
-      { path: ROUTES.MODELS, label: "Models", icon: "models" },
-      { path: ROUTES.SETTINGS, label: "Settings", icon: "settings" },
-      { path: ROUTES.HELP, label: "Help", icon: "help" },
-      { path: ROUTES.ABOUT, label: "About", icon: "about" },
+      { path: ROUTES.MODELS, label: "Models", icon: "models", tour: "nav-models" },
+      { path: ROUTES.SETTINGS, label: "Settings", icon: "settings", tour: "nav-settings" },
+      { path: ROUTES.HELP, label: "Help", icon: "help", tour: "nav-help" },
+      { path: ROUTES.ABOUT, label: "About", icon: "about", tour: "nav-about" },
     ],
   },
 ];
