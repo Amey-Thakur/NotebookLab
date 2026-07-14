@@ -67,7 +67,7 @@ place in how they work every day. That hope is why every line of it is open.
 > the quiet place to work into something that studies what you do inside it. We
 > wanted our thinking partner back, so we built one that answers only to you.
 >
-> Every part of NotebookLab was made by the two of us, by hand, one considered
+> Every part of NotebookLab was made by the two of us, one considered
 > commit at a time, each with a single clear purpose and read closely before it
 > was trusted. We made it the way we would want a tool made for us.
 >
