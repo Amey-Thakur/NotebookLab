@@ -21,6 +21,7 @@ import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS, ROUTES } from "@/lib/constants";
 import { BrandMark } from "@/components/shared/brand-mark";
 import { useNotebookStore } from "@/stores/notebook-store";
+import { useUserStore } from "@/stores/user-store";
 import { useNotebooks } from "@/features/notebooks/hooks/use-notebooks";
 import type { Note, RecentNote } from "@/types/models";
 
@@ -36,6 +37,7 @@ export function HomePage() {
   const queryClient = useQueryClient();
   const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
   const setActiveNotebook = useNotebookStore((s) => s.setActiveNotebook);
+  const displayName = useUserStore((s) => s.displayName).trim();
 
   const { data: notebooks } = useNotebooks();
   const { data: recentNotes } = useQuery({
@@ -89,7 +91,9 @@ export function HomePage() {
           <BrandMark className="h-6 w-6" />
           <span className="font-mono text-2xs uppercase tracking-[3px] text-text-4">NotebookLab</span>
         </div>
-        <h1 className="font-display text-4xl font-bold text-text-1 tracking-tight">{greeting()}</h1>
+        <h1 className="font-display text-4xl font-bold text-text-1 tracking-tight">
+          {displayName ? `${greeting()}, ${displayName}` : greeting()}
+        </h1>
         <p className="mt-3 font-body text-lg text-text-2 leading-relaxed max-w-xl">
           A private place to think. Everything here stays on your machine.
         </p>
