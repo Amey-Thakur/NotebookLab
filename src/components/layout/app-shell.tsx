@@ -93,7 +93,7 @@ export function AppShell({ children }: AppShellProps) {
     const GO_WINDOW_MS = 900;
 
     const handleKeydown = (event: KeyboardEvent) => {
-      const dialogAbovePalette = shortcutsOpen || welcome.shouldShow;
+      const dialogAbovePalette = shortcutsOpen || welcome.shouldShow || tourOpen;
 
       if (event.ctrlKey || event.metaKey) {
         const key = event.key.toLowerCase();
@@ -125,7 +125,7 @@ export function AppShell({ children }: AppShellProps) {
 
       /* Below here: no modifier. Never steal a key from a field or a dialog. */
       if (event.altKey || isTypingTarget(event.target)) return;
-      if (paletteOpen || shortcutsOpen || welcome.shouldShow) return;
+      if (paletteOpen || shortcutsOpen || welcome.shouldShow || tourOpen) return;
 
       if (event.key === "?") {
         event.preventDefault();
@@ -152,7 +152,7 @@ export function AppShell({ children }: AppShellProps) {
 
     window.addEventListener("keydown", handleKeydown);
     return () => window.removeEventListener("keydown", handleKeydown);
-  }, [navigate, queryClient, paletteOpen, shortcutsOpen, welcome.shouldShow]);
+  }, [navigate, queryClient, paletteOpen, shortcutsOpen, welcome.shouldShow, tourOpen]);
 
   /* Escape closes the mobile drawer */
   useEffect(() => {

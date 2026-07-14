@@ -75,7 +75,7 @@ export function HomePage() {
 
   const { data: notebooks } = useNotebooks();
   const { data: recentNotes } = useQuery({
-    queryKey: [QUERY_KEYS.NOTES, "recent"],
+    queryKey: [QUERY_KEYS.NOTES, "recent", 6],
     queryFn: () => tauriInvoke<RecentNote[]>("list_recent_notes", { limit: 6 }),
   });
   const { data: recentDocuments } = useQuery({
