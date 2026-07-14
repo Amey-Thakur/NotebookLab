@@ -6,6 +6,13 @@ All notable changes to NotebookLab will be documented in this file.
 
 ### Added
 
+- Sample content on first launch. The Getting Started notebook now ships with
+  two short sample documents, already indexed, alongside its notes, so you can
+  try search, chat, the Studio, and transforms before importing anything of
+  your own.
+- Jump back in. The home screen surfaces your recent notes and documents
+  together, newest first, so you can reopen what you were working on in one
+  click.
 - Personal greeting. NotebookLab asks your name during first-run setup and
   greets you by it on the home screen. Change it any time from Settings; it
   never leaves this machine.
