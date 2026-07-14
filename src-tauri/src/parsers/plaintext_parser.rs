@@ -58,8 +58,9 @@ impl DocumentParser for PlaintextParser {
 /// Decode file bytes to text, honoring a leading byte-order mark for UTF-8,
 /// UTF-16LE, and UTF-16BE. Windows tools (Notepad's "Unicode" save) commonly
 /// write UTF-16, which a plain UTF-8 decode would turn into garbage. Falls back
-/// to UTF-8 with lossy replacement when there is no recognizable BOM.
-fn decode_text(bytes: Vec<u8>) -> String {
+/// to UTF-8 with lossy replacement when there is no recognizable BOM. Shared
+/// with the Markdown parser so both formats decode consistently.
+pub(crate) fn decode_text(bytes: Vec<u8>) -> String {
     if bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
         return String::from_utf8_lossy(&bytes[3..]).into_owned();
     }
