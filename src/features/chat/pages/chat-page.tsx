@@ -25,9 +25,11 @@ import { QUERY_KEYS, ROUTES } from "@/lib/constants";
 import { formatError } from "@/lib/format-error";
 import { cn } from "@/lib/utils";
 import { useNotebookStore } from "@/stores/notebook-store";
+import { useNotebooks } from "@/features/notebooks/hooks/use-notebooks";
 import { useDropImport } from "@/features/documents/hooks/use-drop-import";
+import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
 import { CitationList } from "../components/citation-list";
-import type { Conversation, Message, ChatResponse } from "@/types/models";
+import type { Conversation, Message, ChatResponse, Document } from "@/types/models";
 
 
 export function ChatPage() {
@@ -58,6 +60,16 @@ export function ChatPage() {
     enabled: !!conversationId,
     refetchInterval: false,
   });
+
+  /* Scope: which notebook and how many sources answers are drawn from. */
+  const { data: notebooks } = useNotebooks();
+  const activeNotebook = notebooks?.find((nb) => nb.id === activeNotebookId);
+  const { data: documents } = useQuery({
+    queryKey: [QUERY_KEYS.DOCUMENTS, activeNotebookId],
+    queryFn: () => tauriInvoke<Document[]>("list_documents", { notebook_id: activeNotebookId }),
+    enabled: !!activeNotebookId,
+  });
+  const docCount = documents?.length ?? 0;
 
   const startChat = useMutation({
     mutationFn: () =>
@@ -240,9 +252,25 @@ export function ChatPage() {
       <div className="flex flex-col flex-1 min-w-0">
         <div className="px-8 pt-6 pb-3">
           <h1 className="text-2xl font-display font-bold text-text-1">Chat</h1>
-          <p className="text-xs font-mono text-text-4 mt-1">
+          <p className="text-xs font-mono text-text-4 mt-1 mb-4">
             Ask about your documents, or drop a file to add one
           </p>
+          <ModelRequiredNotice action="Chat" />
+          {activeNotebookId && docCount === 0 && (
+            <p className="mt-3 text-xs text-text-3">
+              This notebook has no sources yet.{" "}
+              <Link to={ROUTES.DOCUMENTS} className="font-mono text-accent hover:underline">
+                Import a document
+              </Link>{" "}
+              or drop one here so Chat can answer from it.
+            </p>
+          )}
+          {docCount > 0 && (
+            <p className="mt-3 text-2xs font-mono text-text-4">
+              Answering from {docCount} {docCount === 1 ? "source" : "sources"}
+              {activeNotebook ? ` in ${activeNotebook.name}` : ""}.
+            </p>
+          )}
         </div>
 
         {/* Messages area: role=log announces new entries to screen readers */}

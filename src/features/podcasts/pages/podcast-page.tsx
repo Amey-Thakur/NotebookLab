@@ -20,6 +20,7 @@ import { Link } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
+import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
 import { ROUTES } from "@/lib/constants";
 import { formatError } from "@/lib/format-error";
 import { useNotebookStore } from "@/stores/notebook-store";
@@ -176,6 +177,8 @@ export function PodcastPage() {
       <p className="text-sm text-text-3 mb-6">
         Turn this notebook into a spoken overview, read aloud in your browser.
       </p>
+
+      <ModelRequiredNotice action="Audio overview" />
 
       {/* Generation form */}
       <div className="border border-border bg-surface-2 p-4 mb-6">

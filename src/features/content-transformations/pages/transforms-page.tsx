@@ -17,6 +17,7 @@ import { Link } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
+import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
 import { ROUTES } from "@/lib/constants";
 import { formatError } from "@/lib/format-error";
 import { useNotebookStore } from "@/stores/notebook-store";
@@ -73,6 +74,8 @@ export function TransformsPage() {
     <div className="flex flex-col h-full">
       <div className="px-8 pt-6 pb-4">
         <h1 className="text-2xl font-display font-bold text-text-1 mb-4">Content Transforms</h1>
+
+        <ModelRequiredNotice action="Transforms" />
 
         {/* Document selector */}
         <div className="mb-4">
