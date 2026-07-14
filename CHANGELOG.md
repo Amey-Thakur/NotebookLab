@@ -63,8 +63,9 @@ All notable changes to NotebookLab will be documented in this file.
   network calls, so an offline or slow provider cannot freeze the window.
 - Plain-text import detects a byte-order mark and decodes UTF-16 files (common
   from Windows Notepad) instead of turning them into garbage.
-- The mind map and timeline Studio views tolerate malformed model output instead
-  of crashing the whole app.
+- Every Studio view (mind map, timeline, slide deck, data table, quiz, and
+  flashcards) tolerates malformed model output instead of crashing the whole app,
+  coercing any stray non-text field to a string before it is rendered.
 - Download buttons work: the certificate downloads as a bundled file and external
   links open in your browser.
 - Dragging a Word document or an image onto the window imports it, matching the
@@ -77,8 +78,16 @@ All notable changes to NotebookLab will be documented in this file.
   click-a-link-to-create-it flow, rather than only after the source is re-edited.
 - Search surfaces backend errors instead of silently showing nothing, and no
   longer queries on a whitespace-only term.
-- Deleting a notebook clears its notes from the "pick up where you left off" list
-  instead of leaving dead entries.
+- Deleting a notebook clears its notes and documents from the "pick up where you
+  left off" list instead of leaving dead entries.
+- The canvas no longer loses an edit made in the last couple of seconds before
+  you navigate away: the final save now compares against what the backend
+  actually stored, not against a save that was only scheduled.
+- Opening a canvas from a hand-edited or foreign bundle drops any malformed
+  stroke instead of letting a bad point crash the view.
+- Renaming a note now saves the new title if you leave the page immediately, and
+  editing a note refreshes the knowledge graph so new links appear without a
+  reload.
 - Closing the command palette returns focus to whatever opened it, so keyboard
   users are not dropped to the top of the page.
 - Regenerating an audio overview during playback stops the old audio instead of
