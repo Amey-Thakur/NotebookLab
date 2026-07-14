@@ -1,53 +1,94 @@
 /*
  * Name: app-sidebar.tsx
- * Purpose: Left sidebar with navigation.
- * Description: Collapses on mobile (<768px) behind a hamburger toggle. Shows
- *   as slide-over on mobile with overlay backdrop. When closed on
- *   mobile the aside is inert, so its links leave the tab order
- *   instead of being focusable while invisible off-screen. Active
- *   item uses accent background. Clicking a nav link on mobile
- *   auto-closes the sidebar.
+ * Purpose: Left sidebar with grouped, collapsible navigation.
+ * Description: Destinations are grouped (Home on top, then Library, Tools, and
+ *   System) and each carries a line icon, so the list reads at a glance instead
+ *   of as one long column. On desktop it collapses to an icon-only rail via the
+ *   toggle at the bottom; the choice persists in localStorage. On mobile it is
+ *   a slide-over drawer with an overlay: when closed the aside is inert, so its
+ *   links leave the tab order instead of being focusable off-screen. The active
+ *   item uses the accent background, and tapping a link on mobile closes the
+ *   drawer.
  * Tech Stack: React 19, Tailwind CSS, React Router
  * License: MIT
  * Authors: Amey Thakur (https://github.com/Amey-Thakur)
  *          Archit Konde (https://github.com/Archit-Konde)
- * Date: 2026-07-12
+ * Date: 2026-07-14
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 
 import { ROUTES } from "@/lib/constants";
+import { cn } from "@/lib/utils";
+import { NAV_ICONS, type NavIconName } from "./nav-icons";
 
+interface NavItem {
+  path: string;
+  label: string;
+  icon: NavIconName;
+}
 
-const NAV_ITEMS = [
-  { path: ROUTES.HOME, label: "Home" },
-  { path: ROUTES.NOTEBOOKS, label: "Notebooks" },
-  { path: ROUTES.DOCUMENTS, label: "Documents" },
-  { path: ROUTES.SEARCH, label: "Search" },
-  { path: ROUTES.CHAT, label: "Chat" },
-  { path: ROUTES.THINKING_PARTNER, label: "Think" },
-  { path: ROUTES.STUDIO, label: "Studio" },
-  { path: ROUTES.CANVAS, label: "Canvas" },
-  { path: ROUTES.TRANSFORMS, label: "Transform" },
-  { path: ROUTES.PODCASTS, label: "Audio overview" },
-  { path: ROUTES.PROMPT_STUDIO, label: "Prompt Studio" },
-  { path: ROUTES.GRAPH, label: "Connections" },
-  { path: ROUTES.MODELS, label: "Models" },
-  { path: ROUTES.SETTINGS, label: "Settings" },
-  { path: ROUTES.HELP, label: "Help" },
-  { path: ROUTES.ABOUT, label: "About" },
-] as const;
+interface NavGroup {
+  label: string | null;
+  items: NavItem[];
+}
 
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: null,
+    items: [{ path: ROUTES.HOME, label: "Home", icon: "home" }],
+  },
+  {
+    label: "Library",
+    items: [
+      { path: ROUTES.NOTEBOOKS, label: "Notebooks", icon: "notebooks" },
+      { path: ROUTES.DOCUMENTS, label: "Documents", icon: "documents" },
+      { path: ROUTES.SEARCH, label: "Search", icon: "search" },
+      { path: ROUTES.GRAPH, label: "Connections", icon: "connections" },
+    ],
+  },
+  {
+    label: "Tools",
+    items: [
+      { path: ROUTES.CHAT, label: "Chat", icon: "chat" },
+      { path: ROUTES.THINKING_PARTNER, label: "Think", icon: "think" },
+      { path: ROUTES.STUDIO, label: "Studio", icon: "studio" },
+      { path: ROUTES.CANVAS, label: "Canvas", icon: "canvas" },
+      { path: ROUTES.TRANSFORMS, label: "Transform", icon: "transform" },
+      { path: ROUTES.PODCASTS, label: "Audio overview", icon: "audio" },
+      { path: ROUTES.PROMPT_STUDIO, label: "Prompt Studio", icon: "prompt" },
+    ],
+  },
+  {
+    label: "System",
+    items: [
+      { path: ROUTES.MODELS, label: "Models", icon: "models" },
+      { path: ROUTES.SETTINGS, label: "Settings", icon: "settings" },
+      { path: ROUTES.HELP, label: "Help", icon: "help" },
+      { path: ROUTES.ABOUT, label: "About", icon: "about" },
+    ],
+  },
+];
+
+const COLLAPSE_KEY = "notebooklab-sidebar-collapsed";
 
 interface AppSidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-
 export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
   const asideRef = useRef<HTMLElement>(null);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === "true");
+
+  const toggleCollapsed = () => {
+    setCollapsed((current) => {
+      const next = !current;
+      localStorage.setItem(COLLAPSE_KEY, String(next));
+      return next;
+    });
+  };
 
   /* On mobile the closed drawer is only translated off-screen; make it inert
      so keyboard focus and screen readers skip it. Desktop (md+) always shows
@@ -71,42 +112,94 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
     <aside
       ref={asideRef}
       id="app-sidebar"
-      className={`
-        w-[200px] flex-shrink-0 border-r border-border bg-bg overflow-y-auto
-        transition-transform duration-200 ease-out motion-reduce:transition-none
-        fixed md:relative z-30 h-full md:h-auto
-        ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
-      `}
+      className={cn(
+        "flex flex-col flex-shrink-0 border-r border-border bg-bg overflow-hidden",
+        "transition-all duration-200 ease-out motion-reduce:transition-none",
+        "fixed md:relative z-30 h-full md:h-auto w-[220px]",
+        collapsed ? "md:w-[68px]" : "md:w-[220px]",
+        isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+      )}
     >
-      <nav className="p-3" aria-label="Primary">
-        <SectionLabel>Navigation</SectionLabel>
-
-        {NAV_ITEMS.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            end={item.path === ROUTES.HOME}
-            onClick={onClose}
-            className={({ isActive }) =>
-              `block px-2 py-1.5 text-sm rounded-sm transition-colors ${
-                isActive
-                  ? "bg-primary text-on-primary font-semibold"
-                  : "text-text-3 hover:text-text-1 hover:bg-surface-2"
-              }`
-            }
-          >
-            {item.label}
-          </NavLink>
+      <nav className="flex-1 overflow-y-auto p-3 space-y-5" aria-label="Primary">
+        {NAV_GROUPS.map((group, groupIndex) => (
+          <div key={group.label ?? "top"}>
+            {group.label && (
+              <SectionLabel className={collapsed ? "md:hidden" : ""}>{group.label}</SectionLabel>
+            )}
+            {/* In the collapsed rail the headers are hidden, so a hairline keeps
+                the groups visually distinct. Skip it above the first group. */}
+            {group.label && groupIndex > 0 && (
+              <div className={cn("mx-2 mb-2 h-px bg-border", collapsed ? "hidden md:block" : "hidden")} />
+            )}
+            <div className="space-y-0.5">
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  end={item.path === ROUTES.HOME}
+                  onClick={onClose}
+                  title={item.label}
+                  aria-label={item.label}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-2.5 rounded-sm px-2 py-1.5 text-sm transition-colors",
+                      collapsed ? "md:justify-center md:gap-0 md:px-0 md:py-2" : "",
+                      isActive
+                        ? "bg-primary text-on-primary font-semibold"
+                        : "text-text-3 hover:text-text-1 hover:bg-surface-2",
+                    )
+                  }
+                >
+                  <span aria-hidden="true">{NAV_ICONS[item.icon]}</span>
+                  <span className={cn("truncate", collapsed ? "md:hidden" : "")}>{item.label}</span>
+                </NavLink>
+              ))}
+            </div>
+          </div>
         ))}
       </nav>
+
+      {/* Collapse toggle: desktop only. On mobile the drawer already toggles
+          from the header, and an icon-only drawer would not make sense. */}
+      <button
+        type="button"
+        onClick={toggleCollapsed}
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        aria-pressed={collapsed}
+        className={cn(
+          "hidden md:flex items-center gap-2.5 border-t border-border px-4 py-3",
+          "font-mono text-2xs uppercase tracking-widest text-text-4 hover:text-text-2 transition-colors",
+          collapsed ? "md:justify-center md:px-0" : "",
+        )}
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+          className={cn("shrink-0 transition-transform", collapsed ? "rotate-180" : "")}
+        >
+          <path d="M15 6l-6 6 6 6" />
+        </svg>
+        <span className={collapsed ? "md:hidden" : ""}>Collapse</span>
+      </button>
     </aside>
   );
 }
 
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function SectionLabel({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <span className="block mb-1.5 font-mono text-2xs tracking-[2px] uppercase text-text-4">
+    <span
+      className={cn(
+        "block mb-1.5 font-mono text-2xs tracking-[2px] uppercase text-text-4",
+        className,
+      )}
+    >
       {children}
     </span>
   );
