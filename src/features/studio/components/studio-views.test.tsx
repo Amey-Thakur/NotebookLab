@@ -120,5 +120,21 @@ describe("Studio views tolerate malformed model output", () => {
         <MindMapView data={{ title: "T", branches: [{} as never, { label: "b", children: "no" as never }] }} />,
       ),
     );
+
+    // Null items inside otherwise-valid arrays (common in truncated model JSON).
+    bad(() =>
+      renderToStaticMarkup(
+        <TimelineView
+          data={{ title: "T", events: [{ date: "1990", title: "a", description: "b" }, null as never] }}
+        />,
+      ),
+    );
+    bad(() =>
+      renderToStaticMarkup(
+        <MindMapView
+          data={{ title: "T", branches: [{ label: "b", children: [{ label: "c" }, null as never] }, null as never] }}
+        />,
+      ),
+    );
   });
 });

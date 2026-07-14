@@ -15,7 +15,7 @@
 import { asArray, type Timeline, type TimelineEvent } from "../api/studio-api";
 
 export function TimelineView({ data }: { data: Timeline }) {
-  const events = asArray<TimelineEvent>(data.events);
+  const events = asArray<TimelineEvent>(data.events).filter((e) => e && typeof e === "object");
   if (events.length === 0) {
     return <p className="text-sm text-text-3">The timeline came back empty. Try a broader focus.</p>;
   }

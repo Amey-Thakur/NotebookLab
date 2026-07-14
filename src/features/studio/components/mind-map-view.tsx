@@ -27,7 +27,7 @@ function clip(label: unknown, max = 26): string {
 }
 
 export function MindMapView({ data }: { data: MindMap }) {
-  const branches = asArray<MindMapBranch>(data.branches);
+  const branches = asArray<MindMapBranch>(data.branches).filter((b) => b && typeof b === "object");
   if (branches.length === 0) {
     return <p className="text-sm text-text-3">The mind map came back empty. Try a broader focus.</p>;
   }
@@ -40,7 +40,7 @@ export function MindMapView({ data }: { data: MindMap }) {
   const rowY = (index: number) => PAD + index * ROW_H + ROW_H / 2;
 
   const laid = branches.map((branch, i) => {
-    const kids = asArray<MindMapChild>(branch.children);
+    const kids = asArray<MindMapChild>(branch.children).filter((k) => k && typeof k === "object");
     const base = rowOffsets[i];
     if (kids.length === 0) {
       return { label: branch.label, cy: rowY(base), children: [] as { label: string; cy: number }[] };
