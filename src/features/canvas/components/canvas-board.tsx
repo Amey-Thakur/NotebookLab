@@ -41,6 +41,9 @@ interface CanvasBoardProps {
   onCommit: (elements: CanvasElement[]) => void;
   onToolChange: (tool: Tool) => void;
   onDropImage: (file: File, world: Point) => void;
+  /** Mirrors an uncommitted new text label so the page can include it in the
+      save it makes on the way out. */
+  pendingTextRef?: { current: CanvasElement | null };
 }
 
 type Gesture =
@@ -66,6 +69,19 @@ export function CanvasBoard(props: CanvasBoardProps) {
   /* A newly placed text element, held here (not committed) until it is confirmed
      with a non-empty value, so empty placements never enter history or the save. */
   const [pendingText, setPendingText] = useState<TextElement | null>(null);
+
+  /* Mirror an uncommitted new text label into the page's ref, so a label typed
+     but not yet confirmed (for example when Ctrl+N navigates away without
+     blurring the field) is still included in the save the page makes on exit. */
+  useEffect(() => {
+    const ref = props.pendingTextRef;
+    if (!ref) return;
+    const value = editing?.value.trim() ?? "";
+    ref.current =
+      editing && pendingText && pendingText.id === editing.id && value.length > 0
+        ? { ...pendingText, text: value }
+        : null;
+  }, [editing, pendingText, props.pendingTextRef]);
 
   const cameraRef = useRef(camera);
   useEffect(() => {
