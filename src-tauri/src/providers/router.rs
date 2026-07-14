@@ -102,35 +102,33 @@ impl ProviderRouter {
 
     /// Send a chat completion request to the active provider.
     pub fn chat_completion(&self, request: ChatRequest) -> Result<ChatResponse, ProviderError> {
-        let active = self
-            .active_index
-            .read()
-            .map_err(|_| ProviderError::NotAvailable("Provider router lock poisoned".into()))?;
-
-        let idx = active.ok_or_else(|| {
-            ProviderError::NotAvailable("No active provider. Select a model first.".into())
-        })?;
-
-        let provider = &self.providers[idx];
+        let idx = self.active_index_snapshot()?;
 
         /* Availability check removed from hot path. The completion call itself
         will return a clear error if the provider is unreachable. Checking
         availability added ~100-300ms latency per request. */
-        provider.chat_completion(request)
+        self.providers[idx].chat_completion(request)
     }
 
     /// Generate an embedding vector using the active provider.
     pub fn embed(&self, text: &str) -> Result<Option<Vec<f32>>, ProviderError> {
+        let idx = self.active_index_snapshot()?;
+        self.providers[idx].embed(text)
+    }
+
+    /// Read the active provider index and release the lock immediately. The
+    /// provider Vec is append-only (register_or_replace never shrinks it), so
+    /// the index stays valid after the guard drops. Holding the read guard
+    /// across the network call would make switching models mid-request block on
+    /// the write lock for the full request timeout, freezing the app.
+    fn active_index_snapshot(&self) -> Result<usize, ProviderError> {
         let active = self
             .active_index
             .read()
             .map_err(|_| ProviderError::NotAvailable("Provider router lock poisoned".into()))?;
-
-        let idx = active.ok_or_else(|| {
+        active.ok_or_else(|| {
             ProviderError::NotAvailable("No active provider. Select a model first.".into())
-        })?;
-
-        self.providers[idx].embed(text)
+        })
     }
 
     /// List all registered providers with their availability status.

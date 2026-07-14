@@ -96,29 +96,20 @@ pub fn prepare_rag_context(
         .collect::<Vec<_>>()
         .join("\n---\n");
 
-    /* Build LLM messages */
+    /* Build LLM messages: system, then prior conversation, then the retrieved
+    context and the current question together as the final user turn. */
     let mut messages = vec![ChatMessage {
         role: MessageRole::System,
         content: RAG_SYSTEM_PROMPT.to_string(),
     }];
 
-    /* Document context uses User role to separate from system instructions.
-    This reduces the privilege level of injected content from adversarial documents. */
-    if !context.is_empty() {
-        messages.push(ChatMessage {
-            role: MessageRole::User,
-            content: format!("<document_context>\n{context}\n</document_context>\n\nBased on these documents, answer the following question:"),
-        });
-    }
-
-    /* Add conversation history. Fetch MAX+1 because the just-saved user message
-    is already in the DB but will appear in the user's current turn below. */
+    /* Prior conversation. Fetch MAX+1 because the just-saved user message is in
+    the DB; drop it here so it does not duplicate the current turn added below. */
     let history = conversation_repository::get_recent_messages(
         conn,
         conversation_id,
         MAX_HISTORY_MESSAGES + 1,
     )?;
-    /* Skip the last message (the one we just saved) to avoid duplication */
     let history_without_current = if history
         .last()
         .map(|m| m.role == "user" && m.content == user_message)
@@ -138,6 +129,20 @@ pub fn prepare_rag_context(
             content: msg.content.clone(),
         });
     }
+
+    /* The current question is the final user turn. When retrieval found
+    context, carry it in the same message at User role, so injected document
+    text stays below system-instruction privilege. Without this final turn the
+    model would receive context and history but never the actual question. */
+    let final_turn = if context.is_empty() {
+        user_message.to_string()
+    } else {
+        format!("<document_context>\n{context}\n</document_context>\n\nBased on these documents, answer the following question:\n\n{user_message}")
+    };
+    messages.push(ChatMessage {
+        role: MessageRole::User,
+        content: final_turn,
+    });
 
     let sources: Vec<RetrievedSource> = search_results
         .iter()
