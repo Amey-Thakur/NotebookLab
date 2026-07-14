@@ -2,8 +2,9 @@
  * Name: editor-page.tsx
  * Purpose: Full editor view for a single note: title, Milkdown editor,
  *   live word count, Markdown export, save status, and backlinks.
- * Description: Auto-save runs debounced and flushes on unmount so the last
- *   edit is never dropped. Every successful save writes the fresh
+ * Description: Auto-save runs debounced and flushes on unmount, on Ctrl+S, and
+ *   before the app closes (via the autosave registry), so the last
+ *   edit is never dropped, even on a hard quit. Every successful save writes the fresh
  *   note back into the query cache; without that, the 5-minute
  *   staleTime could resurrect old content and silently overwrite
  *   newer edits. Save failures surface in the status indicator
@@ -25,6 +26,7 @@ import { save } from "@tauri-apps/plugin-dialog";
 import { tauriInvoke } from "@/services/tauri-client";
 import { countWords, debounce } from "@/lib/utils";
 import { formatError } from "@/lib/format-error";
+import { useAutosaveFlush } from "@/lib/autosave";
 import { EDITOR_AUTOSAVE_MS, QUERY_KEYS } from "@/lib/constants";
 
 import type { Note } from "@/types/models";
@@ -81,7 +83,7 @@ function NoteEditor({ note }: { note: Note }) {
   const persistNote = useCallback(
     (noteId: string, input: { content?: string; title?: string }) => {
       setSaveState("saving");
-      tauriInvoke<Note>("update_note", { id: noteId, input })
+      return tauriInvoke<Note>("update_note", { id: noteId, input })
         .then((fresh) => {
           setSaveState("saved");
           setSaveError(null);
@@ -107,8 +109,13 @@ function NoteEditor({ note }: { note: Note }) {
     }, EDITOR_AUTOSAVE_MS);
   }, [persistNote]);
 
+  /* The latest editor content, mirrored so an immediate flush (unmount, Ctrl+S,
+     app close) saves what is on screen rather than the last debounced value. */
+  const latestContentRef = useRef(note.content);
+
   const handleContentChange = useCallback(
     (markdown: string) => {
+      latestContentRef.current = markdown;
       setWordCount(countWords(markdown));
       saveContent(note.id, markdown);
     },
@@ -120,21 +127,37 @@ function NoteEditor({ note }: { note: Note }) {
     persistNote(note.id, { title: title.trim() });
   }, [note.id, note.title, title, persistNote]);
 
-  /* Live refs so the unmount flush and Ctrl+S handler always call the latest
-     savers without re-subscribing. */
-  const saveContentRef = useRef(saveContent);
-  const saveTitleRef = useRef(saveTitle);
-  useEffect(() => {
-    saveContentRef.current = saveContent;
-    saveTitleRef.current = saveTitle;
-  }, [saveContent, saveTitle]);
+  /* Persist any unsaved title and pending content edit right now, awaiting the
+     write so callers (export, the app-close flush) can rely on it landing.
+     Cancels the debounce so there is no duplicate write, and no-ops when nothing
+     has changed since the last save. */
+  const flushNow = useCallback((): void | Promise<unknown> => {
+    saveContent.cancel();
+    const input: { content?: string; title?: string } = {};
+    if (latestContentRef.current !== note.content) input.content = latestContentRef.current;
+    const trimmed = title.trim();
+    if (trimmed && trimmed !== note.title) input.title = trimmed;
+    if (input.content !== undefined || input.title !== undefined) {
+      return persistNote(note.id, input);
+    }
+  }, [saveContent, note.id, note.content, note.title, title, persistNote]);
 
-  /* Flush (not cancel) on unmount: a pending content edit and an unsaved title
-     edit made in the last moments before leaving still reach the database. */
+  /* Live ref so the unmount flush and key handlers always call the latest
+     flushNow without re-subscribing. */
+  const flushNowRef = useRef(flushNow);
+  useEffect(() => {
+    flushNowRef.current = flushNow;
+  });
+
+  /* Save on a hard app close too: a quit can fire mid-debounce, before the
+     unmount flush below would run. */
+  useAutosaveFlush(flushNow);
+
+  /* Flush on unmount: a pending content edit and an unsaved title edit made in
+     the last moments before leaving still reach the database. */
   useEffect(() => {
     return () => {
-      saveContentRef.current.flush();
-      saveTitleRef.current();
+      void flushNowRef.current();
     };
   }, []);
 
@@ -143,8 +166,7 @@ function NoteEditor({ note }: { note: Note }) {
     const handleKeydown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
-        saveContentRef.current.flush();
-        saveTitleRef.current();
+        void flushNowRef.current();
       }
     };
     window.addEventListener("keydown", handleKeydown);
@@ -154,7 +176,7 @@ function NoteEditor({ note }: { note: Note }) {
   const openWikiLink = useCallback(
     (linkTitle: string) => {
       /* Persist any pending edit before leaving, then resolve or create */
-      saveContentRef.current.flush();
+      void flushNowRef.current();
       tauriInvoke<Note>("resolve_wiki_link", {
         notebook_id: note.notebook_id,
         title: linkTitle,
@@ -183,7 +205,7 @@ function NoteEditor({ note }: { note: Note }) {
         });
         if (!filePath) return;
 
-        saveContentRef.current.flush();
+        await flushNowRef.current();
         await tauriInvoke("export_note", { id: note.id, file_path: filePath });
         setExported(true);
         setTimeout(() => setExported(false), 1500);

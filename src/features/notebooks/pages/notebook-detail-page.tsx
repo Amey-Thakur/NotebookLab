@@ -13,11 +13,12 @@
  * Date: 2026-07-12
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
+import { useAutosaveFlush } from "@/lib/autosave";
 import { QUERY_KEYS } from "@/lib/constants";
 import { formatError } from "@/lib/format-error";
 import { useNotebookStore } from "@/stores/notebook-store";
@@ -78,12 +79,36 @@ export function NotebookDetailPage() {
     },
   });
 
-  const saveNotebookName = (value: string) => {
+  const saveNotebookName = (value: string): Promise<unknown> | void => {
     const name = value.trim();
     if (name && name !== notebook?.name) {
-      renameNotebook.mutate(name);
+      return renameNotebook.mutateAsync(name).catch(() => {
+        /* The error surfaces via renameNotebook.isError below; swallow it here so
+           it can never block the app-close flush. */
+      });
     }
   };
+
+  /* The name field is uncontrolled and normally saves on blur, but a route
+     change that unmounts the page without blurring (for example Ctrl+N, which
+     fires even while typing) would drop an in-progress rename. Mirror the note
+     editor: read the live input value from a ref and flush it on unmount and on
+     a hard app close. */
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const saveNameRef = useRef(saveNotebookName);
+  useEffect(() => {
+    saveNameRef.current = saveNotebookName;
+  });
+  const flushName = () => {
+    const el = nameInputRef.current;
+    return el ? saveNameRef.current(el.value) : undefined;
+  };
+  useAutosaveFlush(flushName);
+  useEffect(() => {
+    return () => {
+      void flushName();
+    };
+  }, []);
 
   const importDoc = useImportDocument(id);
   const { isDragging } = useDropImport(id);
@@ -114,9 +139,12 @@ export function NotebookDetailPage() {
           >
             &larr; All Notebooks
           </button>
-          {/* The heading is editable in place; blur or Enter saves the name */}
+          {/* The heading is editable in place; blur or Enter saves the name, and
+              an unmount/app-close flush covers leaving without blurring. Keyed by
+              id (not name) so a rename does not remount and discard a live edit. */}
           <input
-            key={notebook?.name}
+            ref={nameInputRef}
+            key={notebook?.id}
             type="text"
             defaultValue={notebook?.name ?? ""}
             aria-label="Notebook name, edit and press Enter to rename"

@@ -21,6 +21,7 @@ import { Link } from "react-router-dom";
 
 import { ROUTES, EDITOR_AUTOSAVE_MS, QUERY_KEYS } from "@/lib/constants";
 import { debounce } from "@/lib/utils";
+import { useAutosaveFlush } from "@/lib/autosave";
 import { useNotebookStore } from "@/stores/notebook-store";
 
 import { CANVAS_COLORS, type Camera, type CanvasElement, type Tool } from "../types";
@@ -91,6 +92,9 @@ function CanvasEditor({ canvas }: { canvas: api.Canvas }) {
      one, or an edit made within the debounce window looks already-saved and is
      dropped when the pending save is cancelled on the way out. */
   const savedRef = useRef<string>(api.serializeScene(initialScene));
+  /* Holds an uncommitted new text label (from the board) so the exit save can
+     include one that was typed but never confirmed with a blur. */
+  const pendingTextRef = useRef<CanvasElement | null>(null);
 
   /* Mirror the latest values so the stable callbacks below can read them. */
   const presentRef = useRef(history.present);
@@ -147,20 +151,42 @@ function CanvasEditor({ canvas }: { canvas: api.Canvas }) {
     if (saveState === "error") lastSavedRef.current = "";
   }, [saveState]);
 
+  /* Compose and save the current scene right now, awaiting the write. Cancels
+     the debounce, folds in any uncommitted text label, and no-ops when the scene
+     already matches what the backend last confirmed. Used on unmount and by the
+     app-close flush, so an edit made inside the debounce window is never lost. */
+  const flushCanvas = useCallback((): void | Promise<unknown> => {
+    saveScene.cancel();
+    const elements = [...presentRef.current];
+    if (pendingTextRef.current) elements.push(pendingTextRef.current);
+    const scene = api.composeScene(cameraRef.current, JSON.stringify(elements));
+    if (scene === savedRef.current) return;
+    return api
+      .updateCanvas(canvas.id, scene)
+      .then((updated) => {
+        savedRef.current = scene;
+        queryClient.setQueryData([QUERY_KEYS.CANVAS, canvas.notebook_id], updated);
+      })
+      .catch(() => {
+        /* Swallow so a failed exit save cannot block the app from closing. */
+      });
+  }, [saveScene, queryClient, canvas.id, canvas.notebook_id]);
+
+  const flushCanvasRef = useRef(flushCanvas);
+  useEffect(() => {
+    flushCanvasRef.current = flushCanvas;
+  });
+
+  /* Save on a hard app close too (a quit can fire mid-debounce). */
+  useAutosaveFlush(flushCanvas);
+
   /* On the way out, cancel the pending debounce and force a final save if there
-     are unsaved changes, updating the cache so a quick return shows the latest. */
+     are unsaved changes, so nothing typed or drawn in the last moment is lost. */
   useEffect(() => {
     return () => {
-      saveScene.cancel();
-      const scene = api.composeScene(cameraRef.current, JSON.stringify(presentRef.current));
-      if (scene !== savedRef.current) {
-        queryClient.setQueryData([QUERY_KEYS.CANVAS, canvas.notebook_id], (old?: api.Canvas) =>
-          old ? { ...old, scene } : old,
-        );
-        api.updateCanvas(canvas.id, scene).catch(() => {});
-      }
+      void flushCanvasRef.current();
     };
-  }, [saveScene, queryClient, canvas.id, canvas.notebook_id]);
+  }, []);
 
   const commit = useCallback((elements: CanvasElement[]) => {
     dispatch({ type: "commit", elements });
@@ -291,6 +317,7 @@ function CanvasEditor({ canvas }: { canvas: api.Canvas }) {
           onCommit={commit}
           onToolChange={setTool}
           onDropImage={(file, world) => addImageFile(file, world)}
+          pendingTextRef={pendingTextRef}
         />
       </div>
     </div>
