@@ -4,6 +4,19 @@ All notable changes to NotebookLab will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Prompt Studio rebuilt as a real prompt crafter. Describe the job in plain
+  words and it writes the complete, ready-to-run prompt, choosing the right
+  technique for the task: worked examples for classification and extraction,
+  step-by-step reasoning for logic, role and style for creative work, and
+  structured output contracts where they reduce errors. Every result comes with
+  recommended model settings (temperature, top-p, top-k), the variables to fill
+  before use, and short notes on why it is built that way. Unknown specifics
+  become named variables instead of invented facts, so prompts are accurate and
+  reusable. The build-from-parts composer remains, now upgraded by the same
+  crafter.
+
 ## [0.4.0] - 2026-07-13
 
 ### Added

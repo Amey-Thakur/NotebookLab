@@ -3,8 +3,8 @@
 This directory holds the two offline OCR models NotebookLab uses to read text
 from images and scans:
 
-- `text-detection.rten` — finds text regions in an image
-- `text-recognition.rten` — reads the characters in each region
+- `text-detection.rten`: finds text regions in an image
+- `text-recognition.rten`: reads the characters in each region
 
 They are **not committed** (see `.gitignore`); they are fetched and checksum
 verified by `scripts/download-models.cjs`:

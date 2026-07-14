@@ -66,7 +66,7 @@ const SECTIONS: Section[] = [
         <P>
           On a notebook, use Import to bring in files. Supported formats: PDF, Word (<Code>.docx</Code>
           ), plain text, Markdown, and images (<Code>.png</Code>, <Code>.jpg</Code>, <Code>.jpeg</Code>,{" "}
-          <Code>.tiff</Code>, <Code>.webp</Code>, <Code>.bmp</Code>).
+          <Code>.tiff</Code>, <Code>.tif</Code>, <Code>.webp</Code>, <Code>.bmp</Code>).
         </P>
         <List>
           <li>
@@ -193,10 +193,20 @@ const SECTIONS: Section[] = [
     id: "transforms",
     title: "Transforms and Prompt Studio",
     body: (
-      <P>
-        Transforms run a summary, key-point extraction, or your own prompt over a single document. The
-        Prompt Studio helps you refine a prompt before you use it.
-      </P>
+      <>
+        <P>
+          Transforms run a summary, key-point extraction, or your own prompt over a single document.
+        </P>
+        <P>
+          The Prompt Studio writes complete, ready-to-run prompts. Describe the job in plain words and
+          it crafts the whole prompt for you, picking the right technique for the task: worked
+          examples for sorting and extraction, step-by-step reasoning for logic, role and style for
+          creative work. It also recommends the model settings to run it with, and turns any detail it
+          does not know into a <Code>{"{variable}"}</Code> you fill in, so prompts stay accurate
+          instead of inventing facts. Prefer building by hand? Switch to Build it and compose from
+          parts, then upgrade the draft with the same crafter.
+        </P>
+      </>
     ),
   },
   {

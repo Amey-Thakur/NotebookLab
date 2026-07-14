@@ -30,7 +30,7 @@ flowchart LR
         S[Services<br>business logic]
         R[Repositories<br>SQLite access]
         P[Providers<br>LLM abstraction]
-        F[Parsers<br>PDF, TXT, MD]
+        F[Parsers<br>PDF, Word, TXT, MD, image OCR]
     end
 
     DB[(SQLite<br>WAL + FTS5)]

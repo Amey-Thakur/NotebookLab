@@ -13,7 +13,7 @@ clone to merged pull request.
 
 ## Setup
 
-Prerequisites: [Node.js](https://nodejs.org/) 22+ and [Rust](https://rustup.rs/) 1.77+.
+Prerequisites: [Node.js](https://nodejs.org/) 22+ and [Rust](https://rustup.rs/) 1.89+.
 On Linux, install the WebKitGTK stack first:
 
 ```bash
