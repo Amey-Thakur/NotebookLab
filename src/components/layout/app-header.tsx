@@ -59,6 +59,7 @@ export function AppHeader({ sidebarOpen, onToggleSidebar, onOpenPalette }: AppHe
       <div className="flex items-center gap-2">
         <button
           type="button"
+          data-tour="search"
           aria-label={`Open universal search (${PALETTE_HINT})`}
           className="hidden sm:flex px-3 py-1 text-xs font-mono text-text-3 bg-surface-2 border border-border
                      hover:border-border-hover focus-visible:border-accent transition-colors"

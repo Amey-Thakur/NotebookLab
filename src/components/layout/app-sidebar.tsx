@@ -27,6 +27,8 @@ interface NavItem {
   path: string;
   label: string;
   icon: NavIconName;
+  /** Anchor id for the product tour, when this item is a tour stop. */
+  tour?: string;
 }
 
 interface NavGroup {
@@ -42,7 +44,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Library",
     items: [
-      { path: ROUTES.NOTEBOOKS, label: "Notebooks", icon: "notebooks" },
+      { path: ROUTES.NOTEBOOKS, label: "Notebooks", icon: "notebooks", tour: "nav-notebooks" },
       { path: ROUTES.DOCUMENTS, label: "Documents", icon: "documents" },
       { path: ROUTES.SEARCH, label: "Search", icon: "search" },
       { path: ROUTES.GRAPH, label: "Connections", icon: "connections" },
@@ -51,9 +53,9 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Tools",
     items: [
-      { path: ROUTES.CHAT, label: "Chat", icon: "chat" },
+      { path: ROUTES.CHAT, label: "Chat", icon: "chat", tour: "nav-chat" },
       { path: ROUTES.THINKING_PARTNER, label: "Think", icon: "think" },
-      { path: ROUTES.STUDIO, label: "Studio", icon: "studio" },
+      { path: ROUTES.STUDIO, label: "Studio", icon: "studio", tour: "nav-studio" },
       { path: ROUTES.CANVAS, label: "Canvas", icon: "canvas" },
       { path: ROUTES.TRANSFORMS, label: "Transform", icon: "transform" },
       { path: ROUTES.PODCASTS, label: "Audio overview", icon: "audio" },
@@ -112,6 +114,7 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
     <aside
       ref={asideRef}
       id="app-sidebar"
+      data-tour="sidebar"
       className={cn(
         "flex flex-col flex-shrink-0 border-r border-border bg-bg overflow-hidden",
         "transition-all duration-200 ease-out motion-reduce:transition-none",
@@ -140,6 +143,7 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
                   onClick={onClose}
                   title={item.label}
                   aria-label={item.label}
+                  data-tour={item.tour}
                   className={({ isActive }) =>
                     cn(
                       "flex items-center gap-2.5 rounded-sm px-2 py-1.5 text-sm transition-colors",

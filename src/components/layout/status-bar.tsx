@@ -96,7 +96,7 @@ export function StatusBar() {
       aria-label="Application status"
     >
       <div className="flex items-center gap-4 min-w-0">
-        <span className="flex items-center gap-2 shrink-0">
+        <span className="flex items-center gap-2 shrink-0" data-tour="status">
           <span className="relative flex h-2 w-2 items-center justify-center" aria-hidden="true">
             {status.animate && (
               <span

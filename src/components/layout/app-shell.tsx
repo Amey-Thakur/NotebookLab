@@ -33,7 +33,9 @@ import { StatusBar } from "./status-bar";
 import { CommandPalette } from "@/components/shared/command-palette";
 import { ShortcutsSheet } from "@/components/shared/shortcuts-sheet";
 import { WelcomeDialog } from "@/features/welcome/components/welcome-dialog";
+import { ProductTour } from "@/features/welcome/components/product-tour";
 import { useFirstRun } from "@/features/welcome/hooks/use-first-run";
+import { useTourStore, hasSeenTour } from "@/stores/tour-store";
 
 
 interface AppShellProps {
@@ -51,6 +53,9 @@ export function AppShell({ children }: AppShellProps) {
   const setActiveNotebook = useNotebookStore((s) => s.setActiveNotebook);
   const { data: notebooks } = useNotebooks();
   const welcome = useFirstRun();
+  const tourOpen = useTourStore((s) => s.isOpen);
+  const startTour = useTourStore((s) => s.start);
+  const finishTour = useTourStore((s) => s.finish);
 
   /* Timestamp of the last "g" leader press, so a following key completes a
      go-to sequence only if it lands within the window below. */
@@ -158,7 +163,15 @@ export function AppShell({ children }: AppShellProps) {
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       <ShortcutsSheet open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
-      <WelcomeDialog open={welcome.shouldShow} onFinish={welcome.dismiss} />
+      <WelcomeDialog
+        open={welcome.shouldShow}
+        onFinish={() => {
+          welcome.dismiss();
+          /* Roll straight into the "how it works" tour on a fresh install. */
+          if (!hasSeenTour()) startTour();
+        }}
+      />
+      {tourOpen && <ProductTour open onFinish={finishTour} />}
 
       <div className="flex flex-1 overflow-hidden relative">
         {/* Mobile overlay */}
