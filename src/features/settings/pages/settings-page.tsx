@@ -23,10 +23,13 @@ import { QUERY_KEYS, ROUTES } from "@/lib/constants";
 import { SHORTCUTS, GROUP_ORDER } from "@/lib/shortcuts";
 import { KeyCaps } from "@/components/shared/key-caps";
 import { useTheme } from "@/components/providers/theme-context";
+import { useUserStore, MAX_NAME_LENGTH } from "@/stores/user-store";
 
 
 export function SettingsPage() {
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const displayName = useUserStore((s) => s.displayName);
+  const setDisplayName = useUserStore((s) => s.setDisplayName);
   const [copied, setCopied] = useState(false);
 
   const { data: version } = useQuery({
@@ -60,6 +63,26 @@ export function SettingsPage() {
   return (
     <div className="p-8 max-w-2xl mx-auto">
       <h1 className="text-2xl font-display font-bold text-text-1 mb-8">Settings</h1>
+
+      {/* Your name */}
+      <section className="mb-8">
+        <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-4 pb-2 border-b border-border">
+          Your name
+        </h2>
+        <p className="text-sm text-text-3 mb-3">
+          Used to greet you on the home screen. It stays on this machine.
+        </p>
+        <input
+          type="text"
+          value={displayName}
+          onChange={(event) => setDisplayName(event.target.value)}
+          maxLength={MAX_NAME_LENGTH}
+          placeholder="What should we call you?"
+          aria-label="Your name"
+          className="w-full max-w-xs px-3 py-2 text-sm bg-surface border border-border text-text-1
+                     placeholder:text-text-4 outline-none focus:border-accent-dim"
+        />
+      </section>
 
       {/* Appearance */}
       <section className="mb-8">

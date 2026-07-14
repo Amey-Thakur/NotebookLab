@@ -2,10 +2,11 @@
  * Name: welcome-dialog.tsx
  * Purpose: First-launch greeting that orients a new user in a few calm steps.
  * Description: A short, spacious walk-through shown once per install: what the
- *   app is, a look to settle on, the handful of keys that make it fast, and a
- *   way in. It writes nothing except the theme the user picks; finishing or
- *   skipping simply records that the welcome has been seen. Built on the shared
- *   Modal so focus, escape, and reduced-motion behavior come for free.
+ *   app is, a name and look to settle on, the handful of keys that make it
+ *   fast, and a way in. It writes only the name and theme the user picks (both
+ *   editable later in Settings); finishing or skipping records that the welcome
+ *   has been seen. Built on the shared Modal so focus, escape, and
+ *   reduced-motion behavior come for free.
  * Tech Stack: React 19, React Router, Tailwind CSS
  * License: MIT
  * Authors: Amey Thakur (https://github.com/Amey-Thakur)
@@ -22,6 +23,7 @@ import { BrandMark } from "@/components/shared/brand-mark";
 import { ROUTES } from "@/lib/constants";
 import { SHORTCUTS, type Shortcut } from "@/lib/shortcuts";
 import { useTheme } from "@/components/providers/theme-context";
+import { useUserStore, MAX_NAME_LENGTH } from "@/stores/user-store";
 import { cn } from "@/lib/utils";
 
 interface WelcomeDialogProps {
@@ -146,12 +148,32 @@ function WelcomeStep() {
 
 function ThemeStep() {
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const displayName = useUserStore((s) => s.displayName);
+  const setDisplayName = useUserStore((s) => s.setDisplayName);
   return (
     <div className="text-center">
       <h2 className="font-display text-xl font-bold text-text-1 mb-2">Make it yours</h2>
       <p className="text-sm text-text-2 mb-6 max-w-sm mx-auto">
-        Pick a look. You can change it any time from Settings.
+        Tell us your name and pick a look. You can change both any time from Settings.
       </p>
+      <div className="mx-auto mb-6 max-w-xs text-left">
+        <label
+          htmlFor="welcome-name"
+          className="mb-1.5 block font-mono text-2xs uppercase tracking-widest text-text-4"
+        >
+          Your name
+        </label>
+        <input
+          id="welcome-name"
+          type="text"
+          value={displayName}
+          onChange={(event) => setDisplayName(event.target.value)}
+          maxLength={MAX_NAME_LENGTH}
+          placeholder="What should we call you?"
+          className="w-full border border-border bg-surface px-3 py-2 text-sm text-text-1
+                     outline-none placeholder:text-text-4 focus:border-accent-dim"
+        />
+      </div>
       <div className="flex justify-center gap-2" role="group" aria-label="Theme">
         {(["light", "dark", "system"] as const).map((option) => (
           <button
