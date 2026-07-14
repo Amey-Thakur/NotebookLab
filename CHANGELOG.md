@@ -7,10 +7,19 @@ All notable changes to NotebookLab will be documented in this file.
 ### Added
 
 - Guided "how it works" tour. On the first launch, right after the welcome, a
-  short coach-mark tour points out where everything is (the grouped sidebar,
-  Notebooks, Chat, the Studio, universal search, and the activity indicator),
-  with Skip and Back. It ends by opening the Getting Started notebook so you can
-  try things right away, and it replays any time from Settings.
+  coach-mark tour walks through the whole app in twenty short steps: every
+  sidebar destination (Home, Notebooks, Documents, Search, Connections, Chat,
+  Think, the Studio, Canvas, Transform, Audio overview, Prompt Studio, Models,
+  Settings, and Help/About), plus universal search, the activity indicator, and
+  a note that your work autosaves. Models is called out as the first stop, since
+  the AI features need a model. Each step spotlights the real element, with Back,
+  Skip, and arrow-key navigation. It ends by opening the Getting Started notebook
+  so you can try things right away, and it replays any time from Settings.
+- Your work saves itself, everywhere. Notes and the canvas already autosaved as
+  you type and on leaving a page; now the app also flushes any pending edit
+  before it closes, so nothing is lost even on a hard quit. The tool pages
+  (Prompt Studio, Transforms, the Studio, and Audio overview) keep the text you
+  type in a draft, so navigating away or reloading no longer discards it.
 - Set-up guidance. The AI features (Chat, the Studio, Thinking Partner,
   Transforms, Prompt Studio, and Audio overview) now show a calm prompt with a
   one-click link to set up a model when none is loaded, instead of only erroring
@@ -88,6 +97,11 @@ All notable changes to NotebookLab will be documented in this file.
 - Renaming a note now saves the new title if you leave the page immediately, and
   editing a note refreshes the knowledge graph so new links appear without a
   reload.
+- Renaming a notebook no longer loses the new name if you leave the page without
+  clicking away from the field first (for example by pressing Ctrl+N to start a
+  note); the rename is flushed on the way out, matching the note editor.
+- A new text label typed on the canvas is included in the save made on the way
+  out, so it is no longer dropped if you navigate away before confirming it.
 - Closing the command palette returns focus to whatever opened it, so keyboard
   users are not dropped to the top of the page.
 - Regenerating an audio overview during playback stops the old audio instead of
