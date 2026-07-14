@@ -92,14 +92,12 @@ export function ProductTour({ open, onFinish, onOpenSample }: ProductTourProps) 
   const isLast = step === STEPS.length - 1;
 
   const next = useCallback(() => {
-    setStep((s) => {
-      if (s >= STEPS.length - 1) {
-        onFinish();
-        return s;
-      }
-      return s + 1;
-    });
-  }, [onFinish]);
+    if (step >= STEPS.length - 1) {
+      onFinish();
+    } else {
+      setStep((s) => s + 1);
+    }
+  }, [step, onFinish]);
 
   const back = useCallback(() => setStep((s) => Math.max(0, s - 1)), []);
 

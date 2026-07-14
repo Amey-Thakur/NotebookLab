@@ -139,8 +139,10 @@ fn main() {
         },
     )?;
 
-    /* The welcome note links to Research Notes, which did not exist when the
-    welcome note was created. Re-sync so both directions resolve. */
+    /* create() already re-resolves inbound links when the second note appears,
+    so both directions resolve on their own. This explicit re-sync of the
+    welcome note is a harmless belt-and-suspenders and keeps the seeding robust
+    if that behavior ever changes. */
     note_repository::sync_note_links(conn, &welcome.id, &notebook.id, &welcome.content)?;
 
     /* Seed a couple of short sample documents so search, chat, the Studio, and
