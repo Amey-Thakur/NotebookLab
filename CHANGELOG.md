@@ -9,7 +9,14 @@ All notable changes to NotebookLab will be documented in this file.
 - Guided "how it works" tour. On the first launch, right after the welcome, a
   short coach-mark tour points out where everything is (the grouped sidebar,
   Notebooks, Chat, the Studio, universal search, and the activity indicator),
-  with Skip and Back. Replay it any time from Settings.
+  with Skip and Back. It ends by opening the Getting Started notebook so you can
+  try things right away, and it replays any time from Settings.
+- Set-up guidance. The AI features (Chat, the Studio, Thinking Partner,
+  Transforms, Prompt Studio, and Audio overview) now show a calm prompt with a
+  one-click link to set up a model when none is loaded, instead of only erroring
+  when you try to use them.
+- Chat scope. Chat now shows which notebook and how many sources it is answering
+  from, and points you to add one when the notebook has none yet.
 - Sample content on first launch. The Getting Started notebook now ships with
   two short sample documents, already indexed, alongside its notes, so you can
   try search, chat, the Studio, and transforms before importing anything of

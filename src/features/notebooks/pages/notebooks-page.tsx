@@ -52,7 +52,7 @@ export function NotebooksPage() {
   const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
 
   const { data: recentNotes } = useQuery({
-    queryKey: [QUERY_KEYS.NOTES, "recent"],
+    queryKey: [QUERY_KEYS.NOTES, "recent", 3],
     queryFn: () => tauriInvoke<RecentNote[]>("list_recent_notes", { limit: 3 }),
   });
 
