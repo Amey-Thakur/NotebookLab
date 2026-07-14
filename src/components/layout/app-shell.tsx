@@ -57,6 +57,17 @@ export function AppShell({ children }: AppShellProps) {
   const startTour = useTourStore((s) => s.start);
   const finishTour = useTourStore((s) => s.finish);
 
+  /* Land the tour's final "Open Getting Started" on the sample notebook so a new
+     user goes straight from the intro to trying it on real content. */
+  const openSampleNotebook = () => {
+    const sample = notebooks?.find((nb) => nb.name === "Getting Started") ?? notebooks?.[0];
+    if (sample) {
+      setActiveNotebook(sample.id);
+      navigate(`/notebooks/${sample.id}`);
+    }
+    finishTour();
+  };
+
   /* Timestamp of the last "g" leader press, so a following key completes a
      go-to sequence only if it lands within the window below. */
   const goLeaderAt = useRef(0);
@@ -171,7 +182,7 @@ export function AppShell({ children }: AppShellProps) {
           if (!hasSeenTour()) startTour();
         }}
       />
-      {tourOpen && <ProductTour open onFinish={finishTour} />}
+      {tourOpen && <ProductTour open onFinish={finishTour} onOpenSample={openSampleNotebook} />}
 
       <div className="flex flex-1 overflow-hidden relative">
         {/* Mobile overlay */}

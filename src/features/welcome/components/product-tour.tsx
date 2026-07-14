@@ -63,6 +63,12 @@ const STEPS: TourStep[] = [
     body: "This dot shows when a model is loaded and lights up while the app is thinking or importing.",
     placement: "top",
   },
+  {
+    target: "",
+    title: "You're all set",
+    body: "We left a Getting Started notebook with sample notes and documents. Open it and try Chat, the Studio, or a transform. You can replay this tour anytime from Settings.",
+    placement: "bottom",
+  },
 ];
 
 const TOOLTIP_WIDTH = 300;
@@ -72,9 +78,11 @@ const PAD = 6;
 interface ProductTourProps {
   open: boolean;
   onFinish: () => void;
+  /** Called from the final step to open the sample notebook, if provided. */
+  onOpenSample?: () => void;
 }
 
-export function ProductTour({ open, onFinish }: ProductTourProps) {
+export function ProductTour({ open, onFinish, onOpenSample }: ProductTourProps) {
   /* Mounted fresh each time the tour opens (see AppShell), so step starts at 0
      without a reset effect. */
   const [step, setStep] = useState(0);
@@ -206,11 +214,11 @@ export function ProductTour({ open, onFinish }: ProductTourProps) {
             )}
             <button
               type="button"
-              onClick={next}
+              onClick={isLast && onOpenSample ? onOpenSample : next}
               className="bg-primary px-3 py-1.5 font-mono text-xs text-on-primary
                          transition-colors hover:bg-primary-hover"
             >
-              {isLast ? "Done" : "Next"}
+              {isLast ? (onOpenSample ? "Open Getting Started" : "Done") : "Next"}
             </button>
           </div>
         </div>
