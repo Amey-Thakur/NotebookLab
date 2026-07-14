@@ -22,9 +22,10 @@ src-tauri/resources/models/ocr/*.rten
 .env.local
 .env.*.local
 
-# IDE
+# IDE and local tooling
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 

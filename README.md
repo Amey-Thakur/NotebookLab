@@ -74,8 +74,8 @@ help you think. Nothing leaves your computer.
 - **See the shape of things.** A document outline tree and a notes connection
   map make a large body of work easy to navigate.
 
-- **Listen instead.** Turn a notebook into a two-voice podcast, read aloud
-  offline.
+- **Listen instead.** Turn a notebook into a spoken audio overview, read aloud
+  offline, as a discussion, a brief, a debate, or a critique.
 
 - **Bring any model.** One-click local model download with a bundled
   llama.cpp server, or connect Ollama, LM Studio, and other
@@ -122,7 +122,7 @@ then, on first open right-click the app and choose Open, or run
 
 ## Develop
 
-You need [Node.js](https://nodejs.org/) 22+ and [Rust](https://rustup.rs/) 1.77+.
+You need [Node.js](https://nodejs.org/) 22+ and [Rust](https://rustup.rs/) 1.89+.
 On Linux, install the WebKitGTK stack first:
 
 ```bash
@@ -243,7 +243,10 @@ and release, so the promise can be checked, not merely trusted.
 
 ## License and authors
 
-Released under the [MIT License](LICENSE).
+Released under the [MIT License](LICENSE). The app ships with open source
+work by others, credited in [THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md):
+the llama.cpp inference server, the ocrs OCR engine and rten runtime, and the
+Play, Source Serif 4, and JetBrains Mono typefaces.
 
 Built by [Amey Thakur](https://github.com/Amey-Thakur) and
 [Archit Konde](https://github.com/Archit-Konde). Their story, and the

@@ -145,7 +145,7 @@ pub fn run() {
             commands::thinking_commands::generate_socratic_questions,
             commands::studio_commands::generate_studio,
             commands::transform_commands::transform_document,
-            commands::prompt_commands::refine_prompt,
+            commands::prompt_commands::craft_prompt,
             commands::model_commands::list_providers,
             commands::model_commands::register_provider,
             commands::model_commands::set_active_provider,

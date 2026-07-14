@@ -152,8 +152,8 @@ export function PodcastPage() {
   if (!activeNotebookId) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-text-3 p-8">
-        <p className="text-lg font-display font-bold mb-2">Podcasts</p>
-        <p className="text-sm text-text-4 mb-4">Select a notebook first to generate a podcast.</p>
+        <p className="text-lg font-display font-bold mb-2">Audio overview</p>
+        <p className="text-sm text-text-4 mb-4">Select a notebook first to generate an audio overview.</p>
         <Link
           to={ROUTES.NOTEBOOKS}
           className="px-4 py-2 text-sm font-mono border border-border text-text-2 hover:border-accent-dim transition-colors"

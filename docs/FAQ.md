@@ -66,7 +66,7 @@ you find passages that match your meaning, not just your words.
 
 **What file types can I import?**
 PDF, Word (`.docx`), plain text, Markdown, and images (`.png`, `.jpg`, `.jpeg`,
-`.tiff`, `.webp`, `.bmp`), up to 50 MB per file. Images are read with offline
+`.tiff`, `.tif`, `.webp`, `.bmp`), up to 50 MB per file. Images are read with offline
 OCR, so a photo or scan of printed text becomes searchable like any other
 source. OCR works best on clear, printed text; handwriting and very low
 resolution scans read less reliably. Legacy binary Word (`.doc`) is not
