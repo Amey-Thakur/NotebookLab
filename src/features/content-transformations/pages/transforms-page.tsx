@@ -20,6 +20,7 @@ import { tauriInvoke } from "@/services/tauri-client";
 import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
 import { ROUTES } from "@/lib/constants";
 import { formatError } from "@/lib/format-error";
+import { usePersistentDraft } from "@/lib/use-persistent-draft";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { useDocuments } from "@/features/documents/hooks/use-documents";
 
@@ -37,7 +38,8 @@ export function TransformsPage() {
   const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
   const [selectedDoc, setSelectedDoc] = useState<string>("");
   const [transformType, setTransformType] = useState<TransformType>("summarize");
-  const [customPrompt, setCustomPrompt] = useState("");
+  /* Preserve the typed custom instruction across navigation and reload. */
+  const [customPrompt, setCustomPrompt] = usePersistentDraft("notebooklab-draft-transform-custom");
   const [result, setResult] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 

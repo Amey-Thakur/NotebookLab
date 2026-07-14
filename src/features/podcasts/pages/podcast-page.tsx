@@ -24,6 +24,7 @@ import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
 import { ROUTES } from "@/lib/constants";
 import { formatError } from "@/lib/format-error";
 import { useNotebookStore } from "@/stores/notebook-store";
+import { usePersistentDraft } from "@/lib/use-persistent-draft";
 
 
 interface PodcastTurn {
@@ -48,7 +49,8 @@ const FORMATS: { id: AudioFormat; label: string; blurb: string }[] = [
 
 export function PodcastPage() {
   const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
-  const [topic, setTopic] = useState("");
+  /* Preserve the typed topic across navigation and reload. */
+  const [topic, setTopic] = usePersistentDraft("notebooklab-draft-podcast-topic");
   const [format, setFormat] = useState<AudioFormat>("discussion");
   const [script, setScript] = useState<PodcastScript | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
