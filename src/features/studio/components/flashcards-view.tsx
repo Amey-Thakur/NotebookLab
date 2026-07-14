@@ -15,19 +15,21 @@
 
 import { useState } from "react";
 
-import type { Flashcard } from "../api/studio-api";
+import { asArray, type Flashcard } from "../api/studio-api";
 
 export function FlashcardsView({ cards }: { cards: Flashcard[] }) {
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
 
-  if (cards.length === 0) {
+  const items = asArray<Flashcard>(cards);
+  if (items.length === 0) {
     return <p className="text-sm text-text-3">No cards came back. Try a broader focus.</p>;
   }
 
-  const card = cards[index];
+  const current = Math.min(index, items.length - 1);
+  const card = items[current];
   const move = (delta: number) => {
-    setIndex((i) => (i + delta + cards.length) % cards.length);
+    setIndex(() => (current + delta + items.length) % items.length);
     setFlipped(false);
   };
 
@@ -45,7 +47,7 @@ export function FlashcardsView({ cards }: { cards: Flashcard[] }) {
           {flipped ? "Answer" : "Prompt"}
         </span>
         <span aria-live="polite" className="font-body text-lg text-text-1 leading-relaxed">
-          {flipped ? card.back : card.front}
+          {flipped ? card?.back : card?.front}
         </span>
         {!flipped && <span className="mt-5 text-xs text-text-4">Click to flip</span>}
       </button>
@@ -60,7 +62,7 @@ export function FlashcardsView({ cards }: { cards: Flashcard[] }) {
           Previous
         </button>
         <span className="text-xs font-mono text-text-4">
-          {index + 1} of {cards.length}
+          {current + 1} of {items.length}
         </span>
         <button
           type="button"

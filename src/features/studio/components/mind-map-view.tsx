@@ -13,7 +13,7 @@
  * Date: 2026-07-13
  */
 
-import type { MindMap } from "../api/studio-api";
+import { asArray, type MindMap, type MindMapBranch, type MindMapChild } from "../api/studio-api";
 
 const PAD = 16;
 const ROW_H = 46;
@@ -21,13 +21,13 @@ const COL_W = 215;
 const NODE_W = 172;
 const NODE_H = 30;
 
-function clip(label: string, max = 26): string {
-  const text = label.trim();
+function clip(label: unknown, max = 26): string {
+  const text = String(label ?? "").trim();
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
 }
 
 export function MindMapView({ data }: { data: MindMap }) {
-  const branches = data.branches ?? [];
+  const branches = asArray<MindMapBranch>(data.branches);
   if (branches.length === 0) {
     return <p className="text-sm text-text-3">The mind map came back empty. Try a broader focus.</p>;
   }
@@ -35,12 +35,12 @@ export function MindMapView({ data }: { data: MindMap }) {
   /* Give every leaf a row, center each branch on its children, center the root
      on the branches. Row offsets are computed without mutation: each branch
      takes as many rows as it has children (at least one). */
-  const rowCounts = branches.map((branch) => Math.max(branch.children?.length ?? 0, 1));
+  const rowCounts = branches.map((branch) => Math.max(asArray(branch.children).length, 1));
   const rowOffsets = rowCounts.map((_, i) => rowCounts.slice(0, i).reduce((sum, n) => sum + n, 0));
   const rowY = (index: number) => PAD + index * ROW_H + ROW_H / 2;
 
   const laid = branches.map((branch, i) => {
-    const kids = branch.children ?? [];
+    const kids = asArray<MindMapChild>(branch.children);
     const base = rowOffsets[i];
     if (kids.length === 0) {
       return { label: branch.label, cy: rowY(base), children: [] as { label: string; cy: number }[] };

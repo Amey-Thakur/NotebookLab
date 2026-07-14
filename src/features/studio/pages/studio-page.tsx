@@ -24,6 +24,7 @@ import { useNotebookStore } from "@/stores/notebook-store";
 import {
   generateStudio,
   safeJson,
+  asItemArray,
   type StudioFormat,
   type Flashcard,
   type QuizQuestion,
@@ -166,12 +167,16 @@ function StudioResult({ format, text }: { format: StudioFormat; text: string }) 
     return <StudyGuideView markdown={text} />;
   }
   if (format === "flashcards") {
-    const parsed = safeJson<Flashcard[]>(text);
-    return "error" in parsed ? <ResultError message={parsed.error} /> : <FlashcardsView cards={parsed.data} />;
+    const parsed = safeJson<unknown>(text);
+    if ("error" in parsed) return <ResultError message={parsed.error} />;
+    const cards = asItemArray<Flashcard>(parsed.data);
+    return cards ? <FlashcardsView cards={cards} /> : <ResultError message="The result could not be read." />;
   }
   if (format === "quiz") {
-    const parsed = safeJson<QuizQuestion[]>(text);
-    return "error" in parsed ? <ResultError message={parsed.error} /> : <QuizView questions={parsed.data} />;
+    const parsed = safeJson<unknown>(text);
+    if ("error" in parsed) return <ResultError message={parsed.error} />;
+    const questions = asItemArray<QuizQuestion>(parsed.data);
+    return questions ? <QuizView questions={questions} /> : <ResultError message="The result could not be read." />;
   }
   if (format === "timeline") {
     const parsed = safeJson<Timeline>(text);

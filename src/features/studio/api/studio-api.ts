@@ -124,3 +124,26 @@ export function safeJson<T>(text: string): { data: T } | { error: string } {
     return { error: error instanceof Error ? error.message : "The result could not be read." };
   }
 }
+
+/**
+ * Coerce a value that should be an array into one, guarding the views against a
+ * model that returns the wrong shape. A non-array becomes an empty array, which
+ * flows into each view's "came back empty" message instead of crashing render.
+ */
+export function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
+/**
+ * For a format whose top level should be an array: return it if it already is,
+ * otherwise recover a single array-valued property (models often wrap the array
+ * in an object like {"questions": [...]}). Returns null when nothing usable.
+ */
+export function asItemArray<T>(value: unknown): T[] | null {
+  if (Array.isArray(value)) return value as T[];
+  if (value && typeof value === "object") {
+    const nested = Object.values(value).find((v) => Array.isArray(v));
+    if (nested) return nested as T[];
+  }
+  return null;
+}

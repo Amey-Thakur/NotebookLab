@@ -16,17 +16,21 @@
 import { useState } from "react";
 
 import { cn } from "@/lib/utils";
-import type { QuizQuestion } from "../api/studio-api";
+import { asArray, type QuizQuestion } from "../api/studio-api";
 
 export function QuizView({ questions }: { questions: QuizQuestion[] }) {
   const [chosen, setChosen] = useState<Record<number, number>>({});
 
-  if (questions.length === 0) {
+  /* Keep only well-formed questions, so a mistyped item from the model can never
+  crash the quiz; the rest still render. */
+  const items = asArray<QuizQuestion>(questions).filter((q) => q && Array.isArray(q.options));
+
+  if (items.length === 0) {
     return <p className="text-sm text-text-3">No questions came back. Try a broader focus.</p>;
   }
 
   const answeredCount = Object.keys(chosen).length;
-  const score = questions.reduce((sum, q, i) => (chosen[i] === q.answer ? sum + 1 : sum), 0);
+  const score = items.reduce((sum, q, i) => (chosen[i] === q.answer ? sum + 1 : sum), 0);
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
@@ -36,7 +40,7 @@ export function QuizView({ questions }: { questions: QuizQuestion[] }) {
         </p>
       )}
 
-      {questions.map((q, i) => {
+      {items.map((q, i) => {
         const pick = chosen[i];
         const isAnswered = pick !== undefined;
         return (
@@ -80,9 +84,9 @@ export function QuizView({ questions }: { questions: QuizQuestion[] }) {
         );
       })}
 
-      {answeredCount === questions.length && (
+      {answeredCount === items.length && (
         <p className="text-sm font-display font-bold text-text-1">
-          Final score: {score} of {questions.length}.
+          Final score: {score} of {items.length}.
         </p>
       )}
     </div>
