@@ -12,7 +12,7 @@
  * Date: 2026-07-13
  */
 
-import { asArray, type DataTable } from "../api/studio-api";
+import { asArray, asText, type DataTable } from "../api/studio-api";
 
 export function DataTableView({ data }: { data: DataTable }) {
   const columns = asArray<string>(data.columns);
@@ -23,7 +23,7 @@ export function DataTableView({ data }: { data: DataTable }) {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h2 className="mb-4 font-display text-lg font-bold text-text-1">{data.title}</h2>
+      <h2 className="mb-4 font-display text-lg font-bold text-text-1">{asText(data.title)}</h2>
       <div className="overflow-x-auto border border-border">
         <table className="w-full border-collapse text-sm">
           <thead>
@@ -33,7 +33,7 @@ export function DataTableView({ data }: { data: DataTable }) {
                   key={i}
                   className="border-b border-border px-3 py-2 text-left font-display font-semibold text-text-1"
                 >
-                  {col}
+                  {asText(col)}
                 </th>
               ))}
             </tr>
@@ -48,7 +48,7 @@ export function DataTableView({ data }: { data: DataTable }) {
                       key={c}
                       className="border-b border-border px-3 py-2 align-top font-body text-text-2"
                     >
-                      {cells[c] ?? ""}
+                      {asText(cells[c])}
                     </td>
                   ))}
                 </tr>

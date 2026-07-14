@@ -16,7 +16,7 @@
 import { useState } from "react";
 
 import { cn } from "@/lib/utils";
-import { asArray, type QuizQuestion } from "../api/studio-api";
+import { asArray, asText, type QuizQuestion } from "../api/studio-api";
 
 export function QuizView({ questions }: { questions: QuizQuestion[] }) {
   const [chosen, setChosen] = useState<Record<number, number>>({});
@@ -46,7 +46,7 @@ export function QuizView({ questions }: { questions: QuizQuestion[] }) {
         return (
           <div key={i}>
             <p className="text-sm font-medium text-text-1 mb-3">
-              {i + 1}. {q.question}
+              {i + 1}. {asText(q.question)}
             </p>
             <div className="space-y-2" role="group" aria-label={`Question ${i + 1} options`}>
               {q.options.map((option, o) => {
@@ -67,7 +67,7 @@ export function QuizView({ questions }: { questions: QuizQuestion[] }) {
                       isAnswered && !isCorrect && !isPicked && "border-border text-text-4",
                     )}
                   >
-                    {option}
+                    {asText(option)}
                     {isAnswered && isCorrect && <span className="float-right text-accent">Correct</span>}
                     {isAnswered && isPicked && !isCorrect && <span className="float-right text-error">Your pick</span>}
                   </button>
@@ -77,7 +77,7 @@ export function QuizView({ questions }: { questions: QuizQuestion[] }) {
             {isAnswered && (
               <p className="mt-3 text-xs text-text-3 leading-relaxed">
                 {pick === q.answer ? "Right. " : "Not quite. "}
-                {q.explanation}
+                {asText(q.explanation)}
               </p>
             )}
           </div>

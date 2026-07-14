@@ -15,7 +15,7 @@
 
 import { useState } from "react";
 
-import { asArray, type Flashcard } from "../api/studio-api";
+import { asArray, asText, type Flashcard } from "../api/studio-api";
 
 export function FlashcardsView({ cards }: { cards: Flashcard[] }) {
   const [index, setIndex] = useState(0);
@@ -47,7 +47,7 @@ export function FlashcardsView({ cards }: { cards: Flashcard[] }) {
           {flipped ? "Answer" : "Prompt"}
         </span>
         <span aria-live="polite" className="font-body text-lg text-text-1 leading-relaxed">
-          {flipped ? card?.back : card?.front}
+          {flipped ? asText(card?.back) : asText(card?.front)}
         </span>
         {!flipped && <span className="mt-5 text-xs text-text-4">Click to flip</span>}
       </button>

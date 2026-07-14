@@ -14,7 +14,7 @@
 
 import { useState } from "react";
 
-import { asArray, type SlideDeck, type Slide } from "../api/studio-api";
+import { asArray, asText, type SlideDeck, type Slide } from "../api/studio-api";
 
 export function SlideDeckView({ data }: { data: SlideDeck }) {
   const slides = asArray<Slide>(data.slides).filter((s) => s && typeof s === "object");
@@ -31,13 +31,13 @@ export function SlideDeckView({ data }: { data: SlideDeck }) {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h2 className="mb-4 font-display text-lg font-bold text-text-1">{data.title}</h2>
+      <h2 className="mb-4 font-display text-lg font-bold text-text-1">{asText(data.title)}</h2>
 
       <div className="flex aspect-video flex-col overflow-y-auto border border-border bg-surface p-8">
-        <h3 className="mb-4 font-display text-xl font-bold text-text-1">{slide.title}</h3>
+        <h3 className="mb-4 font-display text-xl font-bold text-text-1">{asText(slide.title)}</h3>
         <ul className="list-disc space-y-2 pl-5 font-body text-text-2">
-          {asArray<string>(slide.bullets).map((bullet, i) => (
-            <li key={i}>{bullet}</li>
+          {asArray<unknown>(slide.bullets).map((bullet, i) => (
+            <li key={i}>{asText(bullet)}</li>
           ))}
         </ul>
       </div>
