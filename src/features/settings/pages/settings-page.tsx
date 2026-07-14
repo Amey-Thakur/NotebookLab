@@ -24,12 +24,14 @@ import { SHORTCUTS, GROUP_ORDER } from "@/lib/shortcuts";
 import { KeyCaps } from "@/components/shared/key-caps";
 import { useTheme } from "@/components/providers/theme-context";
 import { useUserStore, MAX_NAME_LENGTH } from "@/stores/user-store";
+import { useTourStore } from "@/stores/tour-store";
 
 
 export function SettingsPage() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const displayName = useUserStore((s) => s.displayName);
   const setDisplayName = useUserStore((s) => s.setDisplayName);
+  const startTour = useTourStore((s) => s.start);
   const [copied, setCopied] = useState(false);
 
   const { data: version } = useQuery({
@@ -117,14 +119,24 @@ export function SettingsPage() {
           Documentation
         </h2>
         <p className="text-sm text-text-3 mb-3">
-          A full guide to every feature lives inside the app, so it works offline.
+          A full guide to every feature lives inside the app, so it works offline. New here? Replay
+          the quick tour that points out where everything is.
         </p>
-        <Link
-          to={ROUTES.HELP}
-          className="inline-block px-4 py-2 text-sm font-mono border border-border text-text-2 hover:border-accent-dim transition-colors"
-        >
-          Open the guide
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            to={ROUTES.HELP}
+            className="inline-block px-4 py-2 text-sm font-mono border border-border text-text-2 hover:border-accent-dim transition-colors"
+          >
+            Open the guide
+          </Link>
+          <button
+            type="button"
+            onClick={startTour}
+            className="inline-block px-4 py-2 text-sm font-mono border border-border text-text-2 hover:border-accent-dim transition-colors"
+          >
+            Replay the tour
+          </button>
+        </div>
       </section>
 
       {/* About */}
