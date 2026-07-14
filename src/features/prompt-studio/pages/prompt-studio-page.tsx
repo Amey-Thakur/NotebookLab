@@ -19,10 +19,11 @@
  * Date: 2026-07-13
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 
 import { formatError } from "@/lib/format-error";
+import { usePersistentDraft } from "@/lib/use-persistent-draft";
 import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
 import {
   craftPrompt,
@@ -81,12 +82,36 @@ function compose(parts: PromptParts): string {
 
 type StudioMode = "describe" | "compose";
 
+const PARTS_DRAFT_KEY = "notebooklab-draft-prompt-parts";
+
 export function PromptStudioPage() {
   const [mode, setMode] = useState<StudioMode>("describe");
-  const [describe, setDescribe] = useState("");
-  const [parts, setParts] = useState<PromptParts>(EMPTY);
+  /* The typed input is preserved across navigation and reload, so a described
+     job or half-built prompt is never lost by leaving the page. */
+  const [describe, setDescribe] = usePersistentDraft("notebooklab-draft-prompt-describe");
+  const [parts, setParts] = useState<PromptParts>(() => {
+    try {
+      const raw = localStorage.getItem(PARTS_DRAFT_KEY);
+      if (raw) return { ...EMPTY, ...(JSON.parse(raw) as Partial<PromptParts>) };
+    } catch {
+      /* Unreadable draft: fall back to empty. */
+    }
+    return EMPTY;
+  });
   const [result, setResult] = useState<{ text: string } | null>(null);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (Object.values(parts).some((v) => v.trim())) {
+        localStorage.setItem(PARTS_DRAFT_KEY, JSON.stringify(parts));
+      } else {
+        localStorage.removeItem(PARTS_DRAFT_KEY);
+      }
+    } catch {
+      /* Storage unavailable: the draft simply is not persisted. */
+    }
+  }, [parts]);
 
   const composed = useMemo(() => compose(parts), [parts]);
   const crafted = useMemo(() => (result ? parseCrafted(result.text) : null), [result]);
