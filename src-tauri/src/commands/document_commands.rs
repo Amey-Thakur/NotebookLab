@@ -72,7 +72,15 @@ pub async fn import_document(
             match ingestion_service::parse_and_chunk(&prepared.doc_id, &canonical, ocr) {
                 Ok(chunks) => {
                     let conn = state.conn()?;
-                    ingestion_service::finalize_ingest(&conn, &prepared.doc_id, chunks)?;
+                    /* A store failure must flip the doc to Error too, or it is
+                    stuck in Processing forever and the hash dedup then blocks
+                    re-importing the same file. */
+                    if let Err(e) =
+                        ingestion_service::finalize_ingest(&conn, &prepared.doc_id, chunks)
+                    {
+                        ingestion_service::mark_ingest_error(&conn, &prepared.doc_id);
+                        return Err(e);
+                    }
                 }
                 Err(e) => {
                     if let Ok(conn) = state.conn() {

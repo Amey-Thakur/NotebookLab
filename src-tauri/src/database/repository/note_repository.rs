@@ -73,6 +73,8 @@ pub fn update(conn: &Connection, id: &str, input: UpdateNote) -> AppResult<Note>
     let existing = get_by_id(conn, id)?;
     let now = chrono::Utc::now().to_rfc3339();
 
+    let old_title = existing.title.clone();
+    let notebook_id = existing.notebook_id.clone();
     let title = input.title.unwrap_or(existing.title);
     let content = input.content.unwrap_or(existing.content);
 
@@ -81,9 +83,38 @@ pub fn update(conn: &Connection, id: &str, input: UpdateNote) -> AppResult<Note>
         params![title, content, now, id],
     )?;
 
-    sync_note_links(conn, id, &existing.notebook_id, &content)?;
+    sync_note_links(conn, id, &notebook_id, &content)?;
+
+    /* On rename, inbound backlinks must be re-resolved: notes that already
+    [[link]] the new title now resolve to this note, and notes that linked the
+    old title must drop their now-stale link rows. */
+    if !title.eq_ignore_ascii_case(&old_title) {
+        resync_notes_linking_to(conn, &notebook_id, id)?;
+        resolve_inbound_links(conn, &notebook_id, id, &title)?;
+    }
 
     get_by_id(conn, id)
+}
+
+/// Re-derive the links of every note that currently points at `target_id`, so
+/// rows that no longer match (for example after the target was renamed) are
+/// dropped and any newly-matching ones are created.
+fn resync_notes_linking_to(conn: &Connection, notebook_id: &str, target_id: &str) -> AppResult<()> {
+    let mut stmt = conn.prepare(
+        "SELECT DISTINCT source_id FROM links WHERE target_id = ?1 AND source_type = 'note'",
+    )?;
+    let source_ids: Vec<String> = stmt
+        .query_map(params![target_id], |row| row.get::<_, String>(0))?
+        .collect::<Result<Vec<_>, _>>()?;
+    drop(stmt);
+
+    for source_id in source_ids {
+        if let Ok(note) = get_by_id(conn, &source_id) {
+            sync_note_links(conn, &source_id, notebook_id, &note.content)?;
+        }
+    }
+
+    Ok(())
 }
 
 pub fn delete(conn: &Connection, id: &str) -> AppResult<()> {

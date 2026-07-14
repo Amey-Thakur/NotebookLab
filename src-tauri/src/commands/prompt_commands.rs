@@ -39,7 +39,7 @@ pub async fn craft_prompt(app: tauri::AppHandle, input: String, mode: String) ->
             "Describe the job or write a draft first".into(),
         ));
     }
-    if input.len() > 20_000 {
+    if input.chars().count() > 20_000 {
         return Err(AppError::InvalidInput(
             "Input too long (max 20,000 characters)".into(),
         ));

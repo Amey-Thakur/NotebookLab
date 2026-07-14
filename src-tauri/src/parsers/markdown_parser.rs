@@ -36,7 +36,11 @@ impl DocumentParser for MarkdownParser {
             )));
         }
 
-        let raw = std::fs::read_to_string(file_path)?;
+        /* Decode through the shared byte-order-mark aware decoder so a
+        Windows-authored UTF-8-BOM or UTF-16 .md file behaves like the same
+        content saved as .txt, rather than keeping a stray BOM (which breaks
+        frontmatter and heading detection) or failing to read outright. */
+        let raw = super::plaintext_parser::decode_text(std::fs::read(file_path)?);
         let content = strip_frontmatter(&raw);
         let headings = extract_headings(&content);
 

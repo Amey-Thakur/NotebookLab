@@ -48,7 +48,7 @@ pub async fn send_chat_message(
         return Err(AppError::InvalidInput("Message cannot be empty".into()));
     }
 
-    if message.len() > 50_000 {
+    if message.chars().count() > 50_000 {
         return Err(AppError::InvalidInput(
             "Message too long (max 50,000 characters)".into(),
         ));
