@@ -14,6 +14,7 @@
  * Date: 2026-07-13
  */
 
+import { useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -23,13 +24,46 @@ import { BrandMark } from "@/components/shared/brand-mark";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { useUserStore } from "@/stores/user-store";
 import { useNotebooks } from "@/features/notebooks/hooks/use-notebooks";
-import type { Note, RecentNote } from "@/types/models";
+import type { Note, RecentNote, RecentDocument } from "@/types/models";
 
 function greeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
   if (hour < 18) return "Good afternoon";
   return "Good evening";
+}
+
+type RecentItem = {
+  kind: "note" | "document";
+  id: string;
+  title: string;
+  notebookId: string;
+  notebookName: string;
+  when: string;
+  fileType?: string;
+};
+
+function relativeTime(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "";
+  const min = Math.round((Date.now() - then) / 60000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.round(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const day = Math.round(hr / 24);
+  if (day === 1) return "yesterday";
+  if (day < 7) return `${day}d ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
+function fileTypeLabel(fileType: string): string {
+  const t = fileType.toLowerCase();
+  if (t === "pdf") return "PDF";
+  if (t === "docx" || t === "doc") return "Word";
+  if (["png", "jpg", "jpeg", "tiff", "tif", "webp", "bmp"].includes(t)) return "Image";
+  if (t === "md" || t === "markdown") return "Markdown";
+  return "Text";
 }
 
 export function HomePage() {
@@ -42,7 +76,11 @@ export function HomePage() {
   const { data: notebooks } = useNotebooks();
   const { data: recentNotes } = useQuery({
     queryKey: [QUERY_KEYS.NOTES, "recent"],
-    queryFn: () => tauriInvoke<RecentNote[]>("list_recent_notes", { limit: 4 }),
+    queryFn: () => tauriInvoke<RecentNote[]>("list_recent_notes", { limit: 6 }),
+  });
+  const { data: recentDocuments } = useQuery({
+    queryKey: [QUERY_KEYS.DOCUMENTS, "recent"],
+    queryFn: () => tauriInvoke<RecentDocument[]>("list_recent_documents", { limit: 6 }),
   });
   const { data: chunkCount } = useQuery({
     queryKey: [QUERY_KEYS.CHUNK_COUNT],
@@ -69,18 +107,46 @@ export function HomePage() {
     { label: "Search everything", hint: "Notes and documents", onClick: () => navigate(ROUTES.SEARCH), icon: <IconSearch /> },
   ];
 
-  const openRecent = (note: RecentNote) => {
-    setActiveNotebook(note.notebook_id);
-    navigate(`/editor/${note.id}`);
-  };
-
   const openNotebook = (id: string) => {
     setActiveNotebook(id);
     navigate(`/notebooks/${id}`);
   };
 
+  /* Unify recent notes and documents into one "jump back in" list, newest
+     first. A note opens in the editor; a document opens its notebook, where it
+     can be read, searched, and chatted with. */
+  const recentItems = useMemo<RecentItem[]>(() => {
+    const notes: RecentItem[] = (recentNotes ?? []).map((n) => ({
+      kind: "note",
+      id: n.id,
+      title: n.title || "Untitled note",
+      notebookId: n.notebook_id,
+      notebookName: n.notebook_name,
+      when: n.updated_at,
+    }));
+    const docs: RecentItem[] = (recentDocuments ?? []).map((d) => ({
+      kind: "document",
+      id: d.id,
+      title: d.title,
+      notebookId: d.notebook_id,
+      notebookName: d.notebook_name,
+      when: d.created_at,
+      fileType: d.file_type,
+    }));
+    return [...notes, ...docs].sort((a, b) => (a.when < b.when ? 1 : -1)).slice(0, 6);
+  }, [recentNotes, recentDocuments]);
+
+  const openItem = (item: RecentItem) => {
+    setActiveNotebook(item.notebookId);
+    if (item.kind === "note") {
+      navigate(`/editor/${item.id}`);
+    } else {
+      navigate(`/notebooks/${item.notebookId}`);
+    }
+  };
+
   const hasNotebooks = (notebooks?.length ?? 0) > 0;
-  const hasRecents = (recentNotes?.length ?? 0) > 0;
+  const hasRecents = recentItems.length > 0;
   const isEmpty = notebooks !== undefined && !hasNotebooks && !hasRecents;
 
   return (
@@ -150,25 +216,31 @@ export function HomePage() {
         </section>
       )}
 
-      {/* Pick up where you left off */}
+      {/* Jump back in: recent notes and documents, newest first */}
       {hasRecents && (
         <section className="mb-14">
           <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-4">
-            Pick up where you left off
+            Jump back in
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {recentNotes!.map((note) => (
+            {recentItems.map((item) => (
               <button
-                key={note.id}
+                key={`${item.kind}-${item.id}`}
                 type="button"
-                onClick={() => openRecent(note)}
-                className="text-left p-4 border border-border bg-surface hover:border-accent-dim
-                           focus-visible:border-accent outline-none transition-colors"
+                onClick={() => openItem(item)}
+                className="flex items-start gap-3 text-left p-4 border border-border bg-surface
+                           hover:border-accent-dim focus-visible:border-accent outline-none transition-colors"
               >
-                <p className="text-sm font-medium text-text-1 truncate">{note.title}</p>
-                <p className="text-2xs font-mono text-text-4 mt-1 truncate">
-                  {note.notebook_name} &middot; {new Date(note.updated_at).toLocaleDateString()}
-                </p>
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center border border-border text-accent">
+                  {item.kind === "note" ? <IconNote /> : <IconDoc />}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium text-text-1 truncate">{item.title}</span>
+                  <span className="mt-1 block text-2xs font-mono text-text-4 truncate">
+                    {item.kind === "document" ? `${fileTypeLabel(item.fileType ?? "")} · ` : ""}
+                    {item.notebookName} &middot; {relativeTime(item.when)}
+                  </span>
+                </span>
               </button>
             ))}
           </div>
@@ -253,6 +325,23 @@ function IconSearch() {
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <circle cx="11" cy="11" r="7" />
       <path d="M21 21l-4.3-4.3" />
+    </svg>
+  );
+}
+function IconNote() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6 3h9l3 3v15H6z" />
+      <path d="M9 8h6M9 12h6M9 16h4" />
+    </svg>
+  );
+}
+function IconDoc() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M7 2h7l4 4v16H7z" />
+      <path d="M14 2v4h4" />
+      <path d="M10 13h5M10 17h3" />
     </svg>
   );
 }

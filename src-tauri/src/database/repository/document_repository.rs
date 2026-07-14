@@ -56,6 +56,37 @@ pub fn list_by_notebook(conn: &Connection, notebook_id: &str) -> AppResult<Vec<D
     Ok(docs)
 }
 
+/// A recently added document joined with its notebook name, for the home
+/// screen's "jump back in" section.
+#[derive(serde::Serialize)]
+pub struct RecentDocument {
+    #[serde(flatten)]
+    pub document: Document,
+    pub notebook_name: String,
+}
+
+/// The most recently added documents across every notebook.
+pub fn list_recent(conn: &Connection, limit: usize) -> AppResult<Vec<RecentDocument>> {
+    let mut stmt = conn.prepare(
+        "SELECT d.id, d.notebook_id, d.title, d.file_path, d.file_type, d.file_hash, d.file_size, d.status, d.created_at, d.updated_at, nb.name
+         FROM documents d
+         INNER JOIN notebooks nb ON d.notebook_id = nb.id
+         ORDER BY d.created_at DESC
+         LIMIT ?1",
+    )?;
+
+    let docs = stmt
+        .query_map(params![limit as i64], |row| {
+            Ok(RecentDocument {
+                document: Document::from_row(row)?,
+                notebook_name: row.get(10)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(docs)
+}
+
 pub fn update_status(conn: &Connection, id: &str, status: DocumentStatus) -> AppResult<()> {
     let now = chrono::Utc::now().to_rfc3339();
 
