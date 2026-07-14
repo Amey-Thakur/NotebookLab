@@ -60,7 +60,13 @@ pub fn start_api_server(db_path: PathBuf, api_token: String) {
             let path = request.url().split('?').next().unwrap_or("/");
             if path != "/api/health" {
                 let auth_ok = request.headers().iter().any(|h| {
-                    h.field.as_str() == "Authorization"
+                    /* HTTP header names are case-insensitive (RFC 7230), and
+                    HTTP/2 and the fetch API send them lowercased, so match the
+                    field name case-insensitively rather than exactly. */
+                    h.field
+                        .as_str()
+                        .as_str()
+                        .eq_ignore_ascii_case("authorization")
                         && constant_time_eq(h.value.as_str().as_bytes(), expected_auth.as_bytes())
                 });
                 if !auth_ok {

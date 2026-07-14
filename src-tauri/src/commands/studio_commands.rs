@@ -1,7 +1,8 @@
 /*
  * Name: studio_commands.rs
  * Purpose: Tauri commands for the Studio, which turns a notebook's sources into
- *   study aids: a study guide, flashcards, a quiz, and a mind map.
+ *   study aids and write-ups: a study guide, flashcards, a quiz, a mind map, a
+ *   timeline, a slide deck, a data table, a briefing doc, and a blog post.
  * Description: One async command grounds every format in the notebook's own
  *   documents, so nothing is invented. Work runs on a blocking worker thread
  *   and the database lock is released before the LLM call, matching the rest
@@ -35,7 +36,8 @@ const BLOG_POST_PROMPT: &str = include_str!("../../resources/prompts/studio-blog
 
 /// Generate one Studio format grounded in a notebook's sources.
 ///
-/// `format` is one of: study_guide, flashcards, quiz, mind_map.
+/// `format` is one of: study_guide, flashcards, quiz, mind_map, timeline,
+/// slide_deck, data_table, briefing, blog_post.
 /// `focus` is optional; empty means cover the whole notebook.
 #[tauri::command(rename_all = "snake_case")]
 pub async fn generate_studio(
