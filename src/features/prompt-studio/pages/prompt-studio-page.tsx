@@ -23,6 +23,7 @@ import { useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 
 import { formatError } from "@/lib/format-error";
+import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
 import {
   craftPrompt,
   parseCrafted,
@@ -127,6 +128,8 @@ export function PromptStudioPage() {
       <p className="text-sm text-text-3 mb-6">
         Describe the job and get a complete, ready-to-run prompt, or build one from parts.
       </p>
+
+      <ModelRequiredNotice action="Prompt Studio" />
 
       {/* Mode picker */}
       <div className="flex gap-2 mb-6" role="group" aria-label="Prompt Studio mode">

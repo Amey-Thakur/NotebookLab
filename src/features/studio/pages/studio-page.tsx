@@ -21,6 +21,7 @@ import { useMutation } from "@tanstack/react-query";
 import { ROUTES } from "@/lib/constants";
 import { formatError } from "@/lib/format-error";
 import { useNotebookStore } from "@/stores/notebook-store";
+import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
 import {
   generateStudio,
   safeJson,
@@ -91,6 +92,8 @@ export function StudioPage() {
       <p className="text-sm text-text-3 mb-8">
         Turn this notebook's sources into study aids. Everything is drawn from your own documents.
       </p>
+
+      <ModelRequiredNotice action="The Studio" />
 
       {/* Format picker */}
       <div className="flex flex-wrap gap-2 mb-4" role="group" aria-label="Studio format">
