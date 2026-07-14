@@ -12,7 +12,7 @@
  * Date: 2026-07-13
  */
 
-import { asArray, type Timeline, type TimelineEvent } from "../api/studio-api";
+import { asArray, asText, type Timeline, type TimelineEvent } from "../api/studio-api";
 
 export function TimelineView({ data }: { data: Timeline }) {
   const events = asArray<TimelineEvent>(data.events).filter((e) => e && typeof e === "object");
@@ -22,7 +22,7 @@ export function TimelineView({ data }: { data: Timeline }) {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h2 className="mb-6 font-display text-lg font-bold text-text-1">{data.title}</h2>
+      <h2 className="mb-6 font-display text-lg font-bold text-text-1">{asText(data.title)}</h2>
       <ol className="relative space-y-6 border-l border-border pl-6">
         {events.map((event, i) => (
           <li key={i} className="relative">
@@ -30,9 +30,15 @@ export function TimelineView({ data }: { data: Timeline }) {
               className="absolute -left-[27px] top-1 h-3 w-3 rounded-full bg-primary ring-4 ring-bg"
               aria-hidden
             />
-            <p className="font-mono text-xs uppercase tracking-wider text-accent">{event.date}</p>
-            <h3 className="mt-0.5 font-display text-sm font-bold text-text-1">{event.title}</h3>
-            <p className="mt-1 font-body text-sm leading-relaxed text-text-2">{event.description}</p>
+            <p className="font-mono text-xs uppercase tracking-wider text-accent">
+              {asText(event.date)}
+            </p>
+            <h3 className="mt-0.5 font-display text-sm font-bold text-text-1">
+              {asText(event.title)}
+            </h3>
+            <p className="mt-1 font-body text-sm leading-relaxed text-text-2">
+              {asText(event.description)}
+            </p>
           </li>
         ))}
       </ol>

@@ -135,6 +135,18 @@ export function asArray<T>(value: unknown): T[] {
 }
 
 /**
+ * Coerce a model field that should be text into a safe string. If the model
+ * returns an object or array where a string was expected, this yields "" rather
+ * than letting React throw "Objects are not valid as a React child" and take
+ * down the whole app.
+ */
+export function asText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return "";
+}
+
+/**
  * For a format whose top level should be an array: return it if it already is,
  * otherwise recover a single array-valued property (models often wrap the array
  * in an object like {"questions": [...]}). Returns null when nothing usable.
