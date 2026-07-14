@@ -86,6 +86,11 @@ function CanvasEditor({ canvas }: { canvas: api.Canvas }) {
 
   const mainRef = useRef<HTMLDivElement>(null);
   const lastSavedRef = useRef<string>(api.serializeScene(initialScene));
+  /* The scene actually confirmed saved by the backend. lastSavedRef is advanced
+     when a save is *scheduled*, so the unmount flush must compare against this
+     one, or an edit made within the debounce window looks already-saved and is
+     dropped when the pending save is cancelled on the way out. */
+  const savedRef = useRef<string>(api.serializeScene(initialScene));
 
   /* Mirror the latest values so the stable callbacks below can read them. */
   const presentRef = useRef(history.present);
@@ -110,6 +115,7 @@ function CanvasEditor({ canvas }: { canvas: api.Canvas }) {
         .updateCanvas(canvas.id, scene)
         .then((updated) => {
           setSaveState("saved");
+          savedRef.current = scene;
           /* Mirror the saved scene into the query cache so a quick return does
           not restore a stale copy over what was just written. */
           queryClient.setQueryData([QUERY_KEYS.CANVAS, canvas.notebook_id], updated);
@@ -119,17 +125,21 @@ function CanvasEditor({ canvas }: { canvas: api.Canvas }) {
     [queryClient, canvas.id, canvas.notebook_id],
   );
 
+  /* The debounced wrapper takes the persist function as a call-time argument
+     rather than closing over it, so this render-phase useMemo never captures a
+     ref-accessing closure (persistScene writes savedRef). It is only ever
+     invoked from effects below, where reading refs is safe. */
   const saveScene = useMemo(
-    () => debounce((scene: string) => persistScene(scene), EDITOR_AUTOSAVE_MS),
-    [persistScene],
+    () => debounce((scene: string, persist: (s: string) => void) => persist(scene), EDITOR_AUTOSAVE_MS),
+    [],
   );
 
   /* Autosave whenever elements or camera change, skipping the seeded state. */
   useEffect(() => {
     if (sceneString === lastSavedRef.current) return;
     lastSavedRef.current = sceneString;
-    saveScene(sceneString);
-  }, [sceneString, saveScene]);
+    saveScene(sceneString, persistScene);
+  }, [sceneString, saveScene, persistScene]);
 
   /* A failed save clears the baseline so the next change, or the save on the way
      out, retries instead of treating the unsaved scene as already saved. */
@@ -143,7 +153,7 @@ function CanvasEditor({ canvas }: { canvas: api.Canvas }) {
     return () => {
       saveScene.cancel();
       const scene = api.composeScene(cameraRef.current, JSON.stringify(presentRef.current));
-      if (scene !== lastSavedRef.current) {
+      if (scene !== savedRef.current) {
         queryClient.setQueryData([QUERY_KEYS.CANVAS, canvas.notebook_id], (old?: api.Canvas) =>
           old ? { ...old, scene } : old,
         );

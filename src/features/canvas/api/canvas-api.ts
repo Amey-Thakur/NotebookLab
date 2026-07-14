@@ -62,7 +62,15 @@ function isValidElement(element: unknown): element is CanvasElement {
   if (typeof e.id !== "string") return false;
   switch (e.type) {
     case "stroke":
-      return Array.isArray(e.points) && e.points.length > 0;
+      /* Each point is an [x, y, pressure?] tuple; require finite coordinates so
+      a malformed point cannot produce a NaN path and crash rendering on open. */
+      return (
+        Array.isArray(e.points) &&
+        e.points.length > 0 &&
+        e.points.every(
+          (p) => Array.isArray(p) && p.length >= 2 && isFiniteNumber(p[0]) && isFiniteNumber(p[1]),
+        )
+      );
     case "rectangle":
     case "ellipse":
       return isFiniteNumber(e.x) && isFiniteNumber(e.y) && isFiniteNumber(e.w) && isFiniteNumber(e.h);
