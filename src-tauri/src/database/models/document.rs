@@ -5,7 +5,8 @@
  *   notebook, along with its processing status. The status field
  *   tracks the ingestion pipeline state. Documents transition:
  *   pending -> processing -> processed | error. The file_hash
- *   column enables deduplication detection across notebooks.
+ *   column enables duplicate detection within a notebook (the same file can
+ *   still be imported into different notebooks).
  * Tech Stack: Rust, serde, rusqlite
  * License: MIT
  * Authors: Amey Thakur (https://github.com/Amey-Thakur)
