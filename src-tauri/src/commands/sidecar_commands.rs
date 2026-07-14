@@ -32,7 +32,10 @@ use crate::state::AppState;
 /// state stays consistent across restarts.
 pub const SIDECAR_PROVIDER_NAME: &str = "llama.cpp (sidecar)";
 
-/// Check if the sidecar binary exists in the app bundle.
+/// Whether the llama-server sidecar is configured and its command path
+/// resolves. This does not stat the file, so it returns true even if the binary
+/// is missing from the bundle; an actually-missing binary surfaces as a spawn
+/// error when start_sidecar runs.
 #[tauri::command(rename_all = "snake_case")]
 pub fn sidecar_available(app: tauri::AppHandle) -> AppResult<bool> {
     let available = app.shell().sidecar("llama-server").is_ok();
@@ -237,7 +240,15 @@ pub fn start_sidecar(
         let ready = sidecar_service::wait_for_ready(port, 120, &mgr.cancelled);
 
         if ready {
-            mgr.set_state(sidecar_service::STATE_READY);
+            /* Atomically claim the READY transition. If a concurrent stop
+            already moved us out of STARTING (to STOPPING/STOPPED) and killed the
+            child, do not resurrect a dead server by re-registering it. */
+            if !mgr.try_transition(
+                sidecar_service::STATE_STARTING,
+                sidecar_service::STATE_READY,
+            ) {
+                return;
+            }
             tracing::info!("llama-server ready on port {port}");
 
             /* Register as provider with the API key for auth. Replace any
@@ -262,6 +273,12 @@ pub fn start_sidecar(
         } else if !mgr.cancelled.load(Ordering::Acquire) {
             /* Only set crashed if it wasn't already set by the termination handler */
             tracing::error!("llama-server failed to become ready within 120s");
+            /* The process can still be alive here (a large model loading past the
+            timeout). Kill it so it does not linger as a multi-GB orphan and get
+            leaked when the user clicks Start again. */
+            if let Some(child) = mgr.take_child() {
+                let _ = child.kill();
+            }
             mgr.set_state(sidecar_service::STATE_CRASHED);
         }
     });
