@@ -65,9 +65,11 @@ export function useDeleteNotebook() {
     mutationFn: (id: string) => deleteNotebook(id),
     onSuccess: (_data, deletedId) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.NOTEBOOKS] });
-      /* The delete cascades to the notebook's notes, so drop note caches too
-         (covers the "recent notes" list, which is keyed separately). */
+      /* The delete cascades to the notebook's notes and documents, so drop both
+         caches too (covers the home "jump back in" recent lists, keyed
+         separately from the per-notebook lists). */
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.NOTES] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.DOCUMENTS] });
       /* Clear active notebook if it was the one deleted */
       if (activeId === deletedId) {
         setActive(null);

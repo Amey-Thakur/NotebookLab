@@ -85,7 +85,7 @@ export function PromptStudioPage() {
   const [mode, setMode] = useState<StudioMode>("describe");
   const [describe, setDescribe] = useState("");
   const [parts, setParts] = useState<PromptParts>(EMPTY);
-  const [result, setResult] = useState<{ text: string; from: CraftMode } | null>(null);
+  const [result, setResult] = useState<{ text: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
   const composed = useMemo(() => compose(parts), [parts]);
@@ -94,8 +94,8 @@ export function PromptStudioPage() {
   const craft = useMutation({
     mutationFn: ({ input, craftMode }: { input: string; craftMode: CraftMode }) =>
       craftPrompt(input, craftMode),
-    onSuccess: (text, args) => {
-      if (text.trim()) setResult({ text, from: args.craftMode });
+    onSuccess: (text) => {
+      if (text.trim()) setResult({ text });
     },
   });
 
