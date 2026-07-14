@@ -4,8 +4,8 @@
  * Description: All service and repository errors funnel through AppError,
  *   which implements Serialize for Tauri IPC transmission. Tauri
  *   requires command return errors to be serializable strings.
- *   thiserror generates Display impls. The IntoResponse conversion
- *   serializes the error message as a string that the frontend
+ *   thiserror generates Display impls, and the manual Serialize impl below
+ *   emits the user-facing message as a plain string that the frontend
  *   TauriError class can parse.
  * Tech Stack: Rust, thiserror, serde, Tauri v2
  * License: MIT
