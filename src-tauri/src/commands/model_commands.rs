@@ -27,10 +27,19 @@ pub struct RegisterProviderInput {
     pub is_local: bool,
 }
 
+/// List registered providers with their availability. Async because listing
+/// probes each provider's `/v1/models` endpoint over the network, which would
+/// otherwise block the main thread (and freeze the UI) for a stalled provider.
 #[tauri::command(rename_all = "snake_case")]
-pub fn list_providers(state: State<'_, AppState>) -> AppResult<Vec<ProviderInfo>> {
-    let providers = state.provider_read()?;
-    Ok(providers.list_providers())
+pub async fn list_providers(app: tauri::AppHandle) -> AppResult<Vec<ProviderInfo>> {
+    tauri::async_runtime::spawn_blocking(move || {
+        use tauri::Manager;
+        let state: State<'_, AppState> = app.state();
+        let providers = state.provider_read()?;
+        Ok(providers.list_providers())
+    })
+    .await
+    .map_err(|e| AppError::Internal(format!("Provider listing task failed: {e}")))?
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -115,70 +124,104 @@ pub async fn detect_providers(app: tauri::AppHandle) -> AppResult<Vec<ProviderIn
 /// Validate provider URL to prevent SSRF attacks.
 /// Local providers: must use loopback addresses only.
 /// Cloud providers: must use https:// and not target private/internal networks.
+///
+/// Parses with a real URL parser rather than string slicing: naive slicing
+/// mis-reads userinfo (`https://x@169.254.169.254/`) and bracketed IPv6
+/// (`http://[::1]:11434`), which both defeats the guard and rejects legitimate
+/// IPv6 loopback providers.
 fn validate_provider_url(url: &str, is_local: bool) -> AppResult<()> {
-    /* Must start with http:// or https:// */
-    if !url.starts_with("http://") && !url.starts_with("https://") {
+    let parsed = url::Url::parse(url)
+        .map_err(|_| AppError::InvalidInput("Provider URL is not a valid URL".into()))?;
+
+    match parsed.scheme() {
+        "http" | "https" => {}
+        _ => {
+            return Err(AppError::InvalidInput(
+                "Provider URL must use http:// or https:// scheme".into(),
+            ));
+        }
+    }
+
+    /* Embedded credentials can smuggle a different real host past the checks
+    below (reqwest connects to the host, not the userinfo), so reject them. */
+    if !parsed.username().is_empty() || parsed.password().is_some() {
         return Err(AppError::InvalidInput(
-            "Provider URL must use http:// or https:// scheme".into(),
+            "Provider URL must not contain embedded credentials".into(),
         ));
     }
 
-    /* Extract host from URL */
-    let host = url
-        .trim_start_matches("http://")
-        .trim_start_matches("https://")
-        .split('/')
-        .next()
-        .unwrap_or("")
-        .split(':')
-        .next()
-        .unwrap_or("");
+    let host = parsed
+        .host()
+        .ok_or_else(|| AppError::InvalidInput("Provider URL must include a host".into()))?;
 
     if is_local {
-        /* Local providers must target loopback only */
-        let allowed = ["127.0.0.1", "localhost", "::1", "[::1]"];
-        if !allowed.contains(&host) {
+        let is_loopback = match host {
+            url::Host::Ipv4(ip) => ip.is_loopback(),
+            url::Host::Ipv6(ip) => ip.is_loopback(),
+            url::Host::Domain(name) => name.eq_ignore_ascii_case("localhost"),
+        };
+        if !is_loopback {
             return Err(AppError::InvalidInput(
                 "Local providers must use 127.0.0.1 or localhost".into(),
             ));
         }
     } else {
-        /* Cloud providers must not target private/internal networks */
-        let blocked_prefixes = [
-            "127.",
-            "10.",
-            "192.168.",
-            "172.16.",
-            "172.17.",
-            "172.18.",
-            "172.19.",
-            "172.20.",
-            "172.21.",
-            "172.22.",
-            "172.23.",
-            "172.24.",
-            "172.25.",
-            "172.26.",
-            "172.27.",
-            "172.28.",
-            "172.29.",
-            "172.30.",
-            "172.31.",
-            "169.254.",
-            "0.",
-            "localhost",
-            "::1",
-            "[::1]",
-        ];
-
-        for prefix in &blocked_prefixes {
-            if host.starts_with(prefix) || host == *prefix {
-                return Err(AppError::InvalidInput(
-                    "Cloud providers cannot target private/internal networks".into(),
-                ));
+        let is_internal = match host {
+            url::Host::Ipv4(ip) => {
+                ip.is_loopback() || ip.is_private() || ip.is_link_local() || ip.is_unspecified()
             }
+            url::Host::Ipv6(ip) => ip.is_loopback() || ip.is_unspecified(),
+            url::Host::Domain(name) => name.eq_ignore_ascii_case("localhost"),
+        };
+        if is_internal {
+            return Err(AppError::InvalidInput(
+                "Cloud providers cannot target private/internal networks".into(),
+            ));
         }
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod url_validation_tests {
+    use super::validate_provider_url;
+
+    #[test]
+    fn accepts_loopback_for_local() {
+        assert!(validate_provider_url("http://127.0.0.1:11434", true).is_ok());
+        assert!(validate_provider_url("http://localhost:1234/v1", true).is_ok());
+        assert!(validate_provider_url("http://[::1]:11434", true).is_ok());
+    }
+
+    #[test]
+    fn rejects_non_loopback_for_local() {
+        assert!(validate_provider_url("http://169.254.169.254/v1", true).is_err());
+        assert!(validate_provider_url("https://api.openai.com/v1", true).is_err());
+    }
+
+    #[test]
+    fn accepts_public_https_for_cloud() {
+        assert!(validate_provider_url("https://api.openai.com/v1", false).is_ok());
+    }
+
+    #[test]
+    fn blocks_internal_targets_for_cloud() {
+        assert!(validate_provider_url("http://169.254.169.254/latest/meta-data", false).is_err());
+        assert!(validate_provider_url("http://10.0.0.5/v1", false).is_err());
+        assert!(validate_provider_url("http://192.168.1.1/v1", false).is_err());
+        assert!(validate_provider_url("http://localhost/v1", false).is_err());
+    }
+
+    #[test]
+    fn blocks_userinfo_smuggling_for_cloud() {
+        /* Naive slicing read the host as "x@169.254.169.254" and let this pass. */
+        assert!(validate_provider_url("https://x@169.254.169.254/v1", false).is_err());
+    }
+
+    #[test]
+    fn rejects_non_http_scheme() {
+        assert!(validate_provider_url("ftp://example.com", false).is_err());
+        assert!(validate_provider_url("file:///etc/passwd", false).is_err());
+    }
 }
