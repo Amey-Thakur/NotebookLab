@@ -4,6 +4,22 @@ All notable changes to NotebookLab will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Personal greeting. NotebookLab asks your name during first-run setup and
+  greets you by it on the home screen. Change it any time from Settings; it
+  never leaves this machine.
+- Collapsible, grouped sidebar. Navigation is organised into Home, Library,
+  Tools, and System, every item carries an icon, and the whole sidebar collapses
+  to an icon-only rail from a toggle at the bottom, remembering your choice.
+- Live activity indicator. The status dot now shows what the app is doing: amber
+  with no model, green when ready, and a pulsing accent with a "Thinking" label
+  while a chat, import, or generation is in flight, plus model-download progress.
+  It respects reduced-motion settings.
+- Drop files onto Chat. Dragging a file onto the chat imports it into the active
+  notebook as a source (images read with OCR) and indexes it, so the next
+  question can draw on it.
+
 ### Changed
 
 - Prompt Studio rebuilt as a real prompt crafter. Describe the job in plain
@@ -16,6 +32,39 @@ All notable changes to NotebookLab will be documented in this file.
   become named variables instead of invented facts, so prompts are accurate and
   reusable. The build-from-parts composer remains, now upgraded by the same
   crafter.
+
+### Fixed
+
+- Chat now sends your actual question to the model. The retrieval pipeline
+  stripped the current question along with the duplicate guard and never re-added
+  it, so every answer was generated without the model ever seeing what was asked.
+- Provider URL validation now parses URLs properly, closing an SSRF gap where a
+  crafted userinfo or IPv6 host could slip past the private-network guard, and no
+  longer wrongly rejects a legitimate IPv6 loopback provider.
+- Listing providers and switching models no longer block the main thread on
+  network calls, so an offline or slow provider cannot freeze the window.
+- Plain-text import detects a byte-order mark and decodes UTF-16 files (common
+  from Windows Notepad) instead of turning them into garbage.
+- The mind map and timeline Studio views tolerate malformed model output instead
+  of crashing the whole app.
+- Download buttons work: the certificate downloads as a bundled file and external
+  links open in your browser.
+- Dragging a Word document or an image onto the window imports it, matching the
+  formats the picker already accepts.
+- A single failed embedding no longer aborts a document's whole indexing pass; it
+  skips the chunk and continues, giving up only after repeated misses.
+- The local REST API accepts an Authorization header in any letter case, as HTTP
+  requires.
+- Backlinks resolve as soon as a linked note is created, including the
+  click-a-link-to-create-it flow, rather than only after the source is re-edited.
+- Search surfaces backend errors instead of silently showing nothing, and no
+  longer queries on a whitespace-only term.
+- Deleting a notebook clears its notes from the "pick up where you left off" list
+  instead of leaving dead entries.
+- Closing the command palette returns focus to whatever opened it, so keyboard
+  users are not dropped to the top of the page.
+- Regenerating an audio overview during playback stops the old audio instead of
+  leaving it reading over mismatched highlights.
 
 ## [0.4.0] - 2026-07-13
 
