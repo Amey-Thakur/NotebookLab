@@ -21,6 +21,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
 import { bindExternalLinks } from "@/services/external-link";
+import { flushAllAutosaves } from "@/lib/autosave";
 import { QUERY_KEYS, ROUTES } from "@/lib/constants";
 import { GO_TO, GO_TO_LEADER, isTypingTarget } from "@/lib/shortcuts";
 import { useNotebookStore } from "@/stores/notebook-store";
@@ -75,6 +76,46 @@ export function AppShell({ children }: AppShellProps) {
   /* Route external http(s) link clicks through the system browser. In a Tauri
      webview a plain anchor to an external origin does nothing otherwise. */
   useEffect(() => bindExternalLinks(), []);
+
+  /* Save pending edits before the app closes. The note editor, canvas, and the
+     in-place notebook rename autosave debounced and flush on route changes, but
+     a hard window close or reload can fire mid-debounce, before that flush runs.
+     Here we flush every registered editor and wait for the writes to land. The
+     Tauri window stays alive until we destroy it, so the awaited saves finish; a
+     cap still closes the window if a save ever hangs. pagehide covers reloads,
+     where we cannot await. */
+  useEffect(() => {
+    const onPageHide = () => {
+      void flushAllAutosaves();
+    };
+    window.addEventListener("pagehide", onPageHide);
+
+    let disposed = false;
+    let unlisten: (() => void) | undefined;
+    if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+      import("@tauri-apps/api/window")
+        .then(async ({ getCurrentWindow }) => {
+          const appWindow = getCurrentWindow();
+          const stop = await appWindow.onCloseRequested(async (event) => {
+            event.preventDefault();
+            const cap = new Promise((resolve) => setTimeout(resolve, 2000));
+            await Promise.race([flushAllAutosaves(), cap]);
+            await appWindow.destroy();
+          });
+          if (disposed) stop();
+          else unlisten = stop;
+        })
+        .catch(() => {
+          /* Not a Tauri window after all; pagehide still covers reloads. */
+        });
+    }
+
+    return () => {
+      disposed = true;
+      window.removeEventListener("pagehide", onPageHide);
+      unlisten?.();
+    };
+  }, []);
 
   /* Drop a persisted active notebook that no longer exists (fresh database,
      data reset) so scoped pages show their real empty states. */
