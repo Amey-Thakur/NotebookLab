@@ -16,10 +16,8 @@
 import { useEffect, useRef, useState } from "react";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 
+import { isSupportedFileType } from "@/lib/constants";
 import { useImportDocument } from "./use-documents";
-
-
-const SUPPORTED = /\.(pdf|txt|text|md|markdown)$/i;
 
 
 export function useDropImport(notebookId: string | undefined) {
@@ -47,7 +45,7 @@ export function useDropImport(notebookId: string | undefined) {
           setIsDragging(false);
         } else if (event.payload.type === "drop") {
           setIsDragging(false);
-          for (const path of event.payload.paths.filter((p) => SUPPORTED.test(p))) {
+          for (const path of event.payload.paths.filter(isSupportedFileType)) {
             importRef.current.mutate(path);
           }
         }
@@ -67,5 +65,9 @@ export function useDropImport(notebookId: string | undefined) {
     };
   }, [notebookId]);
 
-  return { isDragging, importError: importDoc.isError ? importDoc.error : null };
+  return {
+    isDragging,
+    isImporting: importDoc.isPending,
+    importError: importDoc.isError ? importDoc.error : null,
+  };
 }

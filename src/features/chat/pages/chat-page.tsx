@@ -23,7 +23,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS, ROUTES } from "@/lib/constants";
 import { formatError } from "@/lib/format-error";
+import { cn } from "@/lib/utils";
 import { useNotebookStore } from "@/stores/notebook-store";
+import { useDropImport } from "@/features/documents/hooks/use-drop-import";
 import { CitationList } from "../components/citation-list";
 import type { Conversation, Message, ChatResponse } from "@/types/models";
 
@@ -37,6 +39,12 @@ export function ChatPage() {
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  /* Drop a file onto chat to add it to this notebook as a source. The existing
+     import pipeline indexes it (images via OCR); the next question can use it. */
+  const { isDragging, isImporting, importError } = useDropImport(activeNotebookId ?? undefined);
+  const [justAdded, setJustAdded] = useState(false);
+  const wasImporting = useRef(false);
 
   const { data: conversations } = useQuery({
     queryKey: [QUERY_KEYS.CONVERSATIONS, activeNotebookId],
@@ -120,6 +128,17 @@ export function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
   }, [messages, pendingMessage]);
 
+  /* Confirm a dropped import once it settles cleanly. */
+  useEffect(() => {
+    const was = wasImporting.current;
+    wasImporting.current = isImporting;
+    if (was && !isImporting && !importError) {
+      setJustAdded(true);
+      const timer = setTimeout(() => setJustAdded(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [isImporting, importError]);
+
   if (!activeNotebookId) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-text-3 p-8">
@@ -141,7 +160,40 @@ export function ChatPage() {
     : null;
 
   return (
-    <div className="flex h-full">
+    <div className="relative flex h-full">
+      {/* Drop a file anywhere on chat to import it into this notebook */}
+      {isDragging && (
+        <div
+          className="absolute inset-4 z-20 flex items-center justify-center border-2 border-dashed
+                     border-accent bg-surface/90 pointer-events-none"
+        >
+          <p className="text-sm font-mono text-accent">Drop a file to add it to this notebook</p>
+        </div>
+      )}
+
+      {/* Import feedback: adding, added, or failed */}
+      {(isImporting || justAdded || importError) && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-24 z-20 flex justify-center px-8">
+          <span
+            role="status"
+            className={cn(
+              "rounded-sm border bg-surface px-3 py-1.5 text-xs font-mono",
+              importError
+                ? "border-error text-error"
+                : justAdded
+                  ? "border-accent-dim text-mark"
+                  : "border-accent-dim text-accent animate-pulse motion-reduce:animate-none",
+            )}
+          >
+            {importError
+              ? formatError(importError)
+              : justAdded
+                ? "Added to this notebook. Ask about it below."
+                : "Adding to this notebook…"}
+          </span>
+        </div>
+      )}
+
       {/* Conversation history rail */}
       {hasHistory && (
         <nav aria-label="Past conversations" className="w-56 shrink-0 border-r border-border overflow-y-auto py-4">
@@ -188,7 +240,9 @@ export function ChatPage() {
       <div className="flex flex-col flex-1 min-w-0">
         <div className="px-8 pt-6 pb-3">
           <h1 className="text-2xl font-display font-bold text-text-1">Chat</h1>
-          <p className="text-xs font-mono text-text-4 mt-1">Ask questions about your documents</p>
+          <p className="text-xs font-mono text-text-4 mt-1">
+            Ask about your documents, or drop a file to add one
+          </p>
         </div>
 
         {/* Messages area: role=log announces new entries to screen readers */}
