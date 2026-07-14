@@ -12,7 +12,7 @@
  * Date: 2026-07-12
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -68,6 +68,8 @@ function PaletteDialog({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(0);
   const listRef = useRef<HTMLUListElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: notebooks } = useNotebooks();
@@ -167,10 +169,14 @@ function PaletteDialog({ onClose }: { onClose: () => void }) {
   }, [onClose]);
 
   /* Hand focus back to whatever opened the palette when it closes, so keyboard
-     users are not dropped at the top of the page. */
-  useEffect(() => {
-    const opener = document.activeElement as HTMLElement | null;
-    return () => opener?.focus?.();
+     users are not dropped at the top of the page. Capture the opener in a
+     layout effect BEFORE moving focus into the input, then focus the input
+     ourselves; a passive effect would run after the input's autofocus and
+     capture the input itself, so the input carries no autoFocus. */
+  useLayoutEffect(() => {
+    openerRef.current = document.activeElement as HTMLElement | null;
+    inputRef.current?.focus();
+    return () => openerRef.current?.focus?.();
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -207,6 +213,7 @@ function PaletteDialog({ onClose }: { onClose: () => void }) {
         onKeyDown={handleKeyDown}
       >
         <input
+          ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -216,7 +223,6 @@ function PaletteDialog({ onClose }: { onClose: () => void }) {
           aria-expanded="true"
           aria-controls="palette-listbox"
           aria-activedescendant={filtered.length > 0 ? `palette-option-${selected}` : undefined}
-          autoFocus
           className="w-full px-4 py-3 text-sm bg-surface text-text-1 border-b border-border
                      placeholder:text-text-4 outline-none"
         />

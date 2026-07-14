@@ -17,6 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
 import { debounce } from "@/lib/utils";
+import { formatError } from "@/lib/format-error";
 import { QUERY_KEYS, ROUTES } from "@/lib/constants";
 import { useNotebookStore } from "@/stores/notebook-store";
 import type { UnifiedSearchResult } from "@/types/models";
@@ -42,9 +43,9 @@ export function SearchPage() {
     debouncedSearch(value);
   };
 
-  const canSearch = !!activeNotebookId && debouncedQuery.length >= 2;
+  const canSearch = !!activeNotebookId && debouncedQuery.trim().length >= 2;
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: [QUERY_KEYS.SEARCH, activeNotebookId, debouncedQuery],
     queryFn: () =>
       tauriInvoke<UnifiedSearchResult>("search", {
@@ -88,6 +89,12 @@ export function SearchPage() {
 
       {isLoading && canSearch && (
         <p className="text-sm text-text-3">Searching...</p>
+      )}
+
+      {error && (
+        <p role="alert" className="text-sm text-error">
+          {formatError(error)}
+        </p>
       )}
 
       {data && (

@@ -86,6 +86,12 @@ export function PodcastPage() {
       format,
     }),
     onSuccess: (result) => {
+      /* Stop any in-flight playback before swapping the script; otherwise the
+         old utterance chain keeps reading while highlights track the new turns
+         and the new script cannot be played until the user hits Stop. */
+      cancelledRef.current = true;
+      synthRef.current.cancel();
+      setIsPlaying(false);
       setScript(result);
       setCurrentTurn(-1);
     },
