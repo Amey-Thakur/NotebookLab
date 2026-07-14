@@ -71,6 +71,12 @@ export const SUPPORTED_FILE_TYPES = [
   ".bmp",
 ] as const;
 
+/** True when a file path ends in one of the supported import extensions. */
+export function isSupportedFileType(path: string): boolean {
+  const lower = path.toLowerCase();
+  return SUPPORTED_FILE_TYPES.some((extension) => lower.endsWith(extension));
+}
+
 /* The image formats above, read with OCR. Used to group the import picker. */
 export const OCR_IMAGE_TYPES = [
   ".png",

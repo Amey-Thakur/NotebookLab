@@ -65,7 +65,9 @@ export function DocumentsPage() {
       {isDragging && (
         <div className="absolute inset-4 z-10 flex items-center justify-center border-2 border-dashed
                         border-accent bg-surface/90 pointer-events-none">
-          <p className="text-sm font-mono text-accent">Drop PDF, TXT, or Markdown files to import</p>
+          <p className="text-sm font-mono text-accent">
+            Drop files to import: PDF, Word, text, Markdown, or images
+          </p>
         </div>
       )}
 

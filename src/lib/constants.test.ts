@@ -17,6 +17,7 @@ import {
   SUPPORTED_FILE_TYPES,
   OCR_IMAGE_TYPES,
   EDITOR_AUTOSAVE_MS,
+  isSupportedFileType,
 } from "./constants";
 
 
@@ -90,5 +91,23 @@ describe("EDITOR_AUTOSAVE_MS", () => {
   it("is a reasonable interval", () => {
     expect(EDITOR_AUTOSAVE_MS).toBeGreaterThanOrEqual(1000);
     expect(EDITOR_AUTOSAVE_MS).toBeLessThanOrEqual(10000);
+  });
+});
+
+
+describe("isSupportedFileType", () => {
+  it("accepts documents, markdown, Word, and OCR images", () => {
+    expect(isSupportedFileType("/path/report.pdf")).toBe(true);
+    expect(isSupportedFileType("notes.md")).toBe(true);
+    expect(isSupportedFileType("C:\\Users\\a\\memo.txt")).toBe(true);
+    expect(isSupportedFileType("brief.docx")).toBe(true);
+    expect(isSupportedFileType("scan.PNG")).toBe(true);
+    expect(isSupportedFileType("fax.tif")).toBe(true);
+  });
+
+  it("rejects unsupported and legacy formats", () => {
+    expect(isSupportedFileType("legacy.doc")).toBe(false);
+    expect(isSupportedFileType("archive.zip")).toBe(false);
+    expect(isSupportedFileType("noextension")).toBe(false);
   });
 });
