@@ -43,6 +43,13 @@ pub fn ensure_sample_notebook(conn: &Connection) -> AppResult<()> {
         return Ok(());
     }
 
+    /* Record the attempt up front, before any seeding, so a failure partway
+    through can never recreate a duplicate sample notebook on the next launch. */
+    conn.execute(
+        "INSERT OR REPLACE INTO settings (key, value) VALUES (?1, 'true')",
+        rusqlite::params![FIRST_RUN_FLAG],
+    )?;
+
     tracing::info!("First run detected. Creating sample notebook...");
 
     let notebook = notebook_repository::create(
@@ -140,23 +147,8 @@ fn main() {
     transforms all have real content to work on from the first launch. They are
     chunked through the same service imports use, so nothing about them is
     special downstream. */
-    seed_sample_document(
-        conn,
-        &notebook.id,
-        "A Brief History of the Internet",
-        SAMPLE_INTERNET,
-    )?;
-    seed_sample_document(
-        conn,
-        &notebook.id,
-        "The Basics of Photosynthesis",
-        SAMPLE_PHOTOSYNTHESIS,
-    )?;
-
-    conn.execute(
-        "INSERT OR REPLACE INTO settings (key, value) VALUES (?1, 'true')",
-        rusqlite::params![FIRST_RUN_FLAG],
-    )?;
+    seed_sample_document(conn, &notebook.id, "About NotebookLab", SAMPLE_ABOUT)?;
+    seed_sample_document(conn, &notebook.id, "A Guide to NotebookLab", SAMPLE_GUIDE)?;
 
     tracing::info!("Sample notebook created with 2 notes and 2 documents");
     Ok(())
@@ -193,30 +185,38 @@ fn seed_sample_document(
     Ok(())
 }
 
-const SAMPLE_INTERNET: &str = r#"A Brief History of the Internet
+const SAMPLE_ABOUT: &str = r#"About NotebookLab
 
-The internet began as a research project funded by the United States government in the late 1960s. Its first working network, called ARPANET, connected four university computers in 1969. The goal was to let researchers share scarce computing resources across long distances.
+NotebookLab is an offline-first workspace for reading, questioning, and thinking with your own documents. It brings a source-grounded AI assistant together with a connected notes editor and a spatial canvas, all running on your own machine.
 
-A key breakthrough came in the 1970s with packet switching and a common set of rules for exchanging data. In 1974, Vint Cerf and Bob Kahn described the Transmission Control Protocol and the Internet Protocol, known together as TCP/IP. On January 1, 1983, ARPANET switched to TCP/IP, a date many consider the true birth of the modern internet.
+The idea behind it is simple. The tools we think with have quietly become products that watch us: the notebook turned into a subscription, and the private note into a data point. NotebookLab is built the other way around. Your files, notes, chats, and canvases live in a local database on your computer. There is no account to create and no telemetry. Nothing you write leaves the machine unless you deliberately connect a cloud AI provider, and even then only the text you send it does.
 
-The 1980s saw the network grow beyond universities and military sites. The Domain Name System arrived in 1983, replacing hard to remember numeric addresses with names like example.com. By the end of the decade, national networks around the world were connecting to one another.
+At its center is retrieval-augmented chat. You import documents into a notebook, and when you ask a question, NotebookLab finds the most relevant passages and asks a language model to answer using them. Every answer lists the sources it drew from, with the document, heading, and page, so you can check a claim instead of taking it on faith.
 
-The World Wide Web changed everything. In 1989, Tim Berners-Lee, working at CERN in Switzerland, proposed a system of linked documents read through a browser. He released the first web browser and web server in 1991. The web made the internet approachable for ordinary people, not just engineers.
+The AI can run entirely on your machine through a bundled local model server, so the app works with no internet at all. If you prefer a larger model, you can connect any OpenAI-compatible provider, such as Ollama or LM Studio, and the choice stays yours and explicit.
 
-The 1990s brought rapid growth. Graphical browsers such as Mosaic and later Netscape Navigator let anyone click through pages of text and images. Businesses rushed online, and the number of websites grew from a handful to millions in only a few years.
+NotebookLab reads PDFs, Word files, plain text, Markdown, and even images and scans, which it turns into searchable text with offline optical character recognition. Once a document is in a notebook, it flows into search, chat, and the Studio alike.
 
-Today the internet connects billions of devices and underpins commerce, communication, and culture. What started as a link between four computers is now a global system that most of the world relies on every day."#;
+It is free and open source, released under the MIT License, and made to earn a small, quiet place in how you work every day."#;
 
-const SAMPLE_PHOTOSYNTHESIS: &str = r#"The Basics of Photosynthesis
+const SAMPLE_GUIDE: &str = r#"A Guide to NotebookLab
 
-Photosynthesis is the process that plants, algae, and some bacteria use to turn light into chemical energy. It is the foundation of almost every food chain on Earth and the source of most of the oxygen we breathe.
+NotebookLab is organised around notebooks. A notebook holds related sources, notes, and one spatial canvas, and everything you do is scoped to the notebook you have open.
 
-The process takes place mainly in the leaves, inside tiny structures called chloroplasts. Chloroplasts contain a green pigment named chlorophyll, which absorbs light most strongly in the red and blue parts of the spectrum and reflects green, which is why leaves look green.
+Bringing in sources. Use Import on a notebook, or drag a file onto the window, to add a PDF, Word document, text or Markdown file, or an image. Images and scans are read with offline optical character recognition, so a photo of printed text becomes searchable content like any other source.
 
-Photosynthesis needs three ingredients: sunlight, water, and carbon dioxide. Roots draw water up from the soil, and small pores on the leaf called stomata let carbon dioxide in from the air. Using the energy in sunlight, the plant combines these into glucose, a simple sugar, and releases oxygen as a by-product.
+Search. Search blends keyword ranking with semantic similarity. Keyword search always works; when your AI provider supports embeddings, results also match on meaning, not just wording. Press Ctrl+K anywhere to jump to a page, a notebook, or an action.
 
-Scientists divide the process into two stages. The light-dependent reactions capture energy from sunlight and store it in energy-carrying molecules. The light-independent reactions, also called the Calvin cycle, use that stored energy to build glucose from carbon dioxide.
+Chat. Ask questions about the documents in the active notebook and get answers grounded in cited sources. You can drop a file straight onto the chat to add it as a source first.
 
-The glucose a plant makes serves two purposes. Some is used right away for energy, and some is stored as starch for later or used to build the plant's structure. Animals, including humans, ultimately depend on this stored energy when they eat plants or eat other animals that ate plants.
+The Studio. Turn a notebook's sources into study aids and write-ups: a study guide, flashcards, a quiz, a visual mind map, a timeline, a slide deck, a data table, a briefing doc, or a blog post. Each one is drawn from your own documents.
 
-Photosynthesis also shapes the whole planet. By taking in carbon dioxide and giving off oxygen, plants help regulate the atmosphere and the climate, making them essential far beyond the food they provide."#;
+The Thinking Partner. Generate a mind map from your research, or switch to Socratic mode for probing questions that push your thinking further.
+
+The Canvas. Every notebook has one open canvas for visual thinking. Draw freehand, add shapes and text, and drop in images, then pan, zoom, and rearrange.
+
+Audio overview. Turn a notebook into a spoken overview read aloud in your browser, as a two-host discussion, a short brief, a debate, or a critique.
+
+Prompt Studio. Describe a job in plain words and NotebookLab writes a complete, ready-to-run prompt for any AI model, choosing the right technique for the task.
+
+Sharing. Export a notebook to a single self-contained file, then import it on another machine to recreate it, fully offline."#;
