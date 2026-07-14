@@ -90,6 +90,8 @@ function NoteEditor({ note }: { note: Note }) {
           queryClient.setQueryData([QUERY_KEYS.NOTE, noteId], fresh);
           queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.NOTES, fresh.notebook_id] });
           queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.BACKLINKS] });
+          /* A save may have changed [[wiki-links]], so refresh the connections graph. */
+          queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GRAPH] });
         })
         .catch((e) => {
           setSaveState("error");
@@ -105,12 +107,6 @@ function NoteEditor({ note }: { note: Note }) {
     }, EDITOR_AUTOSAVE_MS);
   }, [persistNote]);
 
-  /* Flush (not cancel) on unmount: edits made in the last two seconds before
-     navigating away still reach the database. */
-  useEffect(() => {
-    return () => saveContent.flush();
-  }, [saveContent]);
-
   const handleContentChange = useCallback(
     (markdown: string) => {
       setWordCount(countWords(markdown));
@@ -124,16 +120,31 @@ function NoteEditor({ note }: { note: Note }) {
     persistNote(note.id, { title: title.trim() });
   }, [note.id, note.title, title, persistNote]);
 
-  /* Ctrl+S / Cmd+S flushes the pending auto-save immediately */
+  /* Live refs so the unmount flush and Ctrl+S handler always call the latest
+     savers without re-subscribing. */
   const saveContentRef = useRef(saveContent);
+  const saveTitleRef = useRef(saveTitle);
   useEffect(() => {
     saveContentRef.current = saveContent;
-  }, [saveContent]);
+    saveTitleRef.current = saveTitle;
+  }, [saveContent, saveTitle]);
+
+  /* Flush (not cancel) on unmount: a pending content edit and an unsaved title
+     edit made in the last moments before leaving still reach the database. */
+  useEffect(() => {
+    return () => {
+      saveContentRef.current.flush();
+      saveTitleRef.current();
+    };
+  }, []);
+
+  /* Ctrl+S / Cmd+S saves the title and flushes the pending content auto-save. */
   useEffect(() => {
     const handleKeydown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
         saveContentRef.current.flush();
+        saveTitleRef.current();
       }
     };
     window.addEventListener("keydown", handleKeydown);
