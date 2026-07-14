@@ -1,16 +1,15 @@
 /*
  * Name: mod.rs
- * Purpose: Database module.
- * Description: Connection initialization, sqlite-vec extension registration,
- *   migration runner, and sub-module declarations. sqlite-vec is
- *   registered as an auto-extension so every connection gets
- *   vector search capabilities. Migrations run in order at
- *   startup.
- * Tech Stack: Rust, rusqlite, sqlite-vec
+ * Purpose: Database module root.
+ * Description: Declares the database sub-modules: models (row types) and
+ *   repository (data access). Connection initialization and the migration
+ *   runner live in state.rs; embeddings are stored as blobs and compared in
+ *   Rust, so there is no vector-search extension to register here.
+ * Tech Stack: Rust, rusqlite
  * License: MIT
  * Authors: Amey Thakur (https://github.com/Amey-Thakur)
  *          Archit Konde (https://github.com/Archit-Konde)
- * Date: 2026-07-12
+ * Date: 2026-07-14
  */
 
 pub mod models;

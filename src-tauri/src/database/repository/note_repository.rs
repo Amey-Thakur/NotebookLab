@@ -34,6 +34,11 @@ pub fn create(conn: &Connection, input: CreateNote) -> AppResult<Note> {
     )?;
 
     sync_note_links(conn, &id, &input.notebook_id, &content)?;
+    /* Existing notes may already link to this new title; their [[wiki-link]]
+    rows were skipped while it did not exist. Resolve them now so the new
+    note's backlinks panel is correct immediately, including the
+    click-a-link-to-create-a-note flow. */
+    resolve_inbound_links(conn, &input.notebook_id, &id, &title)?;
 
     get_by_id(conn, &id)
 }
@@ -183,6 +188,38 @@ pub fn sync_note_links(
                  VALUES (?1, ?2, 'note', ?3, 'note', ?4)",
                 params![Uuid::now_v7().to_string(), note_id, target.id, title],
             )?;
+        }
+    }
+
+    Ok(())
+}
+
+/// Wire up existing notes that already link to a freshly created note's title.
+/// Their [[wiki-link]] rows were skipped while the target did not exist, so
+/// re-sync each such source now that it resolves. The title match is
+/// case-insensitive here; sync_note_links then applies the authoritative
+/// lookup, so a non-matching case simply produces no row.
+fn resolve_inbound_links(
+    conn: &Connection,
+    notebook_id: &str,
+    new_note_id: &str,
+    new_note_title: &str,
+) -> AppResult<()> {
+    let mut stmt =
+        conn.prepare("SELECT id, content FROM notes WHERE notebook_id = ?1 AND id != ?2")?;
+    let sources = stmt
+        .query_map(params![notebook_id, new_note_id], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })?
+        .collect::<Result<Vec<(String, String)>, _>>()?;
+    drop(stmt);
+
+    for (source_id, content) in sources {
+        let links_to_new = extract_wiki_links(&content)
+            .iter()
+            .any(|title| title.eq_ignore_ascii_case(new_note_title));
+        if links_to_new {
+            sync_note_links(conn, &source_id, notebook_id, &content)?;
         }
     }
 

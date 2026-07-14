@@ -44,22 +44,41 @@ pub fn spawn_embedding_pass(app: tauri::AppHandle, document_id: String) {
         };
 
         let mut embedded = 0usize;
+        let mut consecutive_misses = 0usize;
+        const MAX_CONSECUTIVE_MISSES: usize = 3;
         for (chunk_id, content) in &chunks {
             let vector = {
                 let Ok(providers) = state.provider_read() else {
                     return;
                 };
                 match providers.embed(content) {
-                    Ok(Some(v)) if !v.is_empty() => v,
-                    /* Provider has no embedding support: stop quietly, keyword
-                    search remains fully functional. */
+                    Ok(Some(v)) if !v.is_empty() => {
+                        consecutive_misses = 0;
+                        v
+                    }
+                    /* No vector this time: either the provider has no
+                    /v1/embeddings, or a transient failure (timeout, 5xx, rate
+                    limit) came back empty. Skip this chunk and keep going so one
+                    blip cannot leave the whole document unembedded, but give up
+                    after several misses in a row, which means the provider is
+                    not returning embeddings at all. Keyword search stays fully
+                    functional either way. */
                     _ => {
-                        if embedded == 0 {
-                            tracing::info!(
-                                "Embedding pass skipped: active provider has no /v1/embeddings"
-                            );
+                        consecutive_misses += 1;
+                        if consecutive_misses >= MAX_CONSECUTIVE_MISSES {
+                            if embedded == 0 {
+                                tracing::info!(
+                                    "Embedding pass stopped: provider returned no embeddings"
+                                );
+                            } else {
+                                tracing::warn!(
+                                    "Embedding pass stopped after {embedded}/{} chunks: repeated embed misses",
+                                    chunks.len()
+                                );
+                            }
+                            break;
                         }
-                        break;
+                        continue;
                     }
                 }
             };
