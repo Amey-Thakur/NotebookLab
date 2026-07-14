@@ -24,6 +24,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS } from "@/lib/constants";
 import { formatError } from "@/lib/format-error";
+import { Skeleton } from "@/components/shared/skeleton";
 import { useNotebookStore } from "@/stores/notebook-store";
 import {
   useNotebooks,
@@ -91,8 +92,13 @@ export function NotebooksPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full text-text-3">
-        Loading notebooks...
+      <div className="p-8 max-w-4xl mx-auto">
+        <Skeleton className="mb-8 h-8 w-40" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-28" />
+          ))}
+        </div>
       </div>
     );
   }
