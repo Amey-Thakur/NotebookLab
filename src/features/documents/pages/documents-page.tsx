@@ -18,6 +18,7 @@ import { Link } from "react-router-dom";
 
 import { ROUTES } from "@/lib/constants";
 import { formatError } from "@/lib/format-error";
+import { Skeleton } from "@/components/shared/skeleton";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { useDocuments, useDeleteDocument } from "../hooks/use-documents";
 import { useDropImport } from "../hooks/use-drop-import";
@@ -83,7 +84,11 @@ export function DocumentsPage() {
             Imported ({documents?.length ?? 0})
           </h2>
           {isLoading && (
-            <p className="text-xs text-text-4 font-mono py-4">Loading documents...</p>
+            <div className="space-y-2 py-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-14" />
+              ))}
+            </div>
           )}
           {isError && (
             <p role="alert" className="text-xs text-error py-4">
