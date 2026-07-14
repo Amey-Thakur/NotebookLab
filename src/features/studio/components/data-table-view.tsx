@@ -12,11 +12,11 @@
  * Date: 2026-07-13
  */
 
-import type { DataTable } from "../api/studio-api";
+import { asArray, type DataTable } from "../api/studio-api";
 
 export function DataTableView({ data }: { data: DataTable }) {
-  const columns = data.columns ?? [];
-  const rows = data.rows ?? [];
+  const columns = asArray<string>(data.columns);
+  const rows = asArray<string[]>(data.rows);
   if (columns.length === 0 || rows.length === 0) {
     return <p className="text-sm text-text-3">The table came back empty. Try a broader focus.</p>;
   }
@@ -39,18 +39,21 @@ export function DataTableView({ data }: { data: DataTable }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, r) => (
-              <tr key={r} className="odd:bg-surface even:bg-bg">
-                {columns.map((_, c) => (
-                  <td
-                    key={c}
-                    className="border-b border-border px-3 py-2 align-top font-body text-text-2"
-                  >
-                    {row[c] ?? ""}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {rows.map((row, r) => {
+              const cells = asArray<string>(row);
+              return (
+                <tr key={r} className="odd:bg-surface even:bg-bg">
+                  {columns.map((_, c) => (
+                    <td
+                      key={c}
+                      className="border-b border-border px-3 py-2 align-top font-body text-text-2"
+                    >
+                      {cells[c] ?? ""}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

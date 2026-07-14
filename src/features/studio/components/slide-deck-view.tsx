@@ -14,10 +14,10 @@
 
 import { useState } from "react";
 
-import type { SlideDeck } from "../api/studio-api";
+import { asArray, type SlideDeck, type Slide } from "../api/studio-api";
 
 export function SlideDeckView({ data }: { data: SlideDeck }) {
-  const slides = data.slides ?? [];
+  const slides = asArray<Slide>(data.slides).filter((s) => s && typeof s === "object");
   const [index, setIndex] = useState(0);
 
   if (slides.length === 0) {
@@ -36,7 +36,7 @@ export function SlideDeckView({ data }: { data: SlideDeck }) {
       <div className="flex aspect-video flex-col overflow-y-auto border border-border bg-surface p-8">
         <h3 className="mb-4 font-display text-xl font-bold text-text-1">{slide.title}</h3>
         <ul className="list-disc space-y-2 pl-5 font-body text-text-2">
-          {(slide.bullets ?? []).map((bullet, i) => (
+          {asArray<string>(slide.bullets).map((bullet, i) => (
             <li key={i}>{bullet}</li>
           ))}
         </ul>

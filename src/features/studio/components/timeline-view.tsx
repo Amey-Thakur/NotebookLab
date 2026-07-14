@@ -12,10 +12,10 @@
  * Date: 2026-07-13
  */
 
-import type { Timeline } from "../api/studio-api";
+import { asArray, type Timeline, type TimelineEvent } from "../api/studio-api";
 
 export function TimelineView({ data }: { data: Timeline }) {
-  const events = data.events ?? [];
+  const events = asArray<TimelineEvent>(data.events);
   if (events.length === 0) {
     return <p className="text-sm text-text-3">The timeline came back empty. Try a broader focus.</p>;
   }

@@ -13,7 +13,7 @@
  */
 
 import { tauriInvoke } from "@/services/tauri-client";
-import { emptyScene, type Camera, type CanvasScene } from "../types";
+import { emptyScene, type Camera, type CanvasElement, type CanvasScene } from "../types";
 
 export interface Canvas {
   id: string;
@@ -37,13 +37,47 @@ export function parseScene(raw: string): CanvasScene {
   try {
     const parsed = JSON.parse(raw) as Partial<CanvasScene>;
     if (!parsed || !Array.isArray(parsed.elements)) return emptyScene();
+    const c = parsed.camera;
     const camera =
-      parsed.camera && typeof parsed.camera.zoom === "number"
-        ? parsed.camera
+      c && isFiniteNumber(c.x) && isFiniteNumber(c.y) && isFiniteNumber(c.zoom)
+        ? c
         : emptyScene().camera;
-    return { version: 1, camera, elements: parsed.elements };
+    /* Drop anything malformed (for example from a hand-edited or foreign bundle)
+    so a bad element can never crash the canvas on open. */
+    const elements = parsed.elements.filter(isValidElement);
+    return { version: 1, camera, elements };
   } catch {
     return emptyScene();
+  }
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+/** A runtime shape check for one element, matching the discriminated union. */
+function isValidElement(element: unknown): element is CanvasElement {
+  if (!element || typeof element !== "object") return false;
+  const e = element as Record<string, unknown>;
+  if (typeof e.id !== "string") return false;
+  switch (e.type) {
+    case "stroke":
+      return Array.isArray(e.points) && e.points.length > 0;
+    case "rectangle":
+    case "ellipse":
+      return isFiniteNumber(e.x) && isFiniteNumber(e.y) && isFiniteNumber(e.w) && isFiniteNumber(e.h);
+    case "text":
+      return isFiniteNumber(e.x) && isFiniteNumber(e.y) && typeof e.text === "string";
+    case "image":
+      return (
+        isFiniteNumber(e.x) &&
+        isFiniteNumber(e.y) &&
+        isFiniteNumber(e.w) &&
+        isFiniteNumber(e.h) &&
+        typeof e.src === "string"
+      );
+    default:
+      return false;
   }
 }
 

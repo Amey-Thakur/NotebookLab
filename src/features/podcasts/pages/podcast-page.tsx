@@ -54,6 +54,9 @@ export function PodcastPage() {
   const [currentTurn, setCurrentTurn] = useState(-1);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const synthRef = useRef(window.speechSynthesis);
+  /* Set before cancel() so the interrupt event cannot re-enter the play loop and
+     resume from the next turn. */
+  const cancelledRef = useRef(false);
 
   /* Load available voices */
   useEffect(() => {
@@ -70,7 +73,10 @@ export function PodcastPage() {
      keep reading with no visible way to stop them. */
   useEffect(() => {
     const synth = synthRef.current;
-    return () => synth.cancel();
+    return () => {
+      cancelledRef.current = true;
+      synth.cancel();
+    };
   }, []);
 
   const generate = useMutation({
@@ -104,10 +110,14 @@ export function PodcastPage() {
   const playScript = useCallback(() => {
     if (!script || isPlaying) return;
 
+    cancelledRef.current = false;
     setIsPlaying(true);
     setCurrentTurn(0);
 
     const speakTurn = (index: number) => {
+      /* A cancel() during playback fires the current utterance's end/error, which
+      would otherwise re-enter here; bail so Stop and navigation truly stop. */
+      if (cancelledRef.current) return;
       if (index >= script.turns.length) {
         setIsPlaying(false);
         setCurrentTurn(-1);
@@ -133,6 +143,7 @@ export function PodcastPage() {
   }, [script, isPlaying, getVoiceForSpeaker]);
 
   const stopPlayback = () => {
+    cancelledRef.current = true;
     synthRef.current.cancel();
     setIsPlaying(false);
     setCurrentTurn(-1);
