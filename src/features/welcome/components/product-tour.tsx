@@ -30,43 +30,121 @@ const STEPS: TourStep[] = [
   {
     target: "sidebar",
     title: "Your navigation",
-    body: "Everything lives here, grouped into Library for your content, Tools for the AI features, and System. Collapse it anytime with the toggle at the bottom.",
+    body: "Everything lives here, grouped into Library for your content, Tools for the AI features, and System for setup. Collapse it to an icon rail anytime with the toggle at the bottom. Let's walk through each part.",
+    placement: "right",
+  },
+  {
+    target: "nav-home",
+    title: "Home base",
+    body: "Home greets you and offers quick actions (write, import, ask, search), with your recent notes and notebooks so you can pick up where you left off.",
     placement: "right",
   },
   {
     target: "nav-notebooks",
     title: "Notebooks hold your work",
-    body: "Sources, notes, and a canvas live inside a notebook. We left a Getting Started notebook with sample notes and documents for you to try.",
+    body: "A notebook groups sources, notes, and one canvas. Create them here, and share one as a single self-contained file with Export, or bring one in with Import. Ctrl+N starts a new note in the open notebook.",
+    placement: "right",
+  },
+  {
+    target: "nav-documents",
+    title: "Bring in your sources",
+    body: "Import PDFs, Word files, text, Markdown, and even images into a notebook. Photos and scans are read with offline OCR, so their text becomes searchable too. You can also drag a file straight onto the window.",
+    placement: "right",
+  },
+  {
+    target: "nav-search",
+    title: "Search your notebook",
+    body: "Search across the open notebook's documents and notes at once. Every result is tied back to the source it came from.",
+    placement: "right",
+  },
+  {
+    target: "nav-connections",
+    title: "See how notes connect",
+    body: "Link notes by typing [[a note's name]] while writing. Connections draws those links as a graph you can click through, with your most-linked notes shown larger.",
     placement: "right",
   },
   {
     target: "nav-chat",
-    title: "Chat with your documents",
-    body: "Ask a question and get an answer grounded in your sources, with citations you can check.",
+    title: "Chat with your sources",
+    body: "Ask a question and get an answer grounded in your documents, with citations you can open and check. Drag a file onto Chat to add it as a source first. Past conversations wait in the side rail.",
+    placement: "right",
+  },
+  {
+    target: "nav-think",
+    title: "Think it through",
+    body: "Your thinking partner turns your documents into a visual mind map, or switches to Socratic mode to ask probing questions that push your reasoning further.",
     placement: "right",
   },
   {
     target: "nav-studio",
     title: "The Studio",
-    body: "Turn a notebook's sources into a study guide, quiz, timeline, slide deck, and more.",
+    body: "Turn a notebook's sources into study aids and write-ups: a study guide, flashcards, a quiz, a mind map, a timeline, a slide deck, a data table, a briefing, or a blog post, each in its own view.",
+    placement: "right",
+  },
+  {
+    target: "nav-canvas",
+    title: "A canvas per notebook",
+    body: "A freeform whiteboard for visual thinking: draw with a pressure pen, add shapes and text, drop in images, and pan and zoom. It autosaves as you go.",
+    placement: "right",
+  },
+  {
+    target: "nav-transform",
+    title: "Transform documents",
+    body: "Run a document through a quick AI pass: summarize it, pull out its key points, or apply your own custom instruction, then copy the result.",
+    placement: "right",
+  },
+  {
+    target: "nav-audio",
+    title: "Audio overview",
+    body: "Turn a notebook into a spoken overview, read aloud in the app: a two-host discussion, a one-minute brief, a debate, or a critique.",
+    placement: "right",
+  },
+  {
+    target: "nav-prompt",
+    title: "Prompt Studio",
+    body: "Describe a job in plain words and it writes a complete, ready-to-run prompt for any AI model, turning unknowns into fill-in-the-blank variables. Or compose one from classic building blocks.",
+    placement: "right",
+  },
+  {
+    target: "nav-models",
+    title: "Connect your AI: start here",
+    body: "The AI features need a model. Open Models to run the bundled one entirely offline on your machine, or connect any OpenAI-compatible provider like Ollama or LM Studio. Nothing else works until this is set, so it's the first stop.",
+    placement: "right",
+  },
+  {
+    target: "nav-settings",
+    title: "Make it yours",
+    body: "Set your name and theme, find your data folder, browse every keyboard shortcut, manage the local API, and replay this tour whenever you like.",
+    placement: "right",
+  },
+  {
+    target: "nav-help",
+    title: "Help and About",
+    body: "Help is the full guide to NotebookLab, readable entirely offline. About introduces the two makers and the Makers' Pledge behind the app.",
     placement: "right",
   },
   {
     target: "search",
-    title: "Find anything, fast",
-    body: "Press Ctrl+K (Cmd+K on Mac) anywhere to jump to a page, a notebook, or an action.",
+    title: "Jump anywhere, fast",
+    body: "Press Ctrl+K (Cmd+K on Mac) to open the command palette and jump to any page, notebook, or action. Or press G then a letter (try G then H for Home), and ? for the full shortcut list.",
     placement: "bottom",
   },
   {
     target: "status",
     title: "Activity at a glance",
-    body: "This dot shows when a model is loaded and lights up while the app is thinking or importing.",
+    body: "This dot reads the app's pulse: amber when no model is connected, green when one is ready, and a pulsing accent labelled Thinking while a chat, import, download, or generation is running.",
     placement: "top",
   },
   {
     target: "",
+    title: "Your work saves itself",
+    body: "You never press save. Notes and the canvas autosave as you type and again the moment you leave the page, and Ctrl+S saves the open note right away. A small Saved indicator confirms it, so nothing you write is lost.",
+    placement: "bottom",
+  },
+  {
+    target: "",
     title: "You're all set",
-    body: "We left a Getting Started notebook with sample notes and documents. Open it and try Chat, the Studio, or a transform. You can replay this tour anytime from Settings.",
+    body: "We left a Getting Started notebook with sample notes and documents. Open it and try Chat, the Studio, or a transform on real content. You can replay this tour anytime from Settings.",
     placement: "bottom",
   },
 ];
@@ -222,7 +300,7 @@ export function ProductTour({ open, onFinish, onOpenSample }: ProductTourProps) 
         </div>
 
         {/* Progress dots */}
-        <div className="flex items-center justify-center gap-1.5 pb-3" aria-hidden="true">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 px-4 pb-3" aria-hidden="true">
           {STEPS.map((_, index) => (
             <span
               key={index}
