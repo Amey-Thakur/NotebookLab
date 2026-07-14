@@ -67,7 +67,12 @@ impl LlmProvider for OpenAiCompatibleProvider {
 
     fn is_available(&self) -> bool {
         let url = format!("{}/v1/models", self.base_url);
-        let mut req = self.client.get(&url);
+        /* A short per-request timeout for the reachability probe. The provider
+        listing calls this while holding the router read lock, so a stalled
+        remote host must not pin that lock (and delay sidecar activation and
+        provider registration, which need the write lock) for the client's full
+        120s. A healthy endpoint answers in milliseconds. */
+        let mut req = self.client.get(&url).timeout(Duration::from_secs(4));
 
         if let Some(ref key) = self.api_key {
             req = req.bearer_auth(key);

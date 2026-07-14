@@ -154,11 +154,28 @@ impl AppState {
             include_str!("../resources/migrations/005_canvas.sql"),
         ];
 
-        for sql in &migrations {
+        /* Track the applied version in the database so each migration runs
+        exactly once. Re-running them every launch is wasteful and, for the
+        non-idempotent FTS backfill in 003, would append duplicate postings and
+        corrupt search ranking. */
+        let current: i64 = conn.query_row("PRAGMA user_version", [], |row| row.get(0))?;
+        let mut applied = 0;
+        for (index, sql) in migrations.iter().enumerate() {
+            let version = (index + 1) as i64;
+            if version <= current {
+                continue;
+            }
             conn.execute_batch(sql)?;
+            /* user_version takes a literal, not a bind parameter; version is a
+            computed integer, so this is safe. */
+            conn.execute_batch(&format!("PRAGMA user_version = {version};"))?;
+            applied += 1;
         }
 
-        tracing::info!("Database migrations applied ({} files)", migrations.len());
+        tracing::info!(
+            "Database migrations: {applied} applied, schema at version {}",
+            migrations.len()
+        );
         Ok(())
     }
 }

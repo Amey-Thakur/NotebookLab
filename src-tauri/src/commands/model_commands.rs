@@ -42,9 +42,12 @@ pub async fn list_providers(app: tauri::AppHandle) -> AppResult<Vec<ProviderInfo
     .map_err(|e| AppError::Internal(format!("Provider listing task failed: {e}")))?
 }
 
+/// Register (or replace) a provider. Async because it takes the provider WRITE
+/// lock, which a long in-flight generation holds via its read guard; doing that
+/// wait off the main thread keeps the window responsive.
 #[tauri::command(rename_all = "snake_case")]
-pub fn register_provider(
-    state: State<'_, AppState>,
+pub async fn register_provider(
+    app: tauri::AppHandle,
     input: RegisterProviderInput,
 ) -> AppResult<usize> {
     if input.name.trim().is_empty() || input.name.len() > 200 {
@@ -73,19 +76,23 @@ pub fn register_provider(
         ));
     }
 
-    let provider = OpenAiCompatibleProvider::new(
-        input.name,
-        input.base_url,
-        input.api_key,
-        input.model,
-        input.is_local,
-    );
-
-    let mut providers = state.provider_write()?;
-    let index = providers.register_or_replace(Box::new(provider));
-
-    tracing::info!("Registered provider at index {index}");
-    Ok(index)
+    tauri::async_runtime::spawn_blocking(move || {
+        use tauri::Manager;
+        let state: State<'_, AppState> = app.state();
+        let provider = OpenAiCompatibleProvider::new(
+            input.name,
+            input.base_url,
+            input.api_key,
+            input.model,
+            input.is_local,
+        );
+        let mut providers = state.provider_write()?;
+        let index = providers.register_or_replace(Box::new(provider));
+        tracing::info!("Registered provider at index {index}");
+        Ok(index)
+    })
+    .await
+    .map_err(|e| AppError::Internal(format!("Register task failed: {e}")))?
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -167,10 +174,22 @@ fn validate_provider_url(url: &str, is_local: bool) -> AppResult<()> {
         }
     } else {
         let is_internal = match host {
-            url::Host::Ipv4(ip) => {
-                ip.is_loopback() || ip.is_private() || ip.is_link_local() || ip.is_unspecified()
+            url::Host::Ipv4(ip) => is_internal_v4(ip),
+            url::Host::Ipv6(ip) => {
+                /* An IPv4-mapped address (::ffff:a.b.c.d) reaches the underlying
+                IPv4 host on dual-stack systems, so apply the IPv4 rules to it;
+                otherwise reject loopback, unspecified, unique-local (fc00::/7),
+                and link-local (fe80::/10). is_unique_local / link-local helpers
+                are unstable, so match the ranges directly. */
+                if let Some(v4) = ip.to_ipv4_mapped() {
+                    is_internal_v4(v4)
+                } else {
+                    ip.is_loopback()
+                        || ip.is_unspecified()
+                        || (ip.octets()[0] & 0xfe) == 0xfc
+                        || (ip.segments()[0] & 0xffc0) == 0xfe80
+                }
             }
-            url::Host::Ipv6(ip) => ip.is_loopback() || ip.is_unspecified(),
             url::Host::Domain(name) => name.eq_ignore_ascii_case("localhost"),
         };
         if is_internal {
@@ -181,6 +200,12 @@ fn validate_provider_url(url: &str, is_local: bool) -> AppResult<()> {
     }
 
     Ok(())
+}
+
+/// Whether an IPv4 address points at the loopback, private, link-local, or
+/// unspecified ranges that a cloud provider must never target.
+fn is_internal_v4(ip: std::net::Ipv4Addr) -> bool {
+    ip.is_loopback() || ip.is_private() || ip.is_link_local() || ip.is_unspecified()
 }
 
 #[cfg(test)]
@@ -217,6 +242,18 @@ mod url_validation_tests {
     fn blocks_userinfo_smuggling_for_cloud() {
         /* Naive slicing read the host as "x@169.254.169.254" and let this pass. */
         assert!(validate_provider_url("https://x@169.254.169.254/v1", false).is_err());
+    }
+
+    #[test]
+    fn blocks_internal_ipv6_targets_for_cloud() {
+        /* Unique-local (fc00::/7), link-local (fe80::/10), loopback, and an
+        IPv4-mapped link-local metadata address must all be rejected. */
+        assert!(validate_provider_url("http://[fd00::1]/v1", false).is_err());
+        assert!(validate_provider_url("http://[fe80::1]/v1", false).is_err());
+        assert!(validate_provider_url("http://[::1]/v1", false).is_err());
+        assert!(validate_provider_url("http://[::ffff:169.254.169.254]/v1", false).is_err());
+        /* A public IPv6 address is still allowed. */
+        assert!(validate_provider_url("https://[2606:4700:4700::1111]/v1", false).is_ok());
     }
 
     #[test]
