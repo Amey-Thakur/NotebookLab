@@ -138,7 +138,58 @@ export interface ChatResponse {
 export interface ProviderInfo {
   index: number;
   name: string;
+  /** Provider family: "sidecar" | "ollama" | "openai" | "anthropic" |
+      "gemini" | "deepseek" | "lmstudio" | "llamacpp" | "custom". */
+  kind: string;
+  model: string;
   is_local: boolean;
   is_available: boolean;
   is_active: boolean;
+}
+
+/** A saved provider configuration; never carries the API key itself. */
+export interface SavedProviderInfo {
+  name: string;
+  kind: string;
+  base_url: string;
+  model: string;
+  is_local: boolean;
+  has_api_key: boolean;
+}
+
+export interface OllamaStatus {
+  running: boolean;
+  installed: boolean;
+  version: string | null;
+}
+
+export interface OllamaModel {
+  name: string;
+  size_bytes: number;
+  parameter_size: string | null;
+  quantization: string | null;
+  family: string | null;
+}
+
+export interface OllamaPullProgress {
+  model: string;
+  status: string;
+  total: number;
+  completed: number;
+  percent: number;
+  done: boolean;
+}
+
+export interface OllamaPullFinished {
+  model: string;
+  ok: boolean;
+  error: string | null;
+}
+
+export interface HardwareProfile {
+  total_ram_gb: number;
+  cpu_name: string;
+  cpu_cores: number;
+  gpu_name: string | null;
+  gpu_vram_gb: number | null;
 }
