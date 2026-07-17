@@ -186,6 +186,34 @@ export interface OllamaPullFinished {
   error: string | null;
 }
 
+/** The last completed AI request, with token counts as reported by the
+    provider itself. */
+export interface LastRequest {
+  provider: string;
+  kind: string;
+  model: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+  context_window: number | null;
+  at_epoch_ms: number;
+  auto_selected: boolean;
+}
+
+export interface ModelUsage {
+  provider: string;
+  kind: string;
+  model: string;
+  requests: number;
+  prompt_tokens: number;
+  completion_tokens: number;
+}
+
+export interface UsageStats {
+  auto_enabled: boolean;
+  last: LastRequest | null;
+  models: ModelUsage[];
+}
+
 export interface HardwareProfile {
   total_ram_gb: number;
   cpu_name: string;

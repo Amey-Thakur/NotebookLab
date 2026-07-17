@@ -36,6 +36,14 @@ export function countWords(text: string): number {
 /**
  * Format byte count into human-readable string.
  */
+/** Compact token counts for the usage display: 1234 -> "1.2k", 1234567 ->
+    "1.2M"; exact below 1000. */
+export function formatTokens(count: number): string {
+  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
+  if (count >= 1_000) return `${(count / 1_000).toFixed(1)}k`;
+  return String(count);
+}
+
 export function formatBytes(bytes: number, decimals = 1): string {
   if (bytes < 0) return "-" + formatBytes(-bytes, decimals);
   if (bytes === 0) return "0 B";

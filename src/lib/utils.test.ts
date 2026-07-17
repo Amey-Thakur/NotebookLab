@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import { cn, countWords, formatBytes, debounce } from "./utils";
+import { cn, countWords, formatBytes, formatTokens, debounce } from "./utils";
 
 
 describe("cn", () => {
@@ -30,6 +30,20 @@ describe("cn", () => {
 
   it("handles empty inputs", () => {
     expect(cn()).toBe("");
+  });
+});
+
+
+describe("formatTokens", () => {
+  it("keeps small counts exact", () => {
+    expect(formatTokens(0)).toBe("0");
+    expect(formatTokens(999)).toBe("999");
+  });
+
+  it("compacts thousands and millions", () => {
+    expect(formatTokens(1234)).toBe("1.2k");
+    expect(formatTokens(12_400)).toBe("12.4k");
+    expect(formatTokens(1_234_567)).toBe("1.2M");
   });
 });
 

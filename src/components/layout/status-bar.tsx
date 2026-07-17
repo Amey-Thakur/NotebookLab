@@ -1,7 +1,7 @@
 /*
  * Name: status-bar.tsx
  * Purpose: Bottom status bar with a live activity indicator, the active
- *   notebook, and the indexed chunk count.
+ *   notebook, session token usage, and the indexed chunk count.
  * Description: The left dot is a real activity signal: amber when no model is
  *   loaded, green when a provider is ready, and a pulsing accent (with a ping
  *   ring) whenever the app is actually working, i.e. any chat, import, or
@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { useNotebooks } from "@/features/notebooks/hooks/use-notebooks";
 import { deriveStatus } from "./status-state";
+import { UsageChip } from "./usage-chip";
 
 
 interface DownloadProgress {
@@ -141,6 +142,7 @@ export function StatusBar() {
             v{updateVersion} ready, restart to update
           </button>
         )}
+        <UsageChip />
         <span className={`font-mono text-2xs ${chunks > 0 ? "text-text-3" : "text-text-4"}`}>
           {chunks} chunks indexed
         </span>
