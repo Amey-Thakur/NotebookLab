@@ -26,6 +26,7 @@ import { QUERY_KEYS, ROUTES } from "@/lib/constants";
 import { GO_TO, GO_TO_LEADER, isTypingTarget } from "@/lib/shortcuts";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { useNotebooks } from "@/features/notebooks/hooks/use-notebooks";
+import { useOpenWith } from "@/features/documents/hooks/use-open-with";
 import type { Note } from "@/types/models";
 
 import { AppSidebar } from "./app-sidebar";
@@ -76,6 +77,10 @@ export function AppShell({ children }: AppShellProps) {
   /* Route external http(s) link clicks through the system browser. In a Tauri
      webview a plain anchor to an external origin does nothing otherwise. */
   useEffect(() => bindExternalLinks(), []);
+
+  /* Files opened from the OS ("Open with NotebookLab"), at launch or while
+     running, are imported into a notebook and brought on screen. */
+  useOpenWith();
 
   /* Save pending edits before the app closes. The note editor, canvas, and the
      in-place notebook rename autosave debounced and flush on route changes, but

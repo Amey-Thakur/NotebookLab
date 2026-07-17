@@ -11,9 +11,42 @@
  * Date: 2026-07-12
  */
 
+use std::sync::Mutex;
+
 use tauri::{AppHandle, Manager};
 
 use crate::error::AppResult;
+
+/// Files passed on the command line at launch ("Open with NotebookLab").
+/// Held until the frontend is mounted and asks for them, because an event
+/// emitted during setup would fire before any listener exists.
+pub struct StartupFiles(pub Mutex<Vec<String>>);
+
+/// Keep only arguments that are real, importable files. Flags and stray
+/// arguments from the shell or updater are ignored.
+pub fn importable_files(args: impl Iterator<Item = String>) -> Vec<String> {
+    args.filter(|arg| !arg.starts_with('-'))
+        .filter(|arg| {
+            let path = std::path::Path::new(arg);
+            path.is_file()
+                && path
+                    .extension()
+                    .and_then(|e| e.to_str())
+                    .is_some_and(crate::parsers::is_supported_extension)
+        })
+        .collect()
+}
+
+/// Hand over (and clear) the files the app was launched with, so a double
+/// opened PDF lands in a notebook exactly once.
+#[tauri::command(rename_all = "snake_case")]
+pub fn take_startup_files(state: tauri::State<'_, StartupFiles>) -> Vec<String> {
+    state
+        .0
+        .lock()
+        .map(|mut files| std::mem::take(&mut *files))
+        .unwrap_or_default()
+}
 
 #[tauri::command(rename_all = "snake_case")]
 pub fn get_app_version() -> String {

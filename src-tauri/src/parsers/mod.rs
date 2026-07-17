@@ -67,6 +67,15 @@ pub fn is_ocr_image_extension(ext: &str) -> bool {
     )
 }
 
+/// Whether a file extension has a parser at all. Used by the "Open with
+/// NotebookLab" path to accept only files the import pipeline can read.
+pub fn is_supported_extension(ext: &str) -> bool {
+    matches!(
+        ext.to_lowercase().as_str(),
+        "txt" | "text" | "md" | "markdown" | "pdf" | "docx"
+    ) || is_ocr_image_extension(ext)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
