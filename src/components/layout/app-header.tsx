@@ -1,10 +1,11 @@
 /*
  * Name: app-header.tsx
- * Purpose: Top application bar with hamburger toggle, brand, command palette
- *   trigger, and theme switch.
- * Description: Hamburger button visible only on mobile (<768px). The "Jump
- *   to..." button opens the command palette, the same action bound to Ctrl+K
- *   globally in AppShell, so the visible kbd hint is real.
+ * Purpose: Top application bar with hamburger toggle, brand, model switcher,
+ *   command palette trigger, and theme switch.
+ * Description: Hamburger button visible only on mobile (<768px). The model
+ *   switcher shows the active AI model and swaps it in two clicks. The
+ *   "Jump to..." button opens the command palette, the same action bound to
+ *   Ctrl+K globally in AppShell, so the visible kbd hint is real.
  * Tech Stack: React 19, Tailwind CSS, Tauri v2
  * License: MIT
  * Authors: Amey Thakur (https://github.com/Amey-Thakur)
@@ -14,6 +15,7 @@
 
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { BrandMark } from "@/components/shared/brand-mark";
+import { ModelSwitcher } from "@/components/layout/model-switcher";
 import { IS_MAC } from "@/lib/shortcuts";
 
 
@@ -57,6 +59,7 @@ export function AppHeader({ sidebarOpen, onToggleSidebar, onOpenPalette }: AppHe
       </div>
 
       <div className="flex items-center gap-2">
+        <ModelSwitcher />
         <button
           type="button"
           data-tour="search"
