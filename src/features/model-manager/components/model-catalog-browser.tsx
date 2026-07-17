@@ -21,10 +21,9 @@ import { listen } from "@tauri-apps/api/event";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
-import { formatBytes } from "@/lib/utils";
+import { cn, formatBytes } from "@/lib/utils";
 import { formatError } from "@/lib/format-error";
 import { QUERY_KEYS } from "@/lib/constants";
-import { cn } from "@/lib/utils";
 import type { OllamaPullFinished, OllamaPullProgress } from "@/types/models";
 
 import {
@@ -52,6 +51,23 @@ export function ModelCatalogBrowser({ installedTags }: ModelCatalogBrowserProps)
   const [progress, setProgress] = useState<OllamaPullProgress | null>(null);
   const [pullError, setPullError] = useState<string | null>(null);
   const [confirmLarge, setConfirmLarge] = useState<CatalogModel | null>(null);
+
+  /* A download keeps running if the user navigates away; on mount, ask the
+     backend whether one is in flight so the progress bar picks it back up
+     instead of misreporting an idle catalog. */
+  useEffect(() => {
+    let cancelled = false;
+    tauriInvoke<string | null>("ollama_pull_state")
+      .then((model) => {
+        if (!cancelled && model) setPulling(model);
+      })
+      .catch(() => {
+        /* Backend unavailable (dev preview): nothing to restore. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   /* Follow the backend's pull events for the lifetime of the browser. */
   useEffect(() => {

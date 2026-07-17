@@ -173,10 +173,12 @@ pub fn pull_model(model: &str, mut on_progress: impl FnMut(PullProgress)) -> App
         completed: u64,
     }
 
-    /* No overall timeout: a large model legitimately downloads for a long
-    time. The connect timeout still fails fast when Ollama is not running. */
+    /* A six-hour ceiling: far beyond any realistic pull (a 9 GB model on a
+    slow line finishes in under three), while guaranteeing a hung Ollama can
+    never leave the pull guard stuck until app restart. The connect timeout
+    still fails fast when Ollama is not running. */
     let client = reqwest::blocking::Client::builder()
-        .timeout(None)
+        .timeout(Duration::from_secs(6 * 3600))
         .connect_timeout(Duration::from_secs(5))
         .build()
         .map_err(|e| AppError::Internal(format!("HTTP client build failed: {e}")))?;
