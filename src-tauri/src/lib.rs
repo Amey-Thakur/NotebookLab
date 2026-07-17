@@ -201,6 +201,8 @@ pub fn run() {
             commands::system_commands::get_hardware_profile,
             commands::system_commands::get_recent_logs,
             commands::system_commands::take_startup_files,
+            commands::skills_commands::fetch_agent_skills,
+            commands::skills_commands::fetch_agent_skill_body,
             commands::download_commands::list_gguf_catalog,
             commands::download_commands::download_gguf_model,
             commands::podcast_commands::generate_podcast,

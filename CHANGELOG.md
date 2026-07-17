@@ -6,6 +6,18 @@ All notable changes to NotebookLab will be documented in this file.
 
 ### Added
 
+- Proven methods, built in. Prompt Studio now loads the open AI-SKILLS
+  library (github.com/Amey-Thakur/AI-SKILLS) automatically: pick a working
+  method — code review, debugging, research synthesis, and more — and it is
+  inserted into your description in plain sight for the crafter to build on.
+  The catalog is cached for a day, only that one repository is ever
+  contacted, and everything degrades gracefully offline.
+
+### Changed
+
+- The Models page breathes. A wider layout, a three-column first-visit
+  guide, roomier cards, and no more text wrapping awkwardly mid-card.
+
 - Eight bundled models instead of one. The built-in offline server now offers
   a curated, size-verified catalog (Llama 3.2 1B and 3B, Gemma 3 4B, Phi-4
   Mini, Qwen 3 4B, Mistral 7B, Qwen 2.5 Coder 7B, DeepSeek R1 Distill 7B),
