@@ -210,7 +210,15 @@ const SECTIONS: Section[] = [
           creative work. It also recommends the model settings to run it with, and turns any detail it
           does not know into a <Code>{"{variable}"}</Code> you fill in, so prompts stay accurate
           instead of inventing facts. Prefer building by hand? Switch to Build it and compose from
-          parts, then upgrade the draft with the same crafter.
+          parts, then upgrade the draft with the same crafter. The Studio can also start you from a
+          proven working method, drawn from the same open{" "}
+          <a
+            href="https://amey-thakur.github.io/AI-SKILLS/"
+            className="text-accent underline underline-offset-2"
+          >
+            AI-SKILLS library
+          </a>{" "}
+          we maintain for every AI agent.
         </P>
       </>
     ),
