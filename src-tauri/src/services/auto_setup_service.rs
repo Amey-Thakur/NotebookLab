@@ -17,11 +17,22 @@
 use crate::providers::openai_compatible::OpenAiCompatibleProvider;
 use crate::providers::ProviderRouter;
 
-/// Common local LLM provider endpoints to probe on startup.
-const LOCAL_PROVIDERS: &[(&str, &str, &str)] = &[
-    ("Ollama", "http://127.0.0.1:11434", "llama3.2:3b"),
-    ("LM Studio", "http://127.0.0.1:1234", "local-model"),
-    ("llama.cpp", "http://127.0.0.1:8080", "local-model"),
+/// Common local LLM provider endpoints to probe on startup: display name,
+/// provider kind, endpoint, and a fallback model name.
+const LOCAL_PROVIDERS: &[(&str, &str, &str, &str)] = &[
+    ("Ollama", "ollama", "http://127.0.0.1:11434", "llama3.2:3b"),
+    (
+        "LM Studio",
+        "lmstudio",
+        "http://127.0.0.1:1234",
+        "local-model",
+    ),
+    (
+        "llama.cpp",
+        "llamacpp",
+        "http://127.0.0.1:8080",
+        "local-model",
+    ),
 ];
 
 /// Probe local endpoints and auto-register any responding provider.
@@ -41,7 +52,7 @@ pub fn auto_detect_providers(router: &mut ProviderRouter) {
         .map(|p| p.name.clone())
         .collect();
 
-    for (name, url, default_model) in LOCAL_PROVIDERS {
+    for (name, kind, url, default_model) in LOCAL_PROVIDERS {
         /* Skip if already registered (prevents duplicates on restart) */
         if existing_names.iter().any(|n| n == name) {
             tracing::debug!("Provider {name} already registered, skipping");
@@ -60,8 +71,9 @@ pub fn auto_detect_providers(router: &mut ProviderRouter) {
                 let body = resp.text().unwrap_or_default();
                 let model = extract_model_name(&body, default_model);
 
-                let provider = OpenAiCompatibleProvider::new(
+                let provider = OpenAiCompatibleProvider::with_kind(
                     name.to_string(),
+                    kind.to_string(),
                     url.to_string(),
                     None,
                     model,
@@ -69,7 +81,11 @@ pub fn auto_detect_providers(router: &mut ProviderRouter) {
                 );
 
                 let index = router.register_or_replace(Box::new(provider));
-                if router.set_active(index).is_ok() {
+
+                /* Only claim the active slot when nothing holds it: a provider
+                restored from the user's saved choice must not be overridden by
+                whatever local server happens to answer first. */
+                if router.active_name().is_none() && router.set_active(index).is_ok() {
                     tracing::info!("Auto-activated provider: {name} (index {index})");
                     return; /* Stop after first successful provider */
                 }
@@ -83,7 +99,7 @@ pub fn auto_detect_providers(router: &mut ProviderRouter) {
         }
     }
 
-    tracing::info!("No local LLM providers detected. User can register manually in Models.");
+    tracing::info!("Local provider detection finished");
 }
 
 /// Pull the first model id out of an OpenAI-style /v1/models response body.

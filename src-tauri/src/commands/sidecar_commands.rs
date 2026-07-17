@@ -256,8 +256,9 @@ pub fn start_sidecar(
             duplicate providers pointing at dead ports. */
             let state: State<'_, AppState> = handle2.state();
             if let Ok(mut providers) = state.provider_write() {
-                let provider = OpenAiCompatibleProvider::new(
+                let provider = OpenAiCompatibleProvider::with_kind(
                     SIDECAR_PROVIDER_NAME.to_string(),
+                    "sidecar".to_string(),
                     format!("http://127.0.0.1:{port}"),
                     Some(api_key_for_provider),
                     model_name,

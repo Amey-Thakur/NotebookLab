@@ -152,6 +152,7 @@ impl AppState {
             include_str!("../resources/migrations/003_fts5_search.sql"),
             include_str!("../resources/migrations/004_embeddings.sql"),
             include_str!("../resources/migrations/005_canvas.sql"),
+            include_str!("../resources/migrations/006_providers.sql"),
         ];
 
         /* Track the applied version in the database so each migration runs
