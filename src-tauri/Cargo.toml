@@ -63,6 +63,10 @@ chrono = { version = "0.4", features = ["serde"] }
 # File hashing for document deduplication
 sha2 = "0.10"
 
+# Hardware detection (RAM, CPU) for local-model recommendations in the
+# Models page. System-only feature set keeps the dependency lean.
+sysinfo = { version = "0.33", default-features = false, features = ["system"] }
+
 
 # PDF text extraction
 pdf-extract = "0.10"
