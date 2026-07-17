@@ -98,7 +98,7 @@ export function LocalServerCard() {
     : "bg-text-4";
 
   return (
-    <div className="border border-border bg-surface-2 p-6 mb-6">
+    <div className="border border-border bg-surface-2 p-6 mb-8">
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-sm font-display font-bold text-text-1">Local AI Server</h2>
         <span className="flex items-center gap-2 text-xs font-mono text-text-3">

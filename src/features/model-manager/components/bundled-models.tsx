@@ -97,7 +97,7 @@ export function BundledModels({ onDownloaded }: BundledModelsProps) {
   const showList = expanded || !anyInstalled;
 
   return (
-    <div className="border border-border bg-surface-2 p-4 mb-6">
+    <div className="border border-border bg-surface-2 p-5 mb-8">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
         <h3 className="text-sm font-semibold text-text-1">
           Bundled models
@@ -117,7 +117,7 @@ export function BundledModels({ onDownloaded }: BundledModelsProps) {
           </button>
         )}
       </div>
-      <p className="text-xs text-text-3 mb-3 max-w-prose">
+      <p className="text-xs text-text-3 mb-3">
         One-time downloads that run entirely on this machine with the built-in server. Nothing you
         write ever leaves your computer, and there is no token bill.
       </p>
@@ -131,7 +131,7 @@ export function BundledModels({ onDownloaded }: BundledModelsProps) {
             const ram = hardware.data?.total_ram_gb;
             const fitsMin = !ram || entry.min_ram_gb <= ram + 0.75;
             return (
-              <div key={entry.id} className={cn("border border-border p-3", !fitsMin && "opacity-70")}>
+              <div key={entry.id} className={cn("border border-border p-4", !fitsMin && "opacity-70")}>
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">

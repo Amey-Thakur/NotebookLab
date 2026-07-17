@@ -41,20 +41,20 @@ export function CloudProvidersSection() {
 
   return (
     <div>
-      <p className="text-xs text-text-3 mb-3 max-w-prose">
+      <p className="text-xs text-text-3 mb-3">
         Bigger models without the hardware: bring your own API key. Keys are stored only on this
         machine and sent only to the provider they belong to; your notes and documents still never
         leave your computer except for the text sent with each AI request.
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {CLOUD_PROVIDERS.map((def) => {
           const savedEntry = saved.data?.find((s) => s.kind === def.kind);
           const live = providers.data?.find((p) => p.name === savedEntry?.name);
           const isRemoving = confirmingRemove === def.kind;
 
           return (
-            <div key={def.kind} className="border border-border p-3 flex flex-col">
+            <div key={def.kind} className="border border-border p-5 flex flex-col">
               <div className="flex items-center justify-between gap-2 mb-1">
                 <span className="text-sm font-semibold text-text-1">{def.name}</span>
                 {savedEntry ? (
