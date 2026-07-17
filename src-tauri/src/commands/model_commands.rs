@@ -14,17 +14,37 @@
 
 use tauri::State;
 
+use crate::database::repository::provider_repository::{self, ProviderConfig};
 use crate::error::{AppError, AppResult};
-use crate::providers::{openai_compatible::OpenAiCompatibleProvider, ProviderInfo};
+use crate::providers::ProviderInfo;
+use crate::services::provider_config_service::{
+    self, ACTIVE_PROVIDER_KEY, CLOUD_KINDS, REGISTERABLE_KINDS,
+};
 use crate::state::AppState;
 
 #[derive(serde::Deserialize)]
 pub struct RegisterProviderInput {
     pub name: String,
+    /// Provider family ("openai", "anthropic", "gemini", "deepseek", "ollama",
+    /// "lmstudio", "llamacpp", "custom"). Defaults to "custom" for backward
+    /// compatibility with the pre-kind register calls.
+    pub kind: Option<String>,
     pub base_url: String,
     pub api_key: Option<String>,
     pub model: String,
     pub is_local: bool,
+}
+
+/// A saved provider as shown in the manage UI. Never carries the API key
+/// itself, only whether one is stored.
+#[derive(serde::Serialize)]
+pub struct SavedProviderInfo {
+    pub name: String,
+    pub kind: String,
+    pub base_url: String,
+    pub model: String,
+    pub is_local: bool,
+    pub has_api_key: bool,
 }
 
 /// List registered providers with their availability. Async because listing
@@ -42,9 +62,10 @@ pub async fn list_providers(app: tauri::AppHandle) -> AppResult<Vec<ProviderInfo
     .map_err(|e| AppError::Internal(format!("Provider listing task failed: {e}")))?
 }
 
-/// Register (or replace) a provider. Async because it takes the provider WRITE
-/// lock, which a long in-flight generation holds via its read guard; doing that
-/// wait off the main thread keeps the window responsive.
+/// Register (or replace) a provider, persisting the configuration so it
+/// survives restarts. Async because it takes the provider WRITE lock, which a
+/// long in-flight generation holds via its read guard; doing that wait off the
+/// main thread keeps the window responsive.
 #[tauri::command(rename_all = "snake_case")]
 pub async fn register_provider(
     app: tauri::AppHandle,
@@ -66,11 +87,38 @@ pub async fn register_provider(
         ));
     }
 
+    let kind = input.kind.clone().unwrap_or_else(|| "custom".to_string());
+    if !REGISTERABLE_KINDS.contains(&kind.as_str()) {
+        return Err(AppError::InvalidInput(format!(
+            "Unknown provider kind: {kind}"
+        )));
+    }
+
+    let has_key = input
+        .api_key
+        .as_deref()
+        .is_some_and(|k| !k.trim().is_empty());
+
+    /* Keyed cloud services need a key and must never be marked local, which
+    would relax the SSRF rules below. */
+    if CLOUD_KINDS.contains(&kind.as_str()) {
+        if !has_key {
+            return Err(AppError::InvalidInput(
+                "This provider needs an API key".into(),
+            ));
+        }
+        if input.is_local {
+            return Err(AppError::InvalidInput(
+                "Cloud providers cannot be registered as local".into(),
+            ));
+        }
+    }
+
     /* Validate URL scheme and host to prevent SSRF */
     validate_provider_url(&input.base_url, input.is_local)?;
 
     /* Reject sending API keys over unencrypted HTTP to remote providers */
-    if input.api_key.is_some() && !input.is_local && !input.base_url.starts_with("https://") {
+    if has_key && !input.is_local && !input.base_url.starts_with("https://") {
         return Err(AppError::InvalidInput(
             "API keys can only be sent to HTTPS endpoints for cloud providers".into(),
         ));
@@ -79,15 +127,26 @@ pub async fn register_provider(
     tauri::async_runtime::spawn_blocking(move || {
         use tauri::Manager;
         let state: State<'_, AppState> = app.state();
-        let provider = OpenAiCompatibleProvider::new(
-            input.name,
-            input.base_url,
-            input.api_key,
-            input.model,
-            input.is_local,
-        );
-        let mut providers = state.provider_write()?;
-        let index = providers.register_or_replace(Box::new(provider));
+
+        let config = ProviderConfig {
+            name: input.name,
+            kind,
+            base_url: input.base_url,
+            api_key: input.api_key.filter(|k| !k.trim().is_empty()),
+            model: input.model,
+            is_local: input.is_local,
+        };
+
+        let index = {
+            let mut providers = state.provider_write()?;
+            providers.register_or_replace(provider_config_service::build_provider(&config))
+        };
+
+        /* Persist after registering: a failed save leaves a working session
+        provider, only the restart restore is lost, and the error says so. */
+        let conn = state.conn()?;
+        provider_repository::upsert(&conn, &config)?;
+
         tracing::info!("Registered provider at index {index}");
         Ok(index)
     })
@@ -100,7 +159,70 @@ pub fn set_active_provider(state: State<'_, AppState>, index: usize) -> AppResul
     let providers = state.provider_read()?;
     providers
         .set_active(index)
-        .map_err(|e| AppError::Provider(e.to_string()))
+        .map_err(|e| AppError::Provider(e.to_string()))?;
+
+    /* Remember the choice so the same model is active after a restart. The
+    sidecar is per-session (its port and key change), so it is not recorded. */
+    if let Some(name) = providers.active_name() {
+        drop(providers);
+        if name != crate::commands::sidecar_commands::SIDECAR_PROVIDER_NAME {
+            let conn = state.conn()?;
+            provider_repository::set_setting(&conn, ACTIVE_PROVIDER_KEY, &name)?;
+        }
+    }
+    Ok(())
+}
+
+/// Remove a saved provider from the router and the database. The bundled
+/// sidecar cannot be removed here; it is managed from its own card.
+#[tauri::command(rename_all = "snake_case")]
+pub async fn delete_provider(app: tauri::AppHandle, name: String) -> AppResult<()> {
+    if name == crate::commands::sidecar_commands::SIDECAR_PROVIDER_NAME {
+        return Err(AppError::InvalidInput(
+            "The bundled local server is managed from its own card".into(),
+        ));
+    }
+
+    tauri::async_runtime::spawn_blocking(move || {
+        use tauri::Manager;
+        let state: State<'_, AppState> = app.state();
+
+        {
+            let mut providers = state.provider_write()?;
+            providers.remove_by_name(&name);
+        }
+
+        let conn = state.conn()?;
+        provider_repository::delete(&conn, &name)?;
+        let active = provider_repository::get_setting(&conn, ACTIVE_PROVIDER_KEY)?;
+        if active.as_deref() == Some(name.as_str()) {
+            provider_repository::clear_setting(&conn, ACTIVE_PROVIDER_KEY)?;
+        }
+
+        tracing::info!("Removed provider: {name}");
+        Ok(())
+    })
+    .await
+    .map_err(|e| AppError::Internal(format!("Delete task failed: {e}")))?
+}
+
+/// List saved provider configurations for the manage UI. API keys are never
+/// returned, only whether one is stored.
+#[tauri::command(rename_all = "snake_case")]
+pub fn list_saved_providers(state: State<'_, AppState>) -> AppResult<Vec<SavedProviderInfo>> {
+    let conn = state.conn()?;
+    let configs = provider_repository::list(&conn)?;
+    Ok(configs
+        .into_iter()
+        .map(|c| SavedProviderInfo {
+            name: c.name,
+            kind: c.kind,
+            base_url: c.base_url,
+            model: c.model,
+            is_local: c.is_local,
+            has_api_key: c.api_key.is_some(),
+        })
+        .collect())
 }
 
 #[tauri::command(rename_all = "snake_case")]

@@ -67,13 +67,27 @@ pub fn run() {
             app.manage(app_state);
             app.manage(SidecarManager::new());
 
-            /* Auto-detect local LLM providers on a background thread.
-            Runs after manage() so state is accessible via Tauri's Arc wrapper.
-            This avoids blocking the UI (up to 1.5s if all probes timeout). */
+            /* Restore saved providers (cloud connections, model choices) and
+            then auto-detect local LLM providers, on a background thread. Runs
+            after manage() so state is accessible via Tauri's Arc wrapper, and
+            restore runs first so the user's saved active model wins over
+            whatever local server answers a probe. This avoids blocking the UI
+            (up to 1.5s if all probes timeout). */
             let handle = app.handle().clone();
             std::thread::spawn(move || {
                 let state: tauri::State<'_, AppState> = handle.state();
+                /* Finish with the database before taking the provider write
+                lock; holding both at once risks a lock-order deadlock. */
+                let saved = state
+                    .conn()
+                    .map(|conn| services::provider_config_service::load_saved_configs(&conn))
+                    .unwrap_or_default();
                 if let Ok(mut providers) = state.provider_write() {
+                    services::provider_config_service::apply_saved_configs(
+                        &mut providers,
+                        saved.0,
+                        saved.1,
+                    );
                     services::auto_setup_service::auto_detect_providers(&mut providers);
                 };
             });
@@ -152,6 +166,13 @@ pub fn run() {
             commands::model_commands::set_active_provider,
             commands::model_commands::get_active_provider_name,
             commands::model_commands::detect_providers,
+            commands::model_commands::delete_provider,
+            commands::model_commands::list_saved_providers,
+            commands::ollama_commands::ollama_status,
+            commands::ollama_commands::ollama_installed_models,
+            commands::ollama_commands::ollama_pull_model,
+            commands::ollama_commands::ollama_delete_model,
+            commands::system_commands::get_hardware_profile,
             commands::podcast_commands::generate_podcast,
             commands::download_commands::download_default_model,
             commands::download_commands::has_local_model,
