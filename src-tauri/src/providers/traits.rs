@@ -64,11 +64,27 @@ pub enum MessageRole {
     Assistant,
 }
 
+/// What kind of work a completion is for, so automatic model selection can
+/// trade quality against speed and cost per task instead of globally.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum TaskPurpose {
+    /// Quick, low-stakes text where latency and cost matter most.
+    Fast,
+    /// Everyday conversational work: the sensible middle.
+    #[default]
+    Balanced,
+    /// Long-form generation and hard reasoning where quality dominates.
+    Quality,
+}
+
 #[derive(Debug, Clone)]
 pub struct ChatRequest {
     pub messages: Vec<ChatMessage>,
     pub max_tokens: Option<u32>,
     pub temperature: Option<f32>,
+    /// Consumed by the router's automatic model selection; individual
+    /// providers ignore it.
+    pub purpose: TaskPurpose,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

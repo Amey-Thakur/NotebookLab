@@ -206,6 +206,33 @@ pub async fn delete_provider(app: tauri::AppHandle, name: String) -> AppResult<(
     .map_err(|e| AppError::Internal(format!("Delete task failed: {e}")))?
 }
 
+/// Session token usage and the last request's context numbers, read from
+/// memory: cheap enough to poll for a live display.
+#[tauri::command(rename_all = "snake_case")]
+pub fn get_usage_stats(
+    state: State<'_, AppState>,
+) -> AppResult<crate::providers::router::UsageStats> {
+    let providers = state.provider_read()?;
+    Ok(providers.usage_stats())
+}
+
+/// Turn automatic per-task model selection on or off, persisted so the choice
+/// survives restarts.
+#[tauri::command(rename_all = "snake_case")]
+pub fn set_auto_model(state: State<'_, AppState>, enabled: bool) -> AppResult<()> {
+    {
+        let providers = state.provider_read()?;
+        providers.set_auto(enabled);
+    }
+    let conn = state.conn()?;
+    provider_repository::set_setting(
+        &conn,
+        provider_config_service::AUTO_MODEL_KEY,
+        if enabled { "true" } else { "false" },
+    )?;
+    Ok(())
+}
+
 /// List saved provider configurations for the manage UI. API keys are never
 /// returned, only whether one is stored.
 #[tauri::command(rename_all = "snake_case")]

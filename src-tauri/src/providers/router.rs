@@ -13,13 +13,60 @@
  * Date: 2026-07-12
  */
 
-use std::sync::RwLock;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Mutex, RwLock};
 
-use super::traits::{ChatRequest, ChatResponse, LlmProvider, ProviderError};
+use super::auto_select;
+use super::traits::{ChatRequest, ChatResponse, LlmProvider, ProviderError, TokenUsage};
 
 pub struct ProviderRouter {
     providers: Vec<Box<dyn LlmProvider>>,
     active_index: RwLock<Option<usize>>,
+    /// When set, chat completions pick the best provider for each request's
+    /// purpose (with fallback on failure) instead of using the active one.
+    auto_enabled: AtomicBool,
+    /// Session token accounting, recorded from what providers actually
+    /// report, so the UI shows real numbers rather than estimates.
+    usage: Mutex<UsageLog>,
+}
+
+#[derive(Default)]
+struct UsageLog {
+    last: Option<LastRequest>,
+    models: Vec<ModelUsage>,
+}
+
+#[derive(Clone, serde::Serialize)]
+pub struct LastRequest {
+    pub provider: String,
+    pub kind: String,
+    pub model: String,
+    pub prompt_tokens: u32,
+    pub completion_tokens: u32,
+    /// The model's known context window, when it is a known fact; None keeps
+    /// the display honest for user-configured local servers.
+    pub context_window: Option<u32>,
+    pub at_epoch_ms: u64,
+    /// Whether automatic selection chose this provider.
+    pub auto_selected: bool,
+}
+
+#[derive(Clone, serde::Serialize)]
+pub struct ModelUsage {
+    pub provider: String,
+    pub kind: String,
+    pub model: String,
+    pub requests: u32,
+    pub prompt_tokens: u64,
+    pub completion_tokens: u64,
+}
+
+/// Everything the token/usage UI shows, read from memory in microseconds.
+#[derive(serde::Serialize)]
+pub struct UsageStats {
+    pub auto_enabled: bool,
+    pub last: Option<LastRequest>,
+    pub models: Vec<ModelUsage>,
 }
 
 impl Default for ProviderRouter {
@@ -33,7 +80,19 @@ impl ProviderRouter {
         Self {
             providers: Vec::new(),
             active_index: RwLock::new(None),
+            auto_enabled: AtomicBool::new(false),
+            usage: Mutex::new(UsageLog::default()),
         }
+    }
+
+    /// Turn automatic per-task model selection on or off. Interior mutability,
+    /// so flipping it needs only the read guard.
+    pub fn set_auto(&self, enabled: bool) {
+        self.auto_enabled.store(enabled, Ordering::Release);
+    }
+
+    pub fn auto_enabled(&self) -> bool {
+        self.auto_enabled.load(Ordering::Acquire)
     }
 
     /// Register a provider. Returns its index for later activation.
@@ -121,17 +180,160 @@ impl ProviderRouter {
         Some(self.providers.get(idx)?.name().to_string())
     }
 
-    /// Send a chat completion request to the active provider.
+    /// Send a chat completion request. With auto selection off this uses the
+    /// active provider; with it on, providers are tried in per-purpose score
+    /// order with fallback, so one dead endpoint never fails a request
+    /// another could serve. Every successful reply's reported token usage is
+    /// recorded for the live usage display.
     pub fn chat_completion(&self, request: ChatRequest) -> Result<ChatResponse, ProviderError> {
-        let idx = self.active_index_snapshot()?;
+        if !self.auto_enabled() {
+            let idx = self.active_index_snapshot()?;
 
-        /* Availability check removed from hot path. The completion call itself
-        will return a clear error if the provider is unreachable. Checking
-        availability added ~100-300ms latency per request. */
-        self.provider_at(idx)?.chat_completion(request)
+            /* Availability check removed from hot path. The completion call
+            itself will return a clear error if the provider is unreachable.
+            Checking availability added ~100-300ms latency per request. */
+            let provider = self.provider_at(idx)?;
+            let identity = identity_of(provider);
+            let response = provider.chat_completion(request)?;
+            self.record_usage(identity, response.usage.clone(), false);
+            return Ok(response);
+        }
+
+        /* Auto: rank every provider for this request's purpose, then walk the
+        list. Trying at most three keeps a fully-offline failure fast. */
+        let mut order: Vec<(i32, usize)> = self
+            .providers
+            .iter()
+            .enumerate()
+            .map(|(i, p)| {
+                (
+                    auto_select::score(p.kind(), p.model(), p.is_local(), request.purpose),
+                    i,
+                )
+            })
+            .collect();
+        order.sort_by_key(|entry| std::cmp::Reverse(entry.0));
+
+        let mut last_error =
+            ProviderError::NotAvailable("No providers registered. Set up a model first.".into());
+        for (_, idx) in order.into_iter().take(3) {
+            let Ok(provider) = self.provider_at(idx) else {
+                continue;
+            };
+            let identity = identity_of(provider);
+            match provider.chat_completion(request.clone()) {
+                Ok(response) => {
+                    self.record_usage(identity, response.usage.clone(), true);
+                    return Ok(response);
+                }
+                Err(e) => {
+                    tracing::warn!("Auto selection: {} failed, trying next: {e}", identity.0);
+                    last_error = e;
+                }
+            }
+        }
+        Err(last_error)
     }
 
-    /// Generate an embedding vector using the active provider.
+    /// Fold one reply's reported usage into the session log.
+    fn record_usage(
+        &self,
+        (name, kind, model): (String, String, String),
+        usage: Option<TokenUsage>,
+        auto_selected: bool,
+    ) {
+        let Ok(mut log) = self.usage.lock() else {
+            return;
+        };
+        let (prompt, completion) = usage
+            .map(|u| (u.prompt_tokens, u.completion_tokens))
+            .unwrap_or((0, 0));
+
+        log.last = Some(LastRequest {
+            provider: name.clone(),
+            kind: kind.clone(),
+            model: model.clone(),
+            prompt_tokens: prompt,
+            completion_tokens: completion,
+            context_window: auto_select::context_window(&kind, &model),
+            at_epoch_ms: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_millis() as u64)
+                .unwrap_or(0),
+            auto_selected,
+        });
+
+        if let Some(entry) = log
+            .models
+            .iter_mut()
+            .find(|m| m.provider == name && m.model == model)
+        {
+            entry.requests += 1;
+            entry.prompt_tokens += u64::from(prompt);
+            entry.completion_tokens += u64::from(completion);
+        } else {
+            log.models.push(ModelUsage {
+                provider: name,
+                kind,
+                model,
+                requests: 1,
+                prompt_tokens: u64::from(prompt),
+                completion_tokens: u64::from(completion),
+            });
+        }
+    }
+
+    /// Session usage for the live token display.
+    pub fn usage_stats(&self) -> UsageStats {
+        let log = self.usage.lock();
+        match log {
+            Ok(log) => UsageStats {
+                auto_enabled: self.auto_enabled(),
+                last: log.last.clone(),
+                models: log.models.clone(),
+            },
+            Err(_) => UsageStats {
+                auto_enabled: self.auto_enabled(),
+                last: None,
+                models: Vec::new(),
+            },
+        }
+    }
+
+    /// The context window of the provider a chat request would use right now:
+    /// the top-ranked Balanced candidate under auto selection, else the
+    /// active provider. Unknown windows fall back to a conservative floor so
+    /// context budgeting never overfills a small window.
+    pub fn planned_context_window(&self) -> u32 {
+        const CONSERVATIVE_FLOOR: u32 = 4096;
+
+        let planned = if self.auto_enabled() {
+            self.providers
+                .iter()
+                .max_by_key(|p| {
+                    auto_select::score(
+                        p.kind(),
+                        p.model(),
+                        p.is_local(),
+                        super::traits::TaskPurpose::Balanced,
+                    )
+                })
+                .map(|p| (p.kind().to_string(), p.model().to_string()))
+        } else {
+            self.active_index_snapshot()
+                .ok()
+                .and_then(|idx| self.providers.get(idx))
+                .map(|p| (p.kind().to_string(), p.model().to_string()))
+        };
+
+        planned
+            .and_then(|(kind, model)| auto_select::context_window(&kind, &model))
+            .unwrap_or(CONSERVATIVE_FLOOR)
+    }
+
+    /// Generate an embedding vector using the active provider. Embeddings
+    /// stay pinned to the active provider even under auto selection: mixing
+    /// embedding spaces across models would corrupt semantic search.
     pub fn embed(&self, text: &str) -> Result<Option<Vec<f32>>, ProviderError> {
         let idx = self.active_index_snapshot()?;
         self.provider_at(idx)?.embed(text)
@@ -179,6 +381,16 @@ impl ProviderRouter {
             })
             .collect()
     }
+}
+
+/// Capture a provider's identity as owned strings before a long call, so the
+/// usage record never borrows across the network request.
+fn identity_of(provider: &dyn LlmProvider) -> (String, String, String) {
+    (
+        provider.name().to_string(),
+        provider.kind().to_string(),
+        provider.model().to_string(),
+    )
 }
 
 #[derive(Debug, serde::Serialize)]

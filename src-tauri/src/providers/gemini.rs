@@ -288,6 +288,7 @@ mod tests {
                 message(MessageRole::Assistant, "Hello!"),
             ],
             max_tokens: Some(100),
+            purpose: Default::default(),
             temperature: None,
         });
         assert!(body.system_instruction.is_some());
@@ -307,6 +308,7 @@ mod tests {
             ],
             max_tokens: None,
             temperature: None,
+            purpose: Default::default(),
         });
         assert_eq!(body.contents.len(), 1);
         assert_eq!(body.contents[0].parts.len(), 2);

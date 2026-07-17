@@ -104,11 +104,7 @@ pub fn run() {
                     .map(|conn| services::provider_config_service::load_saved_configs(&conn))
                     .unwrap_or_default();
                 if let Ok(mut providers) = state.provider_write() {
-                    services::provider_config_service::apply_saved_configs(
-                        &mut providers,
-                        saved.0,
-                        saved.1,
-                    );
+                    services::provider_config_service::apply_saved_configs(&mut providers, saved);
                     services::auto_setup_service::auto_detect_providers(&mut providers);
                 };
             });
@@ -189,6 +185,8 @@ pub fn run() {
             commands::model_commands::detect_providers,
             commands::model_commands::delete_provider,
             commands::model_commands::list_saved_providers,
+            commands::model_commands::get_usage_stats,
+            commands::model_commands::set_auto_model,
             commands::ollama_commands::ollama_status,
             commands::ollama_commands::ollama_installed_models,
             commands::ollama_commands::ollama_pull_model,

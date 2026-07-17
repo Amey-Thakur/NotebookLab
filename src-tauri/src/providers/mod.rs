@@ -15,6 +15,7 @@
  */
 
 pub mod anthropic;
+pub mod auto_select;
 pub mod gemini;
 pub mod openai_compatible;
 pub mod router;
@@ -22,4 +23,6 @@ pub mod traits;
 
 pub use router::{ProviderInfo, ProviderRouter};
 #[allow(unused_imports)]
-pub use traits::{ChatMessage, ChatRequest, ChatResponse, LlmProvider, MessageRole, ProviderError};
+pub use traits::{
+    ChatMessage, ChatRequest, ChatResponse, LlmProvider, MessageRole, ProviderError, TaskPurpose,
+};
