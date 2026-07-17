@@ -49,6 +49,7 @@ export const QUERY_KEYS = {
   SAVED_PROVIDERS: "saved-providers",
   USAGE: "usage",
   GGUF_CATALOG: "gguf-catalog",
+  AGENT_SKILLS: "agent-skills",
   LOGS: "logs",
   OLLAMA_STATUS: "ollama-status",
   OLLAMA_MODELS: "ollama-models",

@@ -24,6 +24,7 @@ pub mod prompt_commands;
 pub mod search_commands;
 pub mod share_commands;
 pub mod sidecar_commands;
+pub mod skills_commands;
 pub mod studio_commands;
 pub mod system_commands;
 pub mod thinking_commands;

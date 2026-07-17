@@ -20,8 +20,10 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
+import { tauriInvoke } from "@/services/tauri-client";
+import { QUERY_KEYS } from "@/lib/constants";
 import { formatError } from "@/lib/format-error";
 import { usePersistentDraft } from "@/lib/use-persistent-draft";
 import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
@@ -215,6 +217,11 @@ export function PromptStudioPage() {
               extraction, step-by-step reasoning for logic, role and style for creative work. Details
               it does not know become {"{variables}"} you fill in, never invented facts.
             </p>
+            <AgentSkillsPanel
+              onInsert={(text) =>
+                setDescribe(describe.trim() ? `${describe.trim()}\n\n${text}` : text)
+              }
+            />
           </div>
         ) : (
           <div className="space-y-4">
@@ -376,6 +383,95 @@ function CraftedDetails({ crafted }: { crafted: CraftedPrompt }) {
             ))}
           </ul>
         </div>
+      )}
+    </div>
+  );
+}
+
+interface AgentSkill {
+  kind: string;
+  name: string;
+  description: string;
+  raw_url: string;
+}
+
+/* Proven working methods from the AI-SKILLS library
+   (github.com/Amey-Thakur/AI-SKILLS), loaded automatically and cached for a
+   day. Inserting one appends its method to the describe field in plain sight,
+   so the crafter can build on it; nothing is ever injected invisibly. */
+function AgentSkillsPanel({ onInsert }: { onInsert: (text: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [inserting, setInserting] = useState<string | null>(null);
+  const [insertError, setInsertError] = useState<string | null>(null);
+
+  const { data: skills } = useQuery({
+    queryKey: [QUERY_KEYS.AGENT_SKILLS],
+    queryFn: () => tauriInvoke<AgentSkill[]>("fetch_agent_skills"),
+    staleTime: 60 * 60 * 1000,
+  });
+
+  const methods = (skills ?? []).filter((s) => s.kind === "skill");
+  if (methods.length === 0) return null;
+
+  const insert = (skill: AgentSkill) => {
+    setInserting(skill.name);
+    setInsertError(null);
+    tauriInvoke<string>("fetch_agent_skill_body", { raw_url: skill.raw_url })
+      .then((body) => {
+        /* Drop the frontmatter; the method itself is what helps the crafter. */
+        const method = body.replace(/^---[\s\S]*?---\s*/, "").trim();
+        onInsert(`Apply this working method:\n${method}`);
+      })
+      .catch((e) => setInsertError(formatError(e)))
+      .finally(() => setInserting(null));
+  };
+
+  return (
+    <div className="mt-5 border-t border-border pt-4">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        className="text-xs font-mono text-text-4 hover:text-text-2 transition-colors"
+      >
+        {open ? "Hide proven methods" : `Start from a proven method (${methods.length})`}
+      </button>
+      {open && (
+        <>
+          <p className="mt-2 text-2xs text-text-4 leading-relaxed">
+            Working methods from the open AI-SKILLS library. Inserting one adds it to your
+            description above, visibly, so the crafted prompt builds on it.
+          </p>
+          <div className="mt-2 space-y-1 max-h-[240px] overflow-y-auto pr-1">
+            {methods.map((skill) => (
+              <div
+                key={skill.name}
+                className="flex items-start justify-between gap-3 border border-border px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <span className="block text-xs font-mono text-text-1">{skill.name}</span>
+                  <span className="block text-2xs text-text-4 leading-relaxed">
+                    {skill.description}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => insert(skill)}
+                  disabled={inserting !== null}
+                  className="shrink-0 px-2.5 py-1 text-2xs font-mono border border-border text-text-3
+                             hover:border-accent-dim hover:text-text-1 transition-colors disabled:opacity-50"
+                >
+                  {inserting === skill.name ? "Loading..." : "Insert"}
+                </button>
+              </div>
+            ))}
+          </div>
+          {insertError && (
+            <p role="alert" className="mt-2 text-2xs text-error">
+              {insertError}
+            </p>
+          )}
+        </>
       )}
     </div>
   );
