@@ -403,6 +403,7 @@ function AgentSkillsPanel({ onInsert }: { onInsert: (text: string) => void }) {
   const [open, setOpen] = useState(false);
   const [inserting, setInserting] = useState<string | null>(null);
   const [insertError, setInsertError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
   const { data: skills } = useQuery({
     queryKey: [QUERY_KEYS.AGENT_SKILLS],
@@ -412,6 +413,14 @@ function AgentSkillsPanel({ onInsert }: { onInsert: (text: string) => void }) {
 
   const methods = (skills ?? []).filter((s) => s.kind === "skill");
   if (methods.length === 0) return null;
+
+  /* The library holds a thousand-plus methods; an unfiltered list would be
+     unusable, so matches render capped and the rest stay one keystroke away. */
+  const needle = query.trim().toLowerCase();
+  const matches = needle
+    ? methods.filter((s) => `${s.name} ${s.description}`.toLowerCase().includes(needle))
+    : methods;
+  const visible = matches.slice(0, 60);
 
   const insert = (skill: AgentSkill) => {
     setInserting(skill.name);
@@ -449,8 +458,20 @@ function AgentSkillsPanel({ onInsert }: { onInsert: (text: string) => void }) {
             . Inserting one adds it to your description above, visibly, so the crafted prompt
             builds on it.
           </p>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={`Filter ${methods.length} methods`}
+            aria-label="Filter methods"
+            className="mt-2 w-full border border-border bg-surface-2 px-3 py-1.5 text-xs font-mono
+                       text-text-1 placeholder:text-text-4 outline-none focus:border-accent-dim"
+          />
           <div className="mt-2 space-y-1 max-h-[240px] overflow-y-auto pr-1">
-            {methods.map((skill) => (
+            {visible.length === 0 && (
+              <p className="px-3 py-2 text-2xs text-text-4">Nothing matches that filter.</p>
+            )}
+            {visible.map((skill) => (
               <div
                 key={skill.name}
                 className="flex items-start justify-between gap-3 border border-border px-3 py-2"
@@ -472,6 +493,11 @@ function AgentSkillsPanel({ onInsert }: { onInsert: (text: string) => void }) {
                 </button>
               </div>
             ))}
+            {matches.length > visible.length && (
+              <p className="px-3 py-2 text-2xs text-text-4">
+                {matches.length - visible.length} more match the filter; type to narrow further.
+              </p>
+            )}
           </div>
           {insertError && (
             <p role="alert" className="mt-2 text-2xs text-error">
