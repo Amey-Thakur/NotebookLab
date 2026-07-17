@@ -439,8 +439,15 @@ function AgentSkillsPanel({ onInsert }: { onInsert: (text: string) => void }) {
       {open && (
         <>
           <p className="mt-2 text-2xs text-text-4 leading-relaxed">
-            Working methods from the open AI-SKILLS library. Inserting one adds it to your
-            description above, visibly, so the crafted prompt builds on it.
+            Working methods from the open{" "}
+            <a
+              href="https://amey-thakur.github.io/AI-SKILLS/"
+              className="text-accent-dim hover:text-accent underline underline-offset-2"
+            >
+              AI-SKILLS library
+            </a>
+            . Inserting one adds it to your description above, visibly, so the crafted prompt
+            builds on it.
           </p>
           <div className="mt-2 space-y-1 max-h-[240px] overflow-y-auto pr-1">
             {methods.map((skill) => (
