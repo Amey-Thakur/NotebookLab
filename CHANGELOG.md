@@ -6,6 +6,31 @@ All notable changes to NotebookLab will be documented in this file.
 
 ### Added
 
+- Auto model switching. Turn on Auto in the model menu and NotebookLab picks
+  the best of your connected models for each task: quick jobs go to fast,
+  free local models, hard generation goes to your strongest model, and if one
+  stops answering the request quietly falls over to the next best. The menu
+  always shows which model actually served the last request, and choosing a
+  model by hand simply switches Auto off. The choice is remembered.
+- Live token usage. A counter in the status bar shows this session's real
+  token use, exactly as reported by the providers, never estimated. Click it
+  for the last request's context-window fill (shown as a percentage only when
+  the model's window is a known fact) and a per-model breakdown with each
+  model's share. It appears only once the AI has done something, and resets
+  when the app closes.
+- A 3D connections map. The Connections page can now draw the notebook's note
+  links as a slowly turning three-dimensional cloud, built with no external
+  libraries: drag to rotate, scroll to zoom, click a note to open it, with
+  the flat view one click away and the choice remembered. It stands still
+  under reduced motion.
+- The AI now knows your map. Chat context includes a compact summary of how
+  the notebook's notes link together, so answers can lean on the shape of
+  your work, not just isolated passages.
+- Smarter context packing. Retrieved passages are fitted to the active
+  model's actual context window (falling back to a safe floor when the
+  window is unknown), most relevant first, and citations only ever refer to
+  passages the model really received.
+
 - Open files with NotebookLab. The installer now registers the app for PDF,
   Word, text, and Markdown files, so "Open with NotebookLab" from your file
   manager drops the file into your current notebook, indexed and ready to ask

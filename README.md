@@ -80,7 +80,13 @@ help you think. Nothing leaves your computer.
 - **Bring any model.** A bundled offline llama.cpp server, a curated catalog
   of open models installed through Ollama in one click, and first-class cloud
   connections for Anthropic Claude, OpenAI, Google Gemini, and DeepSeek with
-  your own API key. A header model menu switches between them instantly.
+  your own API key. A header model menu switches between them instantly, or
+  turn on Auto and the best model is picked per task with automatic fallback.
+  A live status-bar counter shows real token use and context-window fill.
+
+- **See the shape of your work.** Note connections render as a 3D map you can
+  rotate, zoom, and click through (no libraries, our own tiny engine), and
+  the same map is handed to the AI so answers know how your notes relate.
 
 - **Open files with it.** Right-click a PDF, Word, text, or Markdown file and
   choose NotebookLab: it lands in your notebook, indexed and ready to ask

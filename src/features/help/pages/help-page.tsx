@@ -237,10 +237,14 @@ const SECTIONS: Section[] = [
         the Models page offers a curated catalog of open models (Llama, Gemma, Qwen, DeepSeek,
         Mistral, Phi) with one-click installs, marked by whether they fit this computer's memory.
         Most capable: connect a cloud provider (Anthropic Claude, OpenAI, Google Gemini, or
-        DeepSeek) with your own API key through a guided setup; the key is stored only on this
-        machine and sent only to that provider. The model menu in the top bar shows which model is
-        active and switches between them in two clicks, and your choice is remembered across
-        restarts. Either way, the choice is yours and it is explicit.
+        DeepSeek) with your own API key through a guided setup; the key is entered once, stored
+        only on this machine, and sent only to that provider. The model menu in the top bar shows
+        which model is active and switches between them in two clicks, remembered across restarts.
+        Turn on Auto in that menu and NotebookLab picks the best of your models for each task,
+        preferring free local compute for quick work and your strongest model for hard generation,
+        falling back automatically if one stops answering. The status bar counts this session's
+        real token use as reported by the providers; click it for the last request's context-window
+        fill and a per-model breakdown. Either way, the choice is yours and it is explicit.
       </P>
     ),
   },

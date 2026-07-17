@@ -60,7 +60,7 @@ const STEPS: TourStep[] = [
   {
     target: "nav-connections",
     title: "See how notes connect",
-    body: "Link notes by typing [[a note's name]] while writing. Connections draws those links as a graph you can click through, with your most-linked notes shown larger.",
+    body: "Link notes by typing [[a note's name]] while writing. Connections draws those links as a 3D map you can rotate, zoom, and click through (a flat view is one click away), and the AI is handed the same map so it knows how your work fits together.",
     placement: "right",
   },
   {
@@ -138,7 +138,7 @@ const STEPS: TourStep[] = [
   {
     target: "status",
     title: "Activity at a glance",
-    body: "This dot reads the app's pulse: amber when no model is connected, green when one is ready, and a pulsing accent labelled Thinking while a chat, import, download, or generation is running.",
+    body: "This dot reads the app's pulse: amber when no model is connected, green when one is ready, and a pulsing accent labelled Thinking while work is running. Once the AI has done anything, a live token counter appears on the right; click it for the per-model breakdown.",
     placement: "top",
   },
   {
