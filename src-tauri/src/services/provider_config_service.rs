@@ -27,6 +27,9 @@ use crate::providers::{LlmProvider, ProviderRouter};
 /// Settings key holding the name of the provider the user last activated.
 pub const ACTIVE_PROVIDER_KEY: &str = "active_provider_name";
 
+/// Settings key for the automatic per-task model selection flag.
+pub const AUTO_MODEL_KEY: &str = "auto_model_enabled";
+
 /// Provider kinds the register command accepts. "sidecar" is absent on
 /// purpose: the bundled server registers itself at runtime and is never
 /// persisted (its port and key are per-session).
@@ -76,36 +79,52 @@ pub fn build_provider(config: &ProviderConfig) -> Box<dyn LlmProvider> {
 /// taking the provider write lock; holding both at once risks a lock-order
 /// deadlock against request paths that hold the database while calling into
 /// the router.
-pub fn load_saved_configs(conn: &Connection) -> (Vec<ProviderConfig>, Option<String>) {
+pub fn load_saved_configs(conn: &Connection) -> SavedProviderState {
     let configs = match provider_repository::list(conn) {
         Ok(configs) => configs,
         Err(e) => {
             tracing::warn!("Could not load saved providers: {e}");
-            return (Vec::new(), None);
+            return SavedProviderState::default();
         }
     };
     let saved_active = provider_repository::get_setting(conn, ACTIVE_PROVIDER_KEY)
         .ok()
         .flatten();
-    (configs, saved_active)
+    let auto_enabled = provider_repository::get_setting(conn, AUTO_MODEL_KEY)
+        .ok()
+        .flatten()
+        .as_deref()
+        == Some("true");
+    SavedProviderState {
+        configs,
+        saved_active,
+        auto_enabled,
+    }
 }
 
-/// Register saved providers and re-apply the persisted active choice. Called
-/// once at startup, before local auto-detection, so restored cloud connections
-/// and model choices are ready without any user action.
-pub fn apply_saved_configs(
-    router: &mut ProviderRouter,
-    configs: Vec<ProviderConfig>,
-    saved_active: Option<String>,
-) {
-    if configs.is_empty() {
+/// Everything restore needs from the database, read in one lock scope.
+#[derive(Default)]
+pub struct SavedProviderState {
+    pub configs: Vec<ProviderConfig>,
+    pub saved_active: Option<String>,
+    pub auto_enabled: bool,
+}
+
+/// Register saved providers and re-apply the persisted active choice and the
+/// auto-selection flag. Called once at startup, before local auto-detection,
+/// so restored cloud connections and model choices are ready without any user
+/// action.
+pub fn apply_saved_configs(router: &mut ProviderRouter, saved: SavedProviderState) {
+    router.set_auto(saved.auto_enabled);
+    if saved.configs.is_empty() {
         return;
     }
-    let count = configs.len();
-    for config in configs {
+    let count = saved.configs.len();
+    for config in saved.configs {
         let name = config.name.clone();
         let index = router.register_or_replace(build_provider(&config));
-        if saved_active.as_deref() == Some(name.as_str()) && router.set_active(index).is_ok() {
+        if saved.saved_active.as_deref() == Some(name.as_str()) && router.set_active(index).is_ok()
+        {
             tracing::info!("Restored active provider: {name}");
         }
     }

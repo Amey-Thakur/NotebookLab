@@ -15,7 +15,7 @@
 use tauri::{Manager, State};
 
 use crate::error::{AppError, AppResult};
-use crate::providers::{ChatMessage, ChatRequest, MessageRole};
+use crate::providers::{ChatMessage, ChatRequest, MessageRole, TaskPurpose};
 use crate::services::search_service;
 use crate::state::AppState;
 
@@ -56,6 +56,7 @@ pub async fn generate_mind_map(
             ],
             max_tokens: Some(2048),
             temperature: Some(0.3),
+            purpose: TaskPurpose::Quality,
         }).map_err(|e| AppError::Provider(e.to_string()))?;
 
         Ok(response.content)
@@ -100,6 +101,7 @@ pub async fn generate_socratic_questions(
             ],
             max_tokens: Some(1024),
             temperature: Some(0.7),
+            purpose: TaskPurpose::Quality,
         }).map_err(|e| AppError::Provider(e.to_string()))?;
 
         Ok(response.content)

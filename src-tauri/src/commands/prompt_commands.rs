@@ -21,7 +21,7 @@
 use tauri::Manager;
 
 use crate::error::{AppError, AppResult};
-use crate::providers::{ChatMessage, ChatRequest, MessageRole};
+use crate::providers::{ChatMessage, ChatRequest, MessageRole, TaskPurpose};
 use crate::state::AppState;
 
 const GENERATE_SYSTEM: &str = include_str!("../../resources/prompts/prompt-generate.txt");
@@ -72,6 +72,7 @@ pub async fn craft_prompt(app: tauri::AppHandle, input: String, mode: String) ->
                 ],
                 max_tokens: Some(2048),
                 temperature: Some(0.3),
+                purpose: TaskPurpose::Quality,
             })
             .map_err(|e| AppError::Provider(e.to_string()))?;
 

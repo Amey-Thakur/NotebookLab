@@ -21,7 +21,7 @@
 use tauri::Manager;
 
 use crate::error::{AppError, AppResult};
-use crate::providers::traits::{ChatMessage, ChatRequest, MessageRole};
+use crate::providers::traits::{ChatMessage, ChatRequest, MessageRole, TaskPurpose};
 use crate::state::AppState;
 
 const DISCUSSION_PROMPT: &str = include_str!("../../resources/prompts/podcast-discussion.txt");
@@ -123,6 +123,7 @@ pub async fn generate_podcast(
                     ],
                     max_tokens: Some(2000),
                     temperature: Some(0.7),
+                    purpose: TaskPurpose::Quality,
                 })
                 .map_err(|e| AppError::Provider(e.to_string()))?
         };

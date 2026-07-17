@@ -20,7 +20,7 @@ use tauri::{Manager, State};
 
 use crate::database::repository::chunk_repository;
 use crate::error::{AppError, AppResult};
-use crate::providers::{ChatMessage, ChatRequest, MessageRole};
+use crate::providers::{ChatMessage, ChatRequest, MessageRole, TaskPurpose};
 use crate::services::search_service;
 use crate::state::AppState;
 
@@ -112,6 +112,7 @@ pub async fn generate_studio(
                 ],
                 max_tokens: Some(2048),
                 temperature: Some(0.3),
+                purpose: TaskPurpose::Quality,
             })
             .map_err(|e| AppError::Provider(e.to_string()))?;
 

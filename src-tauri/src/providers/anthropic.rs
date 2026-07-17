@@ -224,6 +224,7 @@ mod tests {
             messages,
             max_tokens: None,
             temperature: None,
+            purpose: Default::default(),
         }
     }
 
