@@ -108,7 +108,7 @@ const STEPS: TourStep[] = [
   {
     target: "nav-models",
     title: "Connect your AI: start here",
-    body: "The AI features need a model. Open Models to run the bundled one entirely offline on your machine, or connect any OpenAI-compatible provider like Ollama or LM Studio. Nothing else works until this is set, so it's the first stop.",
+    body: "The AI features need a model. Models offers three paths: the bundled offline model, one-click installs of open models through Ollama, or a cloud provider (Anthropic, OpenAI, Gemini, DeepSeek) with your own API key. It's the first stop.",
     placement: "right",
   },
   {
@@ -122,6 +122,12 @@ const STEPS: TourStep[] = [
     title: "Help and About",
     body: "Help is the full guide to NotebookLab, readable entirely offline. About introduces the two makers and the Makers' Pledge behind the app.",
     placement: "right",
+  },
+  {
+    target: "model-switcher",
+    title: "Your model, one click away",
+    body: "This always shows which AI model is doing the work. Click it to switch between local and cloud models instantly, search them, and pin the ones you use most.",
+    placement: "bottom",
   },
   {
     target: "search",
