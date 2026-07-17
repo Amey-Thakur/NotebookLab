@@ -77,9 +77,10 @@ help you think. Nothing leaves your computer.
 - **Listen instead.** Turn a notebook into a spoken audio overview, read aloud
   offline, as a discussion, a brief, a debate, or a critique.
 
-- **Bring any model.** One-click local model download with a bundled
-  llama.cpp server, or connect Ollama, LM Studio, and other
-  OpenAI-compatible providers.
+- **Bring any model.** A bundled offline llama.cpp server, a curated catalog
+  of open models installed through Ollama in one click, and first-class cloud
+  connections for Anthropic Claude, OpenAI, Google Gemini, and DeepSeek with
+  your own API key. A header model menu switches between them instantly.
 
 - **Move fast.** One keyboard-first search box, go-to shortcuts (`G` then a
   key), and a cheat sheet on `?`. Press once, land anywhere.
@@ -112,8 +113,9 @@ then, on first open right-click the app and choose Open, or run
 
 1. A short welcome greets you on the first launch and opens with a Getting
    Started notebook and two sample notes.
-2. Open **Models**, then either download the bundled model (one 2 GB download)
-   or connect a provider you already run, like Ollama.
+2. Open **Models**, then pick a path: download the bundled model (one 2 GB
+   download), install an open model through Ollama with one click, or connect
+   a cloud provider (Claude, GPT, Gemini, DeepSeek) with your API key.
 3. Import a PDF, Word, text, Markdown, or image file into a notebook.
 4. Open **Chat** and ask a question about it.
 5. Press `?` any time for the full list of keyboard shortcuts.
@@ -164,7 +166,7 @@ src/            React 19 frontend, organized by feature
 src-tauri/      Rust backend
   commands/       async IPC handlers
   services/       RAG, ingestion, search, embeddings, sidecar lifecycle
-  providers/      LLM abstraction for any OpenAI-compatible API
+  providers/      LLM abstraction: OpenAI-compatible, Anthropic, Gemini
   parsers/        PDF, Word (.docx), text, Markdown, image OCR
   database/       SQLite repositories (WAL, FTS5, cascade deletes)
   api/            local REST server on 127.0.0.1:8484
