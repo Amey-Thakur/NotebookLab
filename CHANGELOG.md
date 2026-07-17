@@ -4,6 +4,8 @@ All notable changes to NotebookLab will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-17
+
 ### Added
 
 - Proven methods, built in. Prompt Studio now loads the open AI-SKILLS
@@ -12,6 +14,66 @@ All notable changes to NotebookLab will be documented in this file.
   inserted into your description in plain sight for the crafter to build on.
   The catalog is cached for a day, only that one repository is ever
   contacted, and everything degrades gracefully offline.
+
+- Share a notebook. Export any notebook to a single self-contained file that
+  holds the notebook, its notes, its documents (as their extracted, searchable
+  text), and its canvas, then import that file on another machine to recreate
+  the notebook, fully offline and with no original source files needed. Import
+  and export live on the Notebooks page; a half-finished import is rolled back
+  so nothing partial is left behind.
+- Audio overview formats. The audio overview (read aloud in the browser) can now
+  be a two-host discussion, a one-minute brief from a single narrator, a debate
+  between opposing speakers, or a critique that weighs the material's strengths
+  and gaps. Each is grounded in the notebook's sources, and the prompts now keep
+  document text strictly as data.
+- More Studio formats. Alongside the study guide, flashcards, quiz, and mind
+  map, the Studio can now turn a notebook's sources into a timeline, a slide
+  deck, a data table, a briefing doc, and a blog post. Each one is grounded in
+  your own documents and renders in its own real view, with the timeline, deck,
+  and table laid out visually and the reports read as formatted prose.
+- Canvas workspace. Every notebook now has one open spatial canvas: draw
+  freehand with a pressure-aware pen, add rectangles, ellipses, and text, drop
+  in images, and arrange it all together. Pan by dragging the empty space, zoom
+  toward the cursor, select and move or delete anything, and undo/redo. The
+  whole scene, images included, is stored with the notebook and autosaves as you
+  work, so it stays self-contained and offline. Built on a small custom SVG
+  engine and perfect-freehand rather than a heavy whiteboard library, so it
+  matches the app's look and adds almost nothing to the bundle.
+- Word and image import. Bring in Word (`.docx`) files, and images or scans of
+  printed text (`.png`, `.jpg`, `.jpeg`, `.tiff`, `.webp`, `.bmp`). Images are
+  read with fully offline OCR, no cloud and no network, so a photo or scan
+  becomes searchable content like every other source and flows into search,
+  chat, and the Studio. The OCR models are bundled and verified by checksum; if
+  they are ever missing, image import degrades to a clear message instead of
+  failing quietly. Word and text formats never load the models.
+- Studio: turn a notebook's documents into study aids grounded in your own
+  sources. A structured study guide, interactive flashcards, a scored
+  multiple-choice quiz, and a real visual mind map. Add a focus to narrow it or
+  leave it blank to cover the whole notebook.
+- Visual mind maps: the mind map now renders as an actual tree of connected
+  ideas, in the Studio and in the Thinking Partner, replacing the text preview.
+- Home: a calm landing screen with a greeting, quick actions, your recent
+  notes, and a preview of your notebooks.
+- Universal search launcher: one keyboard-first box (Ctrl+K, or the header
+  Search button) to reach any page, notebook, or action.
+- Keyboard shortcut system with a shared registry and a cheat sheet: press `?`
+  anywhere to see every binding, grouped by area. Navigate by typing `G` then
+  a key (`G` `N` for Notebooks, `G` `A` for About, and so on). The Settings
+  page reads the same registry, so the list can never drift from what is wired.
+- First-run welcome: a short, spacious greeting on the first launch that
+  introduces the app, lets you pick a theme, and points out the keys worth
+  knowing. Shown once.
+- Animated light and dark toggle in the header: a real switch whose knob slides
+  between a sun and a moon, with the active side lit in the accent color.
+- About page: the people behind NotebookLab, why it exists, portraits pulled
+  live from GitHub, and the Makers' Pledge, a certificate carrying the
+  fingerprint of the key that signs every commit and release.
+- The Makers' Pledge as a signed certificate of authenticity: shown on the
+  website and in the README, and available as a one-click download.
+- A single brand mark component, drawn from the packaged app icon, now used
+  consistently in the header, the welcome flow, and the About page.
+- A shared, accessible dialog primitive (focus trap, Escape to close, reduced
+  motion aware) behind the welcome and cheat sheet overlays.
 
 ### Changed
 
@@ -30,8 +92,6 @@ All notable changes to NotebookLab will be documented in this file.
   activity (model detection, imports, downloads, errors), kept in memory
   only, with refresh and copy-all. Useful for bug reports and for anyone
   building against the local REST API.
-
-### Changed
 
 - Auto model selection now also respects context limits: a request that could
   not fit a model's known context window is routed to a model with room
@@ -140,8 +200,6 @@ All notable changes to NotebookLab will be documented in this file.
   notebook as a source (images read with OCR) and indexes it, so the next
   question can draw on it.
 
-### Changed
-
 - Prompt Studio rebuilt as a real prompt crafter. Describe the job in plain
   words and it writes the complete, ready-to-run prompt, choosing the right
   technique for the task: worked examples for classification and extraction,
@@ -203,72 +261,6 @@ All notable changes to NotebookLab will be documented in this file.
   users are not dropped to the top of the page.
 - Regenerating an audio overview during playback stops the old audio instead of
   leaving it reading over mismatched highlights.
-
-## [0.4.0] - 2026-07-13
-
-### Added
-
-- Share a notebook. Export any notebook to a single self-contained file that
-  holds the notebook, its notes, its documents (as their extracted, searchable
-  text), and its canvas, then import that file on another machine to recreate
-  the notebook, fully offline and with no original source files needed. Import
-  and export live on the Notebooks page; a half-finished import is rolled back
-  so nothing partial is left behind.
-- Audio overview formats. The audio overview (read aloud in the browser) can now
-  be a two-host discussion, a one-minute brief from a single narrator, a debate
-  between opposing speakers, or a critique that weighs the material's strengths
-  and gaps. Each is grounded in the notebook's sources, and the prompts now keep
-  document text strictly as data.
-- More Studio formats. Alongside the study guide, flashcards, quiz, and mind
-  map, the Studio can now turn a notebook's sources into a timeline, a slide
-  deck, a data table, a briefing doc, and a blog post. Each one is grounded in
-  your own documents and renders in its own real view, with the timeline, deck,
-  and table laid out visually and the reports read as formatted prose.
-- Canvas workspace. Every notebook now has one open spatial canvas: draw
-  freehand with a pressure-aware pen, add rectangles, ellipses, and text, drop
-  in images, and arrange it all together. Pan by dragging the empty space, zoom
-  toward the cursor, select and move or delete anything, and undo/redo. The
-  whole scene, images included, is stored with the notebook and autosaves as you
-  work, so it stays self-contained and offline. Built on a small custom SVG
-  engine and perfect-freehand rather than a heavy whiteboard library, so it
-  matches the app's look and adds almost nothing to the bundle.
-- Word and image import. Bring in Word (`.docx`) files, and images or scans of
-  printed text (`.png`, `.jpg`, `.jpeg`, `.tiff`, `.webp`, `.bmp`). Images are
-  read with fully offline OCR, no cloud and no network, so a photo or scan
-  becomes searchable content like every other source and flows into search,
-  chat, and the Studio. The OCR models are bundled and verified by checksum; if
-  they are ever missing, image import degrades to a clear message instead of
-  failing quietly. Word and text formats never load the models.
-- Studio: turn a notebook's documents into study aids grounded in your own
-  sources. A structured study guide, interactive flashcards, a scored
-  multiple-choice quiz, and a real visual mind map. Add a focus to narrow it or
-  leave it blank to cover the whole notebook.
-- Visual mind maps: the mind map now renders as an actual tree of connected
-  ideas, in the Studio and in the Thinking Partner, replacing the text preview.
-- Home: a calm landing screen with a greeting, quick actions, your recent
-  notes, and a preview of your notebooks.
-- Universal search launcher: one keyboard-first box (Ctrl+K, or the header
-  Search button) to reach any page, notebook, or action.
-- Keyboard shortcut system with a shared registry and a cheat sheet: press `?`
-  anywhere to see every binding, grouped by area. Navigate by typing `G` then
-  a key (`G` `N` for Notebooks, `G` `A` for About, and so on). The Settings
-  page reads the same registry, so the list can never drift from what is wired.
-- First-run welcome: a short, spacious greeting on the first launch that
-  introduces the app, lets you pick a theme, and points out the keys worth
-  knowing. Shown once.
-- Animated light and dark toggle in the header: a real switch whose knob slides
-  between a sun and a moon, with the active side lit in the accent color.
-- About page: the people behind NotebookLab, why it exists, portraits pulled
-  live from GitHub, and the Makers' Pledge, a certificate carrying the
-  fingerprint of the key that signs every commit and release.
-- The Makers' Pledge as a signed certificate of authenticity: shown on the
-  website and in the README, and available as a one-click download.
-- A single brand mark component, drawn from the packaged app icon, now used
-  consistently in the header, the welcome flow, and the About page.
-- A shared, accessible dialog primitive (focus trap, Escape to close, reduced
-  motion aware) behind the welcome and cheat sheet overlays.
-
-### Fixed
 
 - Word export kept the numbers on numbered lists and now emits emoji and other
   characters beyond the basic range as valid document text.

@@ -70,15 +70,15 @@
 
     /* ── Nav ── */
     nav{position:fixed;top:0;left:0;right:0;z-index:10;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;background:var(--nav-bg);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
-    .nav-logo{display:flex;align-items:center;gap:8px}
-    .nav-logo svg{width:24px;height:24px}
-    .nav-logo span{font-size:15px;font-weight:700}
+    .nav-logo{display:flex;align-items:center;gap:11px}
+    .nav-logo svg{width:34px;height:34px}
+    .nav-logo span{font-size:21px;font-weight:700;letter-spacing:-.3px}
     .nav-right{display:flex;align-items:center;gap:24px}
-    .nav-links{display:flex;gap:24px;align-items:center}
-    .nav-links a{font-size:13px;color:var(--dim);transition:color .15s;background:linear-gradient(var(--accent),var(--accent)) bottom left no-repeat;background-size:0 1px;transition:color .15s,background-size .25s ease}
+    .nav-links{display:flex;gap:26px;align-items:center}
+    .nav-links a{font-size:15px;color:var(--dim);transition:color .15s;background:linear-gradient(var(--accent),var(--accent)) bottom left no-repeat;background-size:0 1px;transition:color .15s,background-size .25s ease}
     .nav-links a:hover{color:var(--text);background-size:100% 1px}
     .nav-controls{display:flex;align-items:center;gap:12px}
-    .btn-nav{background-image:none;padding:8px 16px;background:var(--accent);color:#fff;border-radius:var(--r);font-weight:700;font-size:13px;transition:opacity .2s}
+    .btn-nav{background-image:none;padding:9px 18px;background:var(--accent);color:#fff;border-radius:var(--r);font-weight:700;font-size:14px;transition:opacity .2s}
     .btn-nav:hover{opacity:.88}
     .nav-toggle{display:none;align-items:center;justify-content:center;background:none;border:none;color:var(--text);cursor:pointer;padding:4px}
 
@@ -328,7 +328,7 @@
     <div class="hero">
       <div class="hero-text">
         <h1>Your thinking<br>partner, <em>on your<br>machine.</em></h1>
-        <p>NotebookLab is a desktop app that lets you import PDFs, notes, and research papers, then chat with an AI that has actually read them. Every answer lists its sources with document, heading, and page. Runs entirely on your computer. No cloud account, no API keys, no data uploaded anywhere.</p>
+        <p>NotebookLab is a desktop app that lets you import PDFs, notes, and research papers, then chat with an AI that has actually read them. Every answer lists its sources with document, heading, and page. Runs entirely on your computer: no account, no key, nothing uploaded. Cloud models are there if you bring your own key, never required.</p>
         <div class="hero-actions">
           <a href="https://github.com/Amey-Thakur/NotebookLab/releases/latest" class="btn btn-primary">Download for free</a>
           <a href="https://github.com/Amey-Thakur/NotebookLab" class="btn btn-ghost">View source</a>
@@ -429,7 +429,7 @@
       <div class="feature-card reveal">
         <div class="feature-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 4h12M3 9h8M3 14h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12 12l2 2 2-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         <h3>Connected notes</h3>
-        <p>A clean Markdown editor with [[wiki-links]], backlinks, and a connections map.</p>
+        <p>A clean Markdown editor with [[wiki-links]], backlinks, and a 3D connections map you can fly through.</p>
       </div>
       <div class="feature-card reveal">
         <div class="feature-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2v9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M6 5l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 10v4h10v-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
@@ -439,7 +439,7 @@
       <div class="feature-card reveal">
         <div class="feature-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="3" y="6" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 3h4M9 3v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="9" cy="11" r="2" stroke="currentColor" stroke-width="1.5"/></svg></div>
         <h3>Any model, your choice</h3>
-        <p>A built-in offline model, one-click installs through Ollama, or Claude, GPT, Gemini, and DeepSeek with your own key.</p>
+        <p>Eight bundled offline models sized to your hardware, one-click Ollama installs, or Claude, GPT, Gemini, and DeepSeek with your own key. Auto mode picks the best fit per task, with live token and context readouts.</p>
       </div>
     </div>
   </div>
