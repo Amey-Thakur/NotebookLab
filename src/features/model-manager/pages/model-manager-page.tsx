@@ -122,7 +122,9 @@ export function ModelManagerPage() {
                     : ""
                 }`
               : "")
-          : " "}
+          : hardware.isLoading
+            ? "Checking what this computer can run..."
+            : ""}
       </p>
 
       {/* First visit: the three paths, so "what should I do next?" answers itself */}

@@ -176,10 +176,10 @@ export function ModelSwitcher() {
 
           <div className="max-h-[320px] overflow-y-auto p-1.5">
             {local.length === 0 && cloud.length === 0 && (
-              <p className="px-2.5 py-3 text-xs text-text-4">
+              <p className="px-2.5 py-3 text-xs text-text-4 leading-relaxed">
                 {providers?.length
                   ? "Nothing matches that search."
-                  : "No models yet. Set one up below; it takes a minute."}
+                  : "No AI model yet. Setting one up takes about a minute, and the button below walks you through it."}
               </p>
             )}
 
@@ -212,7 +212,7 @@ export function ModelSwitcher() {
             className="w-full text-left px-3.5 py-2.5 text-xs font-mono text-text-3 border-t
                        border-border hover:text-text-1 hover:bg-surface-2 transition-colors"
           >
-            Manage models →
+            {providers?.length ? "Manage models →" : "Set up AI →"}
           </button>
         </div>
       )}

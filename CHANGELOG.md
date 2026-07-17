@@ -6,6 +6,19 @@ All notable changes to NotebookLab will be documented in this file.
 
 ### Added
 
+- Open files with NotebookLab. The installer now registers the app for PDF,
+  Word, text, and Markdown files, so "Open with NotebookLab" from your file
+  manager drops the file into your current notebook, indexed and ready to ask
+  about. Opening a file while the app is running reuses the same window, and
+  several files opened at once import one after another.
+- A quiet boot screen. The window shows a single pulsing mark in your theme's
+  colors while the app gets ready, instead of a blank flash, and it stands
+  still when your system asks for reduced motion.
+- Faster startup. Every page now loads on first visit instead of all at once,
+  so the app opens lighter and heavy features (the editor, the canvas, the
+  connections graph) fetch their code only when you actually go there, behind
+  the same quiet loading mark.
+
 - A model menu in the top bar. It always shows which AI model is doing the
   work, and switches between your local and cloud models in two clicks, with
   search, availability dots, and pin-to-top favorites. Your choice is now
@@ -86,6 +99,10 @@ All notable changes to NotebookLab will be documented in this file.
 
 ### Fixed
 
+- A model download in progress is no longer forgotten when you leave the
+  Models page: coming back restores the live progress bar, and a download
+  whose connection stalls outright now ends with a clear error instead of
+  silently blocking future downloads until restart.
 - Chat now sends your actual question to the model. The retrieval pipeline
   stripped the current question along with the duplicate guard and never re-added
   it, so every answer was generated without the model ever seeing what was asked.
