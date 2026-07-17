@@ -85,7 +85,9 @@ export function useOpenWith() {
 
     /* Files opened while the app is already running. */
     const unlisten = listen<string[]>("open-files", (event) => {
-      void importFiles(event.payload);
+      importFiles(event.payload).catch((error) => {
+        console.warn("Open-with handling failed:", error);
+      });
     });
 
     return () => {
