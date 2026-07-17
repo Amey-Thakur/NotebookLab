@@ -73,6 +73,12 @@ const SECTIONS: Section[] = [
             <B>Images and scans</B> are read with offline OCR, so a photo or scan of printed text
             becomes searchable content like any other source. OCR works best on clear, printed text.
           </li>
+          <li>
+            <B>Open with NotebookLab.</B> Right-click a PDF, Word, text, or Markdown file in your
+            file manager and choose NotebookLab: the file lands in your current notebook, already
+            indexed. If the app is running, the same window picks it up.
+          </li>
+          <li>You can also drag files straight onto the window, or onto Chat.</li>
           <li>Files are capped at 50 MB each, and a file already in the notebook is not imported twice.</li>
           <li>Legacy binary Word (<Code>.doc</Code>) is not supported; save it as <Code>.docx</Code> first.</li>
         </List>

@@ -82,8 +82,13 @@ help you think. Nothing leaves your computer.
   connections for Anthropic Claude, OpenAI, Google Gemini, and DeepSeek with
   your own API key. A header model menu switches between them instantly.
 
+- **Open files with it.** Right-click a PDF, Word, text, or Markdown file and
+  choose NotebookLab: it lands in your notebook, indexed and ready to ask
+  about. Already-running windows pick the file up instead of starting twice.
+
 - **Move fast.** One keyboard-first search box, go-to shortcuts (`G` then a
-  key), and a cheat sheet on `?`. Press once, land anywhere.
+  key), and a cheat sheet on `?`. Press once, land anywhere. Pages load on
+  demand, so the app starts light.
 
 <br>
 
