@@ -41,7 +41,7 @@ export function OllamaSection() {
   const totalBytes = (models.data ?? []).reduce((sum, m) => sum + m.size_bytes, 0);
 
   return (
-    <div className="border border-border p-4 mb-6">
+    <div className="border border-border p-5 mb-8">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
         <h3 className="text-sm font-semibold text-text-1">
           Ollama

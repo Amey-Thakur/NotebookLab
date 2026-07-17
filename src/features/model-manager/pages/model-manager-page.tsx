@@ -90,7 +90,7 @@ export function ModelManagerPage() {
   };
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
+    <div className="p-8 lg:px-12 max-w-6xl mx-auto">
       <h1 className="text-2xl font-display font-bold text-text-1 mb-2">Models</h1>
 
       {/* Active model, plainly */}
@@ -129,28 +129,36 @@ export function ModelManagerPage() {
 
       {/* First visit: the three paths, so "what should I do next?" answers itself */}
       {!hasProviders && (
-        <div className="border border-accent-dim bg-surface-2 p-4 mb-6">
-          <h2 className="text-base font-display font-bold text-text-1 mb-1">
+        <div className="border border-accent-dim bg-surface-2 p-6 mb-8">
+          <h2 className="text-base font-display font-bold text-text-1 mb-1.5">
             Pick how you want to run AI
           </h2>
-          <p className="text-sm text-text-3 mb-3 max-w-prose">
+          <p className="text-sm text-text-3 mb-5">
             Everything in NotebookLab works with any of the three. You can mix them and switch
             anytime from the model menu in the top bar.
           </p>
-          <ul className="text-xs text-text-3 space-y-1.5 list-disc pl-4 max-w-prose">
-            <li>
-              <span className="text-text-1 font-semibold">Easiest, fully offline:</span> download
-              the bundled starter model below; nothing else to install.
-            </li>
-            <li>
-              <span className="text-text-1 font-semibold">More choice, still local:</span> install
-              Ollama and pick from the catalog; we handle the rest.
-            </li>
-            <li>
-              <span className="text-text-1 font-semibold">Most capable:</span> connect a cloud
-              provider with your own API key.
-            </li>
-          </ul>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="border border-border bg-surface p-4">
+              <p className="text-sm font-semibold text-text-1 mb-1">Easiest, fully offline</p>
+              <p className="text-xs text-text-3 leading-relaxed">
+                Download the bundled starter model below. Nothing else to install, no account, no
+                token bill.
+              </p>
+            </div>
+            <div className="border border-border bg-surface p-4">
+              <p className="text-sm font-semibold text-text-1 mb-1">More choice, still local</p>
+              <p className="text-xs text-text-3 leading-relaxed">
+                Install Ollama and pick from a curated catalog. NotebookLab handles the rest.
+              </p>
+            </div>
+            <div className="border border-border bg-surface p-4">
+              <p className="text-sm font-semibold text-text-1 mb-1">Most capable</p>
+              <p className="text-xs text-text-3 leading-relaxed">
+                Connect Claude, GPT, Gemini, or DeepSeek with your own API key through a guided
+                setup.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
@@ -204,7 +212,7 @@ export function ModelManagerPage() {
           Custom endpoint...
         </button>
       </div>
-      <p className="text-2xs text-text-4 mb-4 max-w-prose">
+      <p className="text-2xs text-text-4 mb-4">
         The scan finds LM Studio, llama.cpp, or Ollama already running on this machine. A custom
         endpoint connects any other OpenAI-compatible server.
       </p>
