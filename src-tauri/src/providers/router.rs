@@ -200,23 +200,40 @@ impl ProviderRouter {
         }
 
         /* Auto: rank every provider for this request's purpose, then walk the
-        list. Trying at most three keeps a fully-offline failure fast. */
-        let mut order: Vec<(i32, usize)> = self
+        list. Trying at most three keeps a fully-offline failure fast. A
+        candidate whose KNOWN context window cannot hold this request (plus
+        the reply) is deprioritized rather than sent a prompt it would
+        truncate; unknown windows are given the benefit of the doubt. */
+        let needed_tokens: u32 = request
+            .messages
+            .iter()
+            .map(|m| (m.content.len() as u32) / 4 + 1)
+            .sum::<u32>()
+            + request.max_tokens.unwrap_or(2048)
+            + 256;
+
+        let mut order: Vec<(bool, i32, usize)> = self
             .providers
             .iter()
             .enumerate()
             .map(|(i, p)| {
+                let fits = auto_select::context_window(p.kind(), p.model())
+                    .map(|window| window >= needed_tokens)
+                    .unwrap_or(true);
                 (
+                    fits,
                     auto_select::score(p.kind(), p.model(), p.is_local(), request.purpose),
                     i,
                 )
             })
             .collect();
-        order.sort_by_key(|entry| std::cmp::Reverse(entry.0));
+        /* Fitting candidates first, best score within each group; a too-small
+        window stays reachable as a last resort rather than failing outright. */
+        order.sort_by_key(|entry| (std::cmp::Reverse(entry.0), std::cmp::Reverse(entry.1)));
 
         let mut last_error =
             ProviderError::NotAvailable("No providers registered. Set up a model first.".into());
-        for (_, idx) in order.into_iter().take(3) {
+        for (_, _, idx) in order.into_iter().take(3) {
             let Ok(provider) = self.provider_at(idx) else {
                 continue;
             };

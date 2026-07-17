@@ -37,6 +37,13 @@ pub fn importable_files(args: impl Iterator<Item = String>) -> Vec<String> {
         .collect()
 }
 
+/// The backend's most recent log lines for the Settings log view. Read-only,
+/// in-memory, capped at 500 lines; nothing is written to disk.
+#[tauri::command(rename_all = "snake_case")]
+pub fn get_recent_logs() -> Vec<String> {
+    crate::utils::log_buffer::recent_lines()
+}
+
 /// Hand over (and clear) the files the app was launched with, so a double
 /// opened PDF lands in a notebook exactly once.
 #[tauri::command(rename_all = "snake_case")]

@@ -15,7 +15,7 @@
  * Date: 2026-07-12
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
@@ -35,6 +35,7 @@ const STATE_LABELS: Record<SidecarStatus["state"], string> = {
 
 export function LocalServerCard() {
   const queryClient = useQueryClient();
+  const [selectedPath, setSelectedPath] = useState<string | null>(null);
 
   const { data: available } = useQuery({
     queryKey: [QUERY_KEYS.SIDECAR, "available"],
@@ -57,7 +58,8 @@ export function LocalServerCard() {
   });
 
   const start = useMutation({
-    mutationFn: () => tauriInvoke<SidecarStatus>("start_sidecar", { model_path: null }),
+    mutationFn: (modelPath: string | null) =>
+      tauriInvoke<SidecarStatus>("start_sidecar", { model_path: modelPath }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SIDECAR, "status"] });
     },
@@ -111,32 +113,59 @@ export function LocalServerCard() {
         minute on the first run.
       </p>
 
-      <div className="flex items-center gap-3 mb-3">
+      <div className="flex flex-wrap items-center gap-3 mb-3">
         {!isRunning ? (
-          <button
-            type="button"
-            onClick={() => start.mutate()}
-            disabled={start.isPending}
-            className="px-4 py-2 text-sm font-mono bg-primary text-on-primary
-                       hover:bg-primary-hover transition-colors disabled:opacity-50"
-          >
-            {state === "crashed" ? "Restart Server" : "Start Server"}
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => start.mutate(selectedPath)}
+              disabled={start.isPending}
+              className="px-4 py-2 text-sm font-mono bg-primary text-on-primary
+                         hover:bg-primary-hover transition-colors disabled:opacity-50"
+            >
+              {state === "crashed" ? "Restart Server" : "Start Server"}
+            </button>
+            {models.length > 1 ? (
+              <label className="flex items-center gap-2 text-xs font-mono text-text-4">
+                with
+                <select
+                  value={selectedPath ?? models[0].path}
+                  onChange={(e) => setSelectedPath(e.target.value)}
+                  aria-label="Model to start the server with"
+                  className="px-2 py-1.5 text-xs font-mono bg-surface border border-border
+                             text-text-1 outline-none focus:border-accent-dim max-w-[280px]"
+                >
+                  {models.map((m) => (
+                    <option key={m.path} value={m.path}>
+                      {m.name} ({m.size_display})
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <span className="text-xs font-mono text-text-4">
+                {models[0].name} ({models[0].size_display})
+              </span>
+            )}
+          </>
         ) : (
-          <button
-            type="button"
-            onClick={() => stop.mutate()}
-            disabled={stop.isPending || state === "starting"}
-            className="px-4 py-2 text-sm font-mono border border-border text-text-2
-                       hover:border-error hover:text-error transition-colors disabled:opacity-50"
-          >
-            Stop Server
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => stop.mutate()}
+              disabled={stop.isPending || state === "starting"}
+              className="px-4 py-2 text-sm font-mono border border-border text-text-2
+                         hover:border-error hover:text-error transition-colors disabled:opacity-50"
+            >
+              Stop Server
+            </button>
+            <span className="text-xs font-mono text-text-4">
+              {status?.model_path
+                ? (models.find((m) => m.path === status.model_path)?.name ?? models[0].name)
+                : models[0].name}
+            </span>
+          </>
         )}
-
-        <span className="text-xs font-mono text-text-4">
-          {models[0].name} ({models[0].size_display})
-        </span>
       </div>
 
       {state === "crashed" && (

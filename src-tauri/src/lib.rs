@@ -37,7 +37,13 @@ pub fn run() {
         "notebooklab=info,tauri=warn"
     };
 
-    tracing_subscriber::fmt().with_env_filter(log_filter).init();
+    /* Logs tee to the console and to an in-memory ring buffer that powers the
+    Settings log view; ANSI stays off so captured lines read cleanly. */
+    tracing_subscriber::fmt()
+        .with_env_filter(log_filter)
+        .with_ansi(false)
+        .with_writer(utils::log_buffer::TeeMakeWriter)
+        .init();
 
     tracing::info!("Starting NotebookLab v{}", env!("CARGO_PKG_VERSION"));
 
@@ -193,7 +199,10 @@ pub fn run() {
             commands::ollama_commands::ollama_pull_state,
             commands::ollama_commands::ollama_delete_model,
             commands::system_commands::get_hardware_profile,
+            commands::system_commands::get_recent_logs,
             commands::system_commands::take_startup_files,
+            commands::download_commands::list_gguf_catalog,
+            commands::download_commands::download_gguf_model,
             commands::podcast_commands::generate_podcast,
             commands::download_commands::download_default_model,
             commands::download_commands::has_local_model,

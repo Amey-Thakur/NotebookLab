@@ -6,6 +6,25 @@ All notable changes to NotebookLab will be documented in this file.
 
 ### Added
 
+- Eight bundled models instead of one. The built-in offline server now offers
+  a curated, size-verified catalog (Llama 3.2 1B and 3B, Gemma 3 4B, Phi-4
+  Mini, Qwen 3 4B, Mistral 7B, Qwen 2.5 Coder 7B, DeepSeek R1 Distill 7B),
+  each with its memory needs and strengths, downloadable in one click with
+  live progress. NotebookLab reads this computer's memory and marks the
+  strongest model it runs comfortably as "Recommended for this computer",
+  and the Local AI Server card grew a picker to start any downloaded model.
+  All of it runs fully offline with no account and no token bill.
+- Developer logs in Settings. An Advanced section shows the backend's recent
+  activity (model detection, imports, downloads, errors), kept in memory
+  only, with refresh and copy-all. Useful for bug reports and for anyone
+  building against the local REST API.
+
+### Changed
+
+- Auto model selection now also respects context limits: a request that could
+  not fit a model's known context window is routed to a model with room
+  before it is ever sent, so long conversations stop degrading quietly.
+
 - Auto model switching. Turn on Auto in the model menu and NotebookLab picks
   the best of your connected models for each task: quick jobs go to fast,
   free local models, hard generation goes to your strongest model, and if one

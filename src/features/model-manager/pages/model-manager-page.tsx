@@ -26,7 +26,7 @@ import { QUERY_KEYS } from "@/lib/constants";
 import { formatError } from "@/lib/format-error";
 import type { ProviderInfo } from "@/types/models";
 
-import { ModelDownload } from "../components/model-download";
+import { BundledModels } from "../components/bundled-models";
 import { LocalServerCard } from "../components/local-server-card";
 import { OllamaSection } from "../components/ollama-section";
 import { CloudProvidersSection } from "../components/cloud-providers-section";
@@ -51,7 +51,7 @@ export function ModelManagerPage() {
   const { data: activeName } = useActiveProviderName();
   const hardware = useHardwareProfile();
 
-  const { data: hasLocalModel, refetch: refetchModel } = useQuery({
+  const { refetch: refetchModel } = useQuery({
     queryKey: [QUERY_KEYS.PROVIDERS, "has-local-model"],
     queryFn: () => tauriInvoke<boolean>("has_local_model"),
   });
@@ -159,15 +159,13 @@ export function ModelManagerPage() {
         On this computer
       </h2>
 
-      {!hasLocalModel && (
-        <ModelDownload
-          onComplete={() => {
-            refetchModel();
-            refreshProviders();
-            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SIDECAR] });
-          }}
-        />
-      )}
+      <BundledModels
+        onDownloaded={() => {
+          refetchModel();
+          refreshProviders();
+          queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SIDECAR] });
+        }}
+      />
 
       <LocalServerCard />
 
