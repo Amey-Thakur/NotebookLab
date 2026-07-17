@@ -1,13 +1,13 @@
 /*
  * Name: graph-page.tsx
  * Purpose: See how the notes in a notebook connect through wiki-links.
- * Description: Draws each note as a dot on a circle, with a line for every
- *   [[wiki-link]] between two notes. A dot's size reflects how many links
- *   touch it, so the hubs of a knowledge base stand out at a glance. The
- *   layout is deterministic (index around a circle), so there is no physics
- *   jitter and no external library, which keeps it calm and predictable.
- *   Clicking a note opens it. An accessible list mirrors the graph for screen
- *   readers and for notebooks with no links yet.
+ * Description: Two views of the same map, toggled and remembered: a 3D cloud
+ *   (Graph3D, our own engine) you can rotate, zoom, and click through, and a
+ *   calm deterministic 2D circle. A dot's size reflects how many links touch
+ *   it, so the hubs of a knowledge base stand out at a glance. The same
+ *   adjacency is summarised into the AI's chat context (rag_service), so the
+ *   page says so honestly. Clicking a note opens it. An accessible list
+ *   mirrors the graph for screen readers and for notebooks with no links yet.
  * Tech Stack: React 19, TanStack Query, SVG, Tailwind CSS
  * License: MIT
  * Authors: Amey Thakur (https://github.com/Amey-Thakur)
@@ -15,15 +15,19 @@
  * Date: 2026-07-12
  */
 
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS, ROUTES } from "@/lib/constants";
 import { formatError } from "@/lib/format-error";
+import { cn } from "@/lib/utils";
 import { useNotebookStore } from "@/stores/notebook-store";
 import type { NotesGraph } from "@/types/models";
+import { Graph3D } from "../components/graph-3d";
+
+const VIEW_KEY = "notebooklab-graph-view";
 
 
 const SIZE = 520;
@@ -34,6 +38,24 @@ const RADIUS = SIZE / 2 - 60;
 export function GraphPage() {
   const navigate = useNavigate();
   const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
+  const [view, setView] = useState<"3d" | "2d">(() => {
+    try {
+      return localStorage.getItem(VIEW_KEY) === "2d" ? "2d" : "3d";
+    } catch {
+      return "3d";
+    }
+  });
+
+  const pickView = (next: "3d" | "2d") => {
+    setView(next);
+    try {
+      localStorage.setItem(VIEW_KEY, next);
+    } catch {
+      /* Preference simply not remembered. */
+    }
+  };
+
+  const openNote = useCallback((id: string) => navigate(`/editor/${id}`), [navigate]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: [QUERY_KEYS.GRAPH, activeNotebookId],
@@ -76,9 +98,30 @@ export function GraphPage() {
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-display font-bold text-text-1 mb-1">Connections</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+        <h1 className="text-2xl font-display font-bold text-text-1">Connections</h1>
+        <div className="flex" role="group" aria-label="View">
+          {(["3d", "2d"] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              aria-pressed={view === mode}
+              onClick={() => pickView(mode)}
+              className={cn(
+                "px-3 py-1 text-xs font-mono border transition-colors",
+                view === mode
+                  ? "border-accent-dim bg-surface-2 text-text-1"
+                  : "border-border text-text-3 hover:text-text-1",
+              )}
+            >
+              {mode.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </div>
       <p className="text-sm text-text-3 mb-6">
         How the notes in this notebook link to each other. Larger dots have more connections.
+        The same map is handed to the AI so it knows how your work fits together.
       </p>
 
       {isLoading && <p className="text-sm text-text-3">Loading connections...</p>}
@@ -98,6 +141,14 @@ export function GraphPage() {
 
       {data && linkedNodes.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-6">
+          {view === "3d" ? (
+            <div className="border border-border bg-surface overflow-hidden">
+              <Graph3D graph={data} onOpenNote={openNote} />
+              <p className="px-3 py-2 border-t border-border text-2xs font-mono text-text-4">
+                Drag to rotate · scroll to zoom · click a note to open it
+              </p>
+            </div>
+          ) : (
           <div className="border border-border bg-surface">
             <svg
               viewBox={`0 0 ${SIZE} ${SIZE}`}
@@ -153,6 +204,7 @@ export function GraphPage() {
               })}
             </svg>
           </div>
+          )}
 
           {/* Accessible, always-visible index of the most connected notes */}
           <nav aria-label="Most connected notes">
