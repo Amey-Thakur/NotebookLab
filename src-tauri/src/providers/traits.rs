@@ -21,6 +21,19 @@ pub trait LlmProvider: Send + Sync {
     /// Human-readable name for display in the model manager UI.
     fn name(&self) -> &str;
 
+    /// Machine-readable provider family ("sidecar", "ollama", "openai",
+    /// "anthropic", "gemini", "deepseek", "lmstudio", "llamacpp", "custom").
+    /// The UI uses this for grouping, icons, and provider-specific guidance.
+    fn kind(&self) -> &str {
+        "custom"
+    }
+
+    /// The model this provider instance sends requests to, for display in the
+    /// model switcher. Empty when the provider has no fixed model.
+    fn model(&self) -> &str {
+        ""
+    }
+
     /// Whether this provider requires network access (false for local models).
     fn is_local(&self) -> bool;
 

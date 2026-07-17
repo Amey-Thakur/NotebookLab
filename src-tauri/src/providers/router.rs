@@ -56,6 +56,27 @@ impl ProviderRouter {
         }
     }
 
+    /// Remove a provider by name. Returns true when something was removed.
+    /// The active index is repaired: cleared if it pointed at the removed
+    /// provider, shifted down if it pointed past it. Requires &mut self (the
+    /// write lock), so no reader holds a guard while indexes move; a stale
+    /// index snapshot taken before removal is handled by the .get() lookups
+    /// below, which fail with a clear error instead of panicking.
+    pub fn remove_by_name(&mut self, name: &str) -> bool {
+        let Some(removed) = self.providers.iter().position(|p| p.name() == name) else {
+            return false;
+        };
+        self.providers.remove(removed);
+        if let Ok(mut active) = self.active_index.write() {
+            *active = match *active {
+                Some(idx) if idx == removed => None,
+                Some(idx) if idx > removed => Some(idx - 1),
+                other => other,
+            };
+        }
+        true
+    }
+
     /// Clear the active provider if it currently points at the named provider.
     /// Used when the sidecar stops so chat fails with a clear "no provider"
     /// message instead of a network error against a dead server.
@@ -97,7 +118,7 @@ impl ProviderRouter {
     pub fn active_name(&self) -> Option<String> {
         let active = self.active_index.read().ok()?;
         let idx = (*active)?;
-        Some(self.providers[idx].name().to_string())
+        Some(self.providers.get(idx)?.name().to_string())
     }
 
     /// Send a chat completion request to the active provider.
@@ -107,20 +128,29 @@ impl ProviderRouter {
         /* Availability check removed from hot path. The completion call itself
         will return a clear error if the provider is unreachable. Checking
         availability added ~100-300ms latency per request. */
-        self.providers[idx].chat_completion(request)
+        self.provider_at(idx)?.chat_completion(request)
     }
 
     /// Generate an embedding vector using the active provider.
     pub fn embed(&self, text: &str) -> Result<Option<Vec<f32>>, ProviderError> {
         let idx = self.active_index_snapshot()?;
-        self.providers[idx].embed(text)
+        self.provider_at(idx)?.embed(text)
     }
 
-    /// Read the active provider index and release the lock immediately. The
-    /// provider Vec is append-only (register_or_replace never shrinks it), so
-    /// the index stays valid after the guard drops. Holding the read guard
-    /// across the network call would make switching models mid-request block on
-    /// the write lock for the full request timeout, freezing the app.
+    /// Bounds-checked provider lookup. A snapshot index can go stale if a
+    /// provider is removed between the snapshot and this call; failing with a
+    /// clear error beats panicking mid-request.
+    fn provider_at(&self, idx: usize) -> Result<&dyn LlmProvider, ProviderError> {
+        self.providers.get(idx).map(|p| p.as_ref()).ok_or_else(|| {
+            ProviderError::NotAvailable("Provider was removed. Pick a model.".into())
+        })
+    }
+
+    /// Read the active provider index and release the lock immediately.
+    /// Holding the read guard across the network call would make switching
+    /// models mid-request block on the write lock for the full request
+    /// timeout, freezing the app. Removal can invalidate the snapshot, which
+    /// provider_at converts into a clear error rather than a panic.
     fn active_index_snapshot(&self) -> Result<usize, ProviderError> {
         let active = self
             .active_index
@@ -141,6 +171,8 @@ impl ProviderRouter {
             .map(|(i, p)| ProviderInfo {
                 index: i,
                 name: p.name().to_string(),
+                kind: p.kind().to_string(),
+                model: p.model().to_string(),
                 is_local: p.is_local(),
                 is_available: p.is_available(),
                 is_active: active_idx == Some(i),
@@ -153,7 +185,69 @@ impl ProviderRouter {
 pub struct ProviderInfo {
     pub index: usize,
     pub name: String,
+    pub kind: String,
+    pub model: String,
     pub is_local: bool,
     pub is_available: bool,
     pub is_active: bool,
+}
+
+#[cfg(test)]
+mod router_tests {
+    use super::*;
+
+    struct FakeProvider(String);
+    impl LlmProvider for FakeProvider {
+        fn name(&self) -> &str {
+            &self.0
+        }
+        fn is_local(&self) -> bool {
+            true
+        }
+        fn is_available(&self) -> bool {
+            true
+        }
+        fn chat_completion(&self, _request: ChatRequest) -> Result<ChatResponse, ProviderError> {
+            Err(ProviderError::NotAvailable("fake".into()))
+        }
+    }
+
+    fn router_with(names: &[&str]) -> ProviderRouter {
+        let mut router = ProviderRouter::new();
+        for n in names {
+            router.register(Box::new(FakeProvider(n.to_string())));
+        }
+        router
+    }
+
+    #[test]
+    fn remove_clears_active_when_it_pointed_at_removed() {
+        let mut router = router_with(&["a", "b"]);
+        router.set_active(1).unwrap();
+        assert!(router.remove_by_name("b"));
+        assert_eq!(router.active_name(), None);
+    }
+
+    #[test]
+    fn remove_shifts_active_when_it_pointed_past_removed() {
+        let mut router = router_with(&["a", "b", "c"]);
+        router.set_active(2).unwrap();
+        assert!(router.remove_by_name("a"));
+        assert_eq!(router.active_name(), Some("c".to_string()));
+    }
+
+    #[test]
+    fn remove_keeps_active_when_it_pointed_before_removed() {
+        let mut router = router_with(&["a", "b"]);
+        router.set_active(0).unwrap();
+        assert!(router.remove_by_name("b"));
+        assert_eq!(router.active_name(), Some("a".to_string()));
+    }
+
+    #[test]
+    fn remove_unknown_name_is_a_noop() {
+        let mut router = router_with(&["a"]);
+        assert!(!router.remove_by_name("missing"));
+        assert_eq!(router.list_providers().len(), 1);
+    }
 }

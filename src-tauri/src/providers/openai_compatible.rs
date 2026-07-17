@@ -25,6 +25,7 @@ use super::traits::{
 
 pub struct OpenAiCompatibleProvider {
     name: String,
+    kind: String,
     base_url: String,
     api_key: Option<String>,
     model: String,
@@ -40,8 +41,23 @@ impl OpenAiCompatibleProvider {
         model: String,
         is_local: bool,
     ) -> Self {
+        Self::with_kind(name, "custom".into(), base_url, api_key, model, is_local)
+    }
+
+    /// Construct with an explicit provider family ("ollama", "openai",
+    /// "deepseek", "sidecar", ...) so the UI can group and label it; the wire
+    /// protocol is the same OpenAI-compatible API either way.
+    pub fn with_kind(
+        name: String,
+        kind: String,
+        base_url: String,
+        api_key: Option<String>,
+        model: String,
+        is_local: bool,
+    ) -> Self {
         Self {
             name,
+            kind,
             base_url,
             api_key,
             model,
@@ -59,6 +75,14 @@ impl OpenAiCompatibleProvider {
 impl LlmProvider for OpenAiCompatibleProvider {
     fn name(&self) -> &str {
         &self.name
+    }
+
+    fn kind(&self) -> &str {
+        &self.kind
+    }
+
+    fn model(&self) -> &str {
+        &self.model
     }
 
     fn is_local(&self) -> bool {
