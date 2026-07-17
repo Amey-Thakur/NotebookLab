@@ -14,16 +14,18 @@
  * Date: 2026-07-17
  */
 
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Mutex;
 
 use tauri::Emitter;
 
 use crate::error::{AppError, AppResult};
 use crate::services::ollama_service::{self, OllamaModel, OllamaStatus, PullProgress};
 
-/// One pull at a time: parallel pulls thrash disk and bandwidth, and the UI
-/// shows a single progress bar.
-static PULL_IN_PROGRESS: AtomicBool = AtomicBool::new(false);
+/// The model currently being pulled, if any. One pull at a time: parallel
+/// pulls thrash disk and bandwidth, and the UI shows a single progress bar.
+/// Holding the name (not just a flag) lets the Models page restore its
+/// progress display after the user navigates away and back mid-download.
+static CURRENT_PULL: Mutex<Option<String>> = Mutex::new(None);
 
 /// Terminal event emitted after a pull ends, success or failure.
 #[derive(Clone, serde::Serialize)]
@@ -55,13 +57,16 @@ pub async fn ollama_installed_models() -> AppResult<Vec<OllamaModel>> {
 pub fn ollama_pull_model(app: tauri::AppHandle, model: String) -> AppResult<()> {
     ollama_service::validate_model_name(&model)?;
 
-    if PULL_IN_PROGRESS
-        .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
-        .is_err()
     {
-        return Err(AppError::InvalidInput(
-            "A model download is already in progress".into(),
-        ));
+        let mut current = CURRENT_PULL
+            .lock()
+            .map_err(|_| AppError::Internal("Pull guard poisoned".into()))?;
+        if current.is_some() {
+            return Err(AppError::InvalidInput(
+                "A model download is already in progress".into(),
+            ));
+        }
+        *current = Some(model.clone());
     }
 
     std::thread::spawn(move || {
@@ -89,10 +94,22 @@ pub fn ollama_pull_model(app: tauri::AppHandle, model: String) -> AppResult<()> 
             tracing::info!("Ollama pull complete: {model}");
         }
 
-        PULL_IN_PROGRESS.store(false, Ordering::Release);
+        if let Ok(mut current) = CURRENT_PULL.lock() {
+            *current = None;
+        }
     });
 
     Ok(())
+}
+
+/// The model currently downloading, if any. Lets the Models page restore its
+/// progress display after a navigation instead of misreporting an idle state.
+#[tauri::command(rename_all = "snake_case")]
+pub fn ollama_pull_state() -> AppResult<Option<String>> {
+    Ok(CURRENT_PULL
+        .lock()
+        .map_err(|_| AppError::Internal("Pull guard poisoned".into()))?
+        .clone())
 }
 
 /// Remove an installed model from disk.
