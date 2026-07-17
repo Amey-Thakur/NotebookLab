@@ -18,6 +18,7 @@ pub mod download_commands;
 pub mod model_commands;
 pub mod note_commands;
 pub mod notebook_commands;
+pub mod ollama_commands;
 pub mod podcast_commands;
 pub mod prompt_commands;
 pub mod search_commands;

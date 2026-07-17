@@ -48,3 +48,80 @@ pub fn restart_app(app: AppHandle) {
     }
     app.restart();
 }
+
+/// What this computer can run, for the local-model recommendations in the
+/// Models page. GPU detection is best-effort via nvidia-smi when present;
+/// absence simply means recommendations key off system RAM alone.
+#[derive(serde::Serialize)]
+pub struct HardwareProfile {
+    pub total_ram_gb: f64,
+    pub cpu_name: String,
+    pub cpu_cores: usize,
+    pub gpu_name: Option<String>,
+    pub gpu_vram_gb: Option<f64>,
+}
+
+/// Detect RAM, CPU, and (best-effort) GPU. Async because the sysinfo refresh
+/// and the nvidia-smi probe both take real time.
+#[tauri::command(rename_all = "snake_case")]
+pub async fn get_hardware_profile() -> AppResult<HardwareProfile> {
+    tauri::async_runtime::spawn_blocking(|| {
+        use sysinfo::System;
+
+        let mut system = System::new();
+        system.refresh_memory();
+        system.refresh_cpu_all();
+
+        let cpu_name = system
+            .cpus()
+            .first()
+            .map(|cpu| cpu.brand().trim().to_string())
+            .filter(|brand| !brand.is_empty())
+            .unwrap_or_else(|| "Unknown CPU".to_string());
+
+        let (gpu_name, gpu_vram_gb) = detect_nvidia_gpu();
+
+        HardwareProfile {
+            total_ram_gb: system.total_memory() as f64 / 1_073_741_824.0,
+            cpu_name,
+            cpu_cores: system.cpus().len(),
+            gpu_name,
+            gpu_vram_gb,
+        }
+    })
+    .await
+    .map_err(|e| crate::error::AppError::Internal(format!("Hardware probe failed: {e}")))
+}
+
+/// Query nvidia-smi for the first GPU's name and VRAM. Returns (None, None)
+/// when the tool is absent (AMD/Intel/no GPU); recommendations then rely on
+/// system RAM, which is the safe lower bound.
+fn detect_nvidia_gpu() -> (Option<String>, Option<f64>) {
+    let mut command = std::process::Command::new("nvidia-smi");
+    command.args([
+        "--query-gpu=name,memory.total",
+        "--format=csv,noheader,nounits",
+    ]);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    let Ok(output) = command.output() else {
+        return (None, None);
+    };
+    if !output.status.success() {
+        return (None, None);
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let Some(line) = stdout.lines().next() else {
+        return (None, None);
+    };
+    let mut parts = line.rsplitn(2, ',');
+    let vram_mb: Option<f64> = parts.next().and_then(|v| v.trim().parse().ok());
+    let name = parts.next().map(|n| n.trim().to_string());
+    (name, vram_mb.map(|mb| mb / 1024.0))
+}
