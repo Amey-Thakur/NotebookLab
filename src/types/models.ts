@@ -97,8 +97,22 @@ export interface SidecarStatus {
 
 export interface ModelFileInfo {
   name: string;
+  /** Full path, so the server can be started with this exact model. */
+  path: string;
   size_bytes: number;
   size_display: string;
+}
+
+/** One bundled-server model from the curated download catalog. */
+export interface GgufCatalogEntry {
+  id: string;
+  label: string;
+  params: string;
+  filename: string;
+  download_gb: number;
+  min_ram_gb: number;
+  recommended_ram_gb: number;
+  use_note: string;
 }
 
 export interface RecentNote extends Note {

@@ -218,6 +218,90 @@ export function SettingsPage() {
           })}
         </div>
       </section>
+
+      {/* Developer logs: folded away, read-only, honest about scope */}
+      <section className="mb-8">
+        <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-3 pb-2 border-b border-border">
+          Advanced
+        </h2>
+        <DeveloperLogs />
+      </section>
+    </div>
+  );
+}
+
+/* The backend's recent log lines, for the curious and for bug reports. Held in
+   memory only (last 500 lines), fetched on open and on Refresh. */
+function DeveloperLogs() {
+  const [open, setOpen] = useState(false);
+  const [copiedLogs, setCopiedLogs] = useState(false);
+
+  const { data: logs, refetch, isFetching } = useQuery({
+    queryKey: [QUERY_KEYS.LOGS],
+    queryFn: () => tauriInvoke<string[]>("get_recent_logs"),
+    enabled: open,
+  });
+
+  const copyLogs = () => {
+    if (!logs?.length) return;
+    navigator.clipboard.writeText(logs.join("\n")).then(
+      () => {
+        setCopiedLogs(true);
+        setTimeout(() => setCopiedLogs(false), 1500);
+      },
+      () => setCopiedLogs(false),
+    );
+  };
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        className="px-3 py-1.5 text-xs font-mono border border-border text-text-3
+                   hover:border-accent-dim hover:text-text-1 transition-colors"
+      >
+        {open ? "Hide developer logs" : "Show developer logs"}
+      </button>
+      <p className="text-2xs text-text-4 mt-2 max-w-prose">
+        What the backend has been doing this session: model detection, imports, downloads, and
+        errors. Kept in memory only (last 500 lines), never written to disk. Useful when reporting
+        a bug or building against the local API.
+      </p>
+
+      {open && (
+        <div className="mt-3">
+          <div className="flex items-center gap-2 mb-2">
+            <button
+              type="button"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="px-2.5 py-1 text-2xs font-mono border border-border text-text-3
+                         hover:border-accent-dim hover:text-text-1 transition-colors disabled:opacity-50"
+            >
+              {isFetching ? "Refreshing..." : "Refresh"}
+            </button>
+            <button
+              type="button"
+              onClick={copyLogs}
+              disabled={!logs?.length}
+              className="px-2.5 py-1 text-2xs font-mono border border-border text-text-3
+                         hover:border-accent-dim hover:text-text-1 transition-colors disabled:opacity-50"
+            >
+              {copiedLogs ? "Copied" : "Copy all"}
+            </button>
+            <span className="text-2xs font-mono text-text-4">{logs?.length ?? 0} lines</span>
+          </div>
+          <pre
+            className="max-h-[320px] overflow-auto border border-border bg-surface-2 p-3
+                       text-2xs font-mono text-text-3 leading-relaxed whitespace-pre-wrap"
+            aria-label="Recent backend log lines"
+          >
+            {logs?.length ? logs.join("\n") : "No log lines yet this session."}
+          </pre>
+        </div>
+      )}
     </div>
   );
 }

@@ -232,8 +232,10 @@ const SECTIONS: Section[] = [
     title: "Models and providers",
     body: (
       <P>
-        NotebookLab works three ways, and you can mix them. Fully offline: download the bundled
-        model on the Models page and nothing else is needed. More local choice: install Ollama and
+        NotebookLab works three ways, and you can mix them. Fully offline: pick from the bundled
+        model catalog on the Models page (eight curated models; the strongest one your computer
+        runs comfortably is marked "Recommended") and nothing else is needed, with no account and
+        no token bill. More local choice: install Ollama and
         the Models page offers a curated catalog of open models (Llama, Gemma, Qwen, DeepSeek,
         Mistral, Phi) with one-click installs, marked by whether they fit this computer's memory.
         Most capable: connect a cloud provider (Anthropic Claude, OpenAI, Google Gemini, or

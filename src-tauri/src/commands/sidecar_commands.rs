@@ -333,6 +333,7 @@ pub fn list_local_models(app: tauri::AppHandle) -> AppResult<Vec<ModelFileInfo>>
                     .and_then(|s| s.to_str())
                     .unwrap_or("unknown")
                     .to_string(),
+                path: p.to_string_lossy().to_string(),
                 size_bytes: size,
                 size_display: format_size(size),
             }
@@ -343,6 +344,8 @@ pub fn list_local_models(app: tauri::AppHandle) -> AppResult<Vec<ModelFileInfo>>
 #[derive(serde::Serialize)]
 pub struct ModelFileInfo {
     pub name: String,
+    /// Full path, so the server can be started with this exact model.
+    pub path: String,
     pub size_bytes: u64,
     pub size_display: String,
 }

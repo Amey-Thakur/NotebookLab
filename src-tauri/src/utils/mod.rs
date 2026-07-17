@@ -10,5 +10,6 @@
  * Date: 2026-07-12
  */
 
+pub mod log_buffer;
 pub mod rtf;
 pub mod text_utils;

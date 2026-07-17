@@ -27,6 +27,140 @@ const DEFAULT_MODEL_URL: &str =
     "https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q4_K_M.gguf";
 const DEFAULT_MODEL_NAME: &str = "Llama-3.2-3B-Instruct-Q4_K_M.gguf";
 
+/// One bundled-server model the user can download in a click.
+#[derive(Clone, serde::Serialize)]
+pub struct GgufCatalogEntry {
+    pub id: &'static str,
+    pub label: &'static str,
+    pub params: &'static str,
+    pub filename: &'static str,
+    /// Verified download size in GB (from the hosting file's content-length).
+    pub download_gb: f64,
+    pub min_ram_gb: u32,
+    pub recommended_ram_gb: u32,
+    pub use_note: &'static str,
+    #[serde(skip)]
+    url: &'static str,
+}
+
+/// Curated GGUF models for the bundled llama.cpp server. Every URL was
+/// verified live (HTTP 200) with its size read from the response headers, so
+/// each entry downloads exactly what it promises. All are Q4_K_M quantized
+/// builds from Hugging Face, small enough for consumer hardware; the catalog
+/// stays ordered small to large so the recommendation logic can walk it.
+const GGUF_CATALOG: &[GgufCatalogEntry] = &[
+    GgufCatalogEntry {
+        id: "llama-3.2-1b",
+        label: "Llama 3.2",
+        params: "1B",
+        filename: "Llama-3.2-1B-Instruct-Q4_K_M.gguf",
+        download_gb: 0.75,
+        min_ram_gb: 4,
+        recommended_ram_gb: 8,
+        use_note: "The lightest start; quick answers on older machines.",
+        url: "https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q4_K_M.gguf",
+    },
+    GgufCatalogEntry {
+        id: "llama-3.2-3b",
+        label: "Llama 3.2",
+        params: "3B",
+        filename: DEFAULT_MODEL_NAME,
+        download_gb: 1.88,
+        min_ram_gb: 8,
+        recommended_ram_gb: 8,
+        use_note: "The dependable starter: capable and light on memory.",
+        url: DEFAULT_MODEL_URL,
+    },
+    GgufCatalogEntry {
+        id: "gemma-3-4b",
+        label: "Gemma 3",
+        params: "4B",
+        filename: "google_gemma-3-4b-it-Q4_K_M.gguf",
+        download_gb: 2.32,
+        min_ram_gb: 8,
+        recommended_ram_gb: 16,
+        use_note: "Google's compact all-rounder with clean writing.",
+        url: "https://huggingface.co/bartowski/google_gemma-3-4b-it-GGUF/resolve/main/google_gemma-3-4b-it-Q4_K_M.gguf",
+    },
+    GgufCatalogEntry {
+        id: "phi-4-mini",
+        label: "Phi-4 Mini",
+        params: "3.8B",
+        filename: "microsoft_Phi-4-mini-instruct-Q4_K_M.gguf",
+        download_gb: 2.32,
+        min_ram_gb: 8,
+        recommended_ram_gb: 16,
+        use_note: "Microsoft's small model tuned for logic and math.",
+        url: "https://huggingface.co/bartowski/microsoft_Phi-4-mini-instruct-GGUF/resolve/main/microsoft_Phi-4-mini-instruct-Q4_K_M.gguf",
+    },
+    GgufCatalogEntry {
+        id: "qwen3-4b",
+        label: "Qwen 3",
+        params: "4B",
+        filename: "Qwen_Qwen3-4B-Q4_K_M.gguf",
+        download_gb: 2.33,
+        min_ram_gb: 8,
+        recommended_ram_gb: 16,
+        use_note: "Punches above its size on reasoning and long documents.",
+        url: "https://huggingface.co/bartowski/Qwen_Qwen3-4B-GGUF/resolve/main/Qwen_Qwen3-4B-Q4_K_M.gguf",
+    },
+    GgufCatalogEntry {
+        id: "mistral-7b",
+        label: "Mistral",
+        params: "7B",
+        filename: "Mistral-7B-Instruct-v0.3-Q4_K_M.gguf",
+        download_gb: 4.07,
+        min_ram_gb: 16,
+        recommended_ram_gb: 16,
+        use_note: "A proven, efficient classic with a direct style.",
+        url: "https://huggingface.co/bartowski/Mistral-7B-Instruct-v0.3-GGUF/resolve/main/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf",
+    },
+    GgufCatalogEntry {
+        id: "qwen2.5-coder-7b",
+        label: "Qwen 2.5 Coder",
+        params: "7B",
+        filename: "Qwen2.5-Coder-7B-Instruct-Q4_K_M.gguf",
+        download_gb: 4.36,
+        min_ram_gb: 16,
+        recommended_ram_gb: 16,
+        use_note: "Purpose-built for code: completion and explanation.",
+        url: "https://huggingface.co/bartowski/Qwen2.5-Coder-7B-Instruct-GGUF/resolve/main/Qwen2.5-Coder-7B-Instruct-Q4_K_M.gguf",
+    },
+    GgufCatalogEntry {
+        id: "deepseek-r1-7b",
+        label: "DeepSeek R1 Distill",
+        params: "7B",
+        filename: "DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf",
+        download_gb: 4.36,
+        min_ram_gb: 16,
+        recommended_ram_gb: 16,
+        use_note: "Deliberate step-by-step reasoning, fully offline.",
+        url: "https://huggingface.co/bartowski/DeepSeek-R1-Distill-Qwen-7B-GGUF/resolve/main/DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf",
+    },
+];
+
+/// The curated bundled-server catalog for the Models page.
+#[tauri::command(rename_all = "snake_case")]
+pub fn list_gguf_catalog() -> Vec<GgufCatalogEntry> {
+    GGUF_CATALOG.to_vec()
+}
+
+/// Download a catalog model by id. Progress arrives on the same
+/// "model-download-progress" events as the default download, keyed by
+/// filename, and the same single-download guard applies.
+#[tauri::command(rename_all = "snake_case")]
+pub fn download_gguf_model(app: tauri::AppHandle, id: String) -> AppResult<String> {
+    let entry = GGUF_CATALOG
+        .iter()
+        .find(|e| e.id == id)
+        .ok_or_else(|| AppError::InvalidInput(format!("Unknown model id: {id}")))?;
+    download_model(
+        app,
+        Some(entry.url.to_string()),
+        Some(entry.filename.to_string()),
+    )
+}
+
 /// Allowed download hosts. Only trusted model repositories.
 const ALLOWED_HOSTS: &[&str] = &["huggingface.co"];
 
