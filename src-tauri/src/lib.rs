@@ -42,11 +42,32 @@ pub fn run() {
     tracing::info!("Starting NotebookLab v{}", env!("CARGO_PKG_VERSION"));
 
     tauri::Builder::default()
+        /* Single instance first, so "Open with NotebookLab" on a second file
+        focuses the running window and forwards the path instead of starting a
+        second app fighting over the database. */
+        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            use tauri::Emitter;
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_focus();
+            }
+            let files = commands::system_commands::importable_files(argv.into_iter().skip(1));
+            if !files.is_empty() {
+                app.emit("open-files", files).ok();
+            }
+        }))
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let app_state = AppState::initialize(app.handle())?;
+
+            /* Files this launch was asked to open ("Open with NotebookLab").
+            Held until the frontend mounts and collects them. */
+            let startup_files =
+                commands::system_commands::importable_files(std::env::args().skip(1));
+            app.manage(commands::system_commands::StartupFiles(
+                std::sync::Mutex::new(startup_files),
+            ));
 
             /* Create sample notebook on first run */
             if let Ok(conn) = app_state.conn() {
@@ -171,8 +192,10 @@ pub fn run() {
             commands::ollama_commands::ollama_status,
             commands::ollama_commands::ollama_installed_models,
             commands::ollama_commands::ollama_pull_model,
+            commands::ollama_commands::ollama_pull_state,
             commands::ollama_commands::ollama_delete_model,
             commands::system_commands::get_hardware_profile,
+            commands::system_commands::take_startup_files,
             commands::podcast_commands::generate_podcast,
             commands::download_commands::download_default_model,
             commands::download_commands::has_local_model,

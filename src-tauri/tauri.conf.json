@@ -45,6 +45,32 @@
     },
     "externalBin": [
       "binaries/llama-server"
+    ],
+    "fileAssociations": [
+      {
+        "ext": ["pdf"],
+        "name": "PDF document",
+        "description": "Open a PDF in NotebookLab",
+        "role": "Viewer"
+      },
+      {
+        "ext": ["docx"],
+        "name": "Word document",
+        "description": "Open a Word document in NotebookLab",
+        "role": "Viewer"
+      },
+      {
+        "ext": ["md", "markdown"],
+        "name": "Markdown document",
+        "description": "Open a Markdown file in NotebookLab",
+        "role": "Viewer"
+      },
+      {
+        "ext": ["txt", "text"],
+        "name": "Text document",
+        "description": "Open a text file in NotebookLab",
+        "role": "Viewer"
+      }
     ]
   },
   "plugins": {
