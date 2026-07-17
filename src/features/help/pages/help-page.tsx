@@ -226,9 +226,15 @@ const SECTIONS: Section[] = [
     title: "Models and providers",
     body: (
       <P>
-        NotebookLab ships with a local AI server, so it works with no account and no internet. Download a
-        model on the Models page, or connect any OpenAI-compatible provider in settings if you prefer a
-        cloud model. Either way, the choice is yours and it is explicit.
+        NotebookLab works three ways, and you can mix them. Fully offline: download the bundled
+        model on the Models page and nothing else is needed. More local choice: install Ollama and
+        the Models page offers a curated catalog of open models (Llama, Gemma, Qwen, DeepSeek,
+        Mistral, Phi) with one-click installs, marked by whether they fit this computer's memory.
+        Most capable: connect a cloud provider (Anthropic Claude, OpenAI, Google Gemini, or
+        DeepSeek) with your own API key through a guided setup; the key is stored only on this
+        machine and sent only to that provider. The model menu in the top bar shows which model is
+        active and switches between them in two clicks, and your choice is remembered across
+        restarts. Either way, the choice is yours and it is explicit.
       </P>
     ),
   },

@@ -7,7 +7,7 @@ Offline-first AI knowledge workspace with thinking partner capabilities.
 - **Frontend:** React 19 + TypeScript + Tailwind CSS + TanStack Query + Zustand
 - **Backend:** Rust (Tauri v2)
 - **Database:** SQLite (WAL, FTS5, cascade deletes)
-- **LLM:** bundled llama.cpp sidecar (GGUF models) + any OpenAI-compatible provider
+- **LLM:** bundled llama.cpp sidecar (GGUF models), Ollama-managed local models, any OpenAI-compatible provider, plus native Anthropic and Gemini providers; configs persist in SQLite
 - **Embeddings:** provider /v1/embeddings + brute-force cosine search in Rust
 - **OCR:** bundled ocrs models on the pure-Rust rten runtime (offline, no system deps)
 - **Documents:** PDF, Word (.docx), text, Markdown, and images all parse to the same chunk shape

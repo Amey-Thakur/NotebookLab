@@ -6,6 +6,30 @@ All notable changes to NotebookLab will be documented in this file.
 
 ### Added
 
+- A model menu in the top bar. It always shows which AI model is doing the
+  work, and switches between your local and cloud models in two clicks, with
+  search, availability dots, and pin-to-top favorites. Your choice is now
+  remembered across restarts.
+- First-class cloud providers. Connect Anthropic (Claude), OpenAI (GPT),
+  Google Gemini, or DeepSeek through a guided three-step setup that explains
+  what an API key is, links straight to each provider's key page, is honest
+  about cost and free tiers, and tests the connection before calling it done.
+  Anthropic and Gemini speak their own native APIs. Keys are stored only on
+  this machine, are never shown again after saving, and can be changed or
+  removed anytime.
+- A curated local model catalog. With Ollama installed, the Models page offers
+  hand-picked models across the Llama, Gemma, Qwen, DeepSeek, Mistral, and Phi
+  families, each with its size, memory needs, use cases, and a quality rating,
+  installable with one click and live download progress. NotebookLab detects
+  this computer's memory and marks each model as fitting, tight, or too large,
+  and asks before installing one the machine cannot comfortably run.
+- Ollama management built in. The Models page now shows whether Ollama is
+  installed and running (with friendly guidance when it is not), lists
+  installed models with their disk sizes and total storage use, and can
+  activate or delete any of them.
+- Saved providers. Registered providers and cloud connections now survive
+  restarts instead of living only in memory, so an API key is entered once.
+
 - Guided "how it works" tour. On the first launch, right after the welcome, a
   coach-mark tour walks through the whole app in twenty short steps: every
   sidebar destination (Home, Notebooks, Documents, Search, Connections, Chat,
