@@ -57,11 +57,15 @@ pub async fn send_chat_message(
     tauri::async_runtime::spawn_blocking(move || {
         let state: State<'_, AppState> = app.state();
 
-        /* Phase 0: Embed the question for semantic retrieval, when supported.
-        Read lock only; other provider reads proceed concurrently. */
-        let query_vector = {
+        /* Phase 0: Embed the question for semantic retrieval, when supported,
+        and read the planned model's context window so retrieval packs to what
+        will actually fit. Read lock only; other reads proceed concurrently. */
+        let (query_vector, context_window) = {
             let providers = state.provider_read()?;
-            providers.embed(&message).ok().flatten()
+            (
+                providers.embed(&message).ok().flatten(),
+                providers.planned_context_window(),
+            )
         };
 
         /* Phase 1: DB read (search + history). Lock released after this block. */
@@ -73,6 +77,7 @@ pub async fn send_chat_message(
                 &notebook_id,
                 &message,
                 query_vector.as_deref(),
+                context_window,
             )?
         };
 
