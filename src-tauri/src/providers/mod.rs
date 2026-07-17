@@ -2,10 +2,11 @@
  * Name: mod.rs
  * Purpose: LLM provider abstraction layer.
  * Description: Pluggable backends for inference. The OpenAiCompatibleProvider
- *   covers llama.cpp, OpenAI, Ollama, and LM Studio since they all
- *   expose the /v1/chat/completions endpoint. Adding Anthropic or
- *   Google AI requires a dedicated provider implementation because
- *   their APIs differ from the OpenAI format.
+ *   covers llama.cpp, OpenAI, DeepSeek, Ollama, and LM Studio since
+ *   they all expose the /v1/chat/completions endpoint. Anthropic
+ *   (Claude) and Google (Gemini) speak their own wire formats and
+ *   have dedicated providers. Adding a new backend = implement the
+ *   LlmProvider trait and map a kind in provider_config_service.
  * Tech Stack: Rust
  * License: MIT
  * Authors: Amey Thakur (https://github.com/Amey-Thakur)
@@ -13,6 +14,8 @@
  * Date: 2026-07-12
  */
 
+pub mod anthropic;
+pub mod gemini;
 pub mod openai_compatible;
 pub mod router;
 pub mod traits;
