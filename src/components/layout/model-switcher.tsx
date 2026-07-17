@@ -20,10 +20,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { ROUTES } from "@/lib/constants";
+import { tauriInvoke } from "@/services/tauri-client";
+import { QUERY_KEYS, ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import type { ProviderInfo } from "@/types/models";
+import type { ProviderInfo, UsageStats } from "@/types/models";
 import {
   useProviders,
   useSetActiveProvider,
@@ -49,8 +51,25 @@ export function ModelSwitcher() {
   const searchRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
+  const queryClient = useQueryClient();
   const { data: providers } = useProviders();
   const setActive = useSetActiveProvider();
+
+  /* Auto-selection state and the last actually-used model ride on the same
+     cached usage query the status-bar chip polls. */
+  const { data: usage } = useQuery({
+    queryKey: [QUERY_KEYS.USAGE],
+    queryFn: () => tauriInvoke<UsageStats>("get_usage_stats"),
+    refetchInterval: 5000,
+  });
+  const autoEnabled = usage?.auto_enabled ?? false;
+
+  const setAuto = useMutation({
+    mutationFn: (enabled: boolean) => tauriInvoke<void>("set_auto_model", { enabled }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.USAGE] });
+    },
+  });
 
   const active = providers?.find((p) => p.is_active);
 
@@ -112,9 +131,19 @@ export function ModelSwitcher() {
   }, [providers, search, favorites]);
 
   const pick = (p: ProviderInfo) => {
+    /* Choosing a specific model is an explicit override: auto stands down. */
+    if (autoEnabled) setAuto.mutate(false);
     setActive.mutate(p.index);
     setOpen(false);
   };
+
+  /* What the trigger shows: under auto, the mode plus the model that actually
+     served the last request; otherwise the active provider and its model. */
+  const triggerLabel = autoEnabled
+    ? `Auto${usage?.last ? ` · ${usage.last.model || usage.last.provider}` : ""}`
+    : active
+      ? `${active.name}${active.model ? ` · ${active.model}` : ""}`
+      : "Set up AI";
 
   return (
     <div ref={containerRef} className="relative">
@@ -125,7 +154,11 @@ export function ModelSwitcher() {
         aria-expanded={open}
         aria-haspopup="listbox"
         aria-label={
-          active ? `Active model: ${active.name}. Switch model` : "Set up an AI model"
+          autoEnabled
+            ? "Automatic model selection is on. Open the model menu"
+            : active
+              ? `Active model: ${active.name}. Switch model`
+              : "Set up an AI model"
         }
         className="flex items-center gap-2 px-3 py-1 text-xs font-mono text-text-3 bg-surface-2
                    border border-border hover:border-border-hover focus-visible:border-accent
@@ -135,12 +168,16 @@ export function ModelSwitcher() {
           aria-hidden="true"
           className={cn(
             "inline-block h-2 w-2 shrink-0 rounded-full",
-            active ? (active.is_available ? "bg-mark" : "bg-amber-500") : "bg-amber-500",
+            autoEnabled
+              ? "bg-accent"
+              : active
+                ? active.is_available
+                  ? "bg-mark"
+                  : "bg-amber-500"
+                : "bg-amber-500",
           )}
         />
-        <span className="truncate hidden sm:inline">
-          {active ? `${active.name}${active.model ? ` · ${active.model}` : ""}` : "Set up AI"}
-        </span>
+        <span className="truncate hidden sm:inline">{triggerLabel}</span>
         <svg
           width="10"
           height="10"
@@ -173,6 +210,39 @@ export function ModelSwitcher() {
                          placeholder:text-text-4 outline-none focus:border-accent-dim"
             />
           </div>
+
+          {/* Auto mode: one honest toggle, only offered once there is more
+              than one model to pick between. */}
+          {(providers?.length ?? 0) > 1 && (
+            <button
+              type="button"
+              role="switch"
+              aria-checked={autoEnabled}
+              onClick={() => setAuto.mutate(!autoEnabled)}
+              disabled={setAuto.isPending}
+              className={cn(
+                "w-full text-left px-3.5 py-2.5 border-b border-border transition-colors",
+                autoEnabled ? "bg-surface-2" : "hover:bg-surface-2",
+              )}
+            >
+              <span className="flex items-center justify-between gap-2">
+                <span className="text-xs text-text-1 font-medium">Auto</span>
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "font-mono text-2xs",
+                    autoEnabled ? "text-accent" : "text-text-4",
+                  )}
+                >
+                  {autoEnabled ? "on" : "off"}
+                </span>
+              </span>
+              <span className="block text-2xs text-text-4 mt-0.5 leading-relaxed">
+                Picks the best of your models for each task, prefers free local compute for quick
+                work, and falls back if one stops answering.
+              </span>
+            </button>
+          )}
 
           <div className="max-h-[320px] overflow-y-auto p-1.5">
             {local.length === 0 && cloud.length === 0 && (
