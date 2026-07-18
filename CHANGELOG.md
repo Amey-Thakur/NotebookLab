@@ -4,6 +4,21 @@ All notable changes to NotebookLab will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-07-18
+
+### Added
+
+- Attach a file straight from the chat box, like a chat app. The button opens
+  the file picker and adds the document to the notebook through the same import
+  that drag and drop uses, so the next question can draw on it.
+- Check for updates from Settings. It asks GitHub for the latest release,
+  downloads it if there is one, and offers a restart to apply it.
+
+### Changed
+
+- Softer, rounded corners on buttons and inputs across the app, so it reads
+  less boxy.
+
 ## [0.4.1] - 2026-07-18
 
 ### Fixed
