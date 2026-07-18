@@ -109,10 +109,24 @@ pub fn run() {
                     .conn()
                     .map(|conn| services::provider_config_service::load_saved_configs(&conn))
                     .unwrap_or_default();
-                if let Ok(mut providers) = state.provider_write() {
+                /* Apply the saved configs first (fast, no network), then read
+                the resulting names, release the lock, and probe local servers
+                WITHOUT holding the lock. Registering the results takes the
+                lock again only for a network-free moment. This keeps the
+                provider lock free during slow probes so chat and every other
+                feature never block on startup detection. */
+                let existing = if let Ok(mut providers) = state.provider_write() {
                     services::provider_config_service::apply_saved_configs(&mut providers, saved);
-                    services::auto_setup_service::auto_detect_providers(&mut providers);
+                    services::auto_setup_service::provider_names(&providers)
+                } else {
+                    Vec::new()
                 };
+                let detected = services::auto_setup_service::probe_local_providers(&existing);
+                if !detected.is_empty() {
+                    if let Ok(mut providers) = state.provider_write() {
+                        services::auto_setup_service::register_detected(&mut providers, detected);
+                    }
+                }
             });
 
             /* Check for updates in the background. When a new version has

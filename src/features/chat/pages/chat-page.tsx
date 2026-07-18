@@ -35,7 +35,10 @@ import type { Conversation, Message, ChatResponse, Document } from "@/types/mode
 export function ChatPage() {
   const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
   const queryClient = useQueryClient();
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  /* Selection is derived, not stored, so returning to Chat reopens the most
+     recent thread without a state-sync effect. "auto" (null) shows the newest
+     conversation; "new" shows a blank one; a string pins an explicit choice. */
+  const [selected, setSelected] = useState<string | "new" | null>(null);
   const [input, setInput] = useState("");
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
@@ -53,6 +56,12 @@ export function ChatPage() {
     queryFn: () => tauriInvoke<Conversation[]>("list_conversations", { notebook_id: activeNotebookId }),
     enabled: !!activeNotebookId,
   });
+
+  /* The conversation actually shown: an explicit pick, a blank new chat, or
+     (default) the most recent thread for this notebook. Deriving it here means
+     navigating away and back reopens the last chat with no effect needed. */
+  const conversationId =
+    selected === "new" ? null : (selected ?? conversations?.[0]?.id ?? null);
 
   const { data: messages } = useQuery({
     queryKey: [QUERY_KEYS.CHAT, conversationId],
@@ -75,7 +84,7 @@ export function ChatPage() {
     mutationFn: () =>
       tauriInvoke<string>("start_chat", { notebook_id: activeNotebookId }),
     onSuccess: (id) => {
-      setConversationId(id);
+      setSelected(id);
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CONVERSATIONS, activeNotebookId] });
     },
   });
@@ -106,8 +115,9 @@ export function ChatPage() {
   const deleteConversation = useMutation({
     mutationFn: (id: string) => tauriInvoke<void>("delete_conversation", { id }),
     onSuccess: (_data, id) => {
+      /* Fall back to auto so the next most recent thread opens, not a blank. */
       if (id === conversationId) {
-        setConversationId(null);
+        setSelected(null);
       }
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CONVERSATIONS, activeNotebookId] });
     },
@@ -122,7 +132,7 @@ export function ChatPage() {
     if (!conversationId) {
       startChat.mutate(undefined, {
         onSuccess: (id) => {
-          setConversationId(id);
+          setSelected(id);
           sendMessage.mutate({ convoId: id, message: msg });
         },
         onError: () => {
@@ -213,7 +223,7 @@ export function ChatPage() {
             <span className="text-[10px] font-mono tracking-widest uppercase text-text-4">History</span>
             <button
               type="button"
-              onClick={() => setConversationId(null)}
+              onClick={() => setSelected("new")}
               className="text-xs font-mono text-text-3 hover:text-text-1 transition-colors"
             >
               + New
@@ -224,7 +234,7 @@ export function ChatPage() {
               <li key={convo.id} className="group flex items-center">
                 <button
                   type="button"
-                  onClick={() => setConversationId(convo.id)}
+                  onClick={() => setSelected(convo.id)}
                   aria-current={convo.id === conversationId ? "true" : undefined}
                   className={`flex-1 text-left px-4 py-2 text-xs truncate transition-colors ${
                     convo.id === conversationId

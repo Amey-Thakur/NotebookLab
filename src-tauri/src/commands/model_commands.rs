@@ -139,7 +139,16 @@ pub async fn register_provider(
 
         let index = {
             let mut providers = state.provider_write()?;
-            providers.register_or_replace(provider_config_service::build_provider(&config))
+            let index =
+                providers.register_or_replace(provider_config_service::build_provider(&config));
+            /* Make it active when nothing else is, so a freshly connected model
+            works immediately even if the caller does not follow up with an
+            explicit activation. A provider the user already chose is left in
+            place. */
+            if providers.active_name().is_none() {
+                let _ = providers.set_active(index);
+            }
+            index
         };
 
         /* Persist after registering: a failed save leaves a working session
@@ -266,9 +275,16 @@ pub async fn detect_providers(app: tauri::AppHandle) -> AppResult<Vec<ProviderIn
     tauri::async_runtime::spawn_blocking(move || {
         use tauri::Manager;
         let state: State<'_, AppState> = app.state();
+        /* Probe the network with no lock held, then register under a brief
+        lock, so a slow probe never freezes chat or any other feature. */
+        let existing = {
+            let providers = state.provider_read()?;
+            crate::services::auto_setup_service::provider_names(&providers)
+        };
+        let detected = crate::services::auto_setup_service::probe_local_providers(&existing);
         {
             let mut providers = state.provider_write()?;
-            crate::services::auto_setup_service::auto_detect_providers(&mut providers);
+            crate::services::auto_setup_service::register_detected(&mut providers, detected);
         }
         let providers = state.provider_read()?;
         Ok(providers.list_providers())
