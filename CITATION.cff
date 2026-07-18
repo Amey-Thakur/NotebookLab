@@ -1,0 +1,36 @@
+# Name: CITATION.cff
+# Purpose: Machine-readable citation metadata for this repository.
+# Description: GitHub reads this file to offer a "Cite this repository" button
+#   and to format the reference, so anyone can credit NotebookLab correctly in
+#   papers, posts, and other work.
+# License: MIT
+# Authors: Amey Thakur (https://github.com/Amey-Thakur)
+#          Archit Konde (https://github.com/Archit-Konde)
+# Date: 2026-07-18
+cff-version: 1.2.0
+title: "NotebookLab: your thinking partner, on your machine"
+message: "If you use this software, please cite it using the metadata below."
+type: software
+authors:
+  - given-names: Amey
+    family-names: Thakur
+    email: ameythakur20@gmail.com
+    website: "https://github.com/Amey-Thakur"
+  - given-names: Archit
+    family-names: Konde
+    email: architkonde19@gmail.com
+    website: "https://github.com/Archit-Konde"
+repository-code: "https://github.com/Amey-Thakur/NotebookLab"
+url: "https://amey-thakur.github.io/NotebookLab/"
+license: MIT
+version: "0.4.2"
+date-released: "2026-07-18"
+keywords:
+  - ai
+  - rag
+  - notes
+  - knowledge-management
+  - local-llm
+  - offline-first
+  - tauri
+  - desktop-app
