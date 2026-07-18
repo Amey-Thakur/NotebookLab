@@ -111,7 +111,9 @@ pub async fn check_for_updates(app: AppHandle) -> AppResult<String> {
                 .await
                 .map_err(|e| crate::error::AppError::Internal(format!("Download failed: {e}")))?;
             app.emit("update-ready", version.clone()).ok();
-            Ok(format!("Version {version} downloaded. Restart to apply it."))
+            Ok(format!(
+                "Version {version} downloaded. Restart to apply it."
+            ))
         }
         Ok(None) => Ok("You are on the latest version.".to_string()),
         Err(e) => Err(crate::error::AppError::Internal(format!(
