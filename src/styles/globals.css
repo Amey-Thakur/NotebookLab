@@ -132,6 +132,28 @@
     --color-on-primary: #ffffff;
   }
 
+  /* ---- HIGH CONTRAST ----
+     Set from Settings (data-contrast="high" on <html>). Muted text tiers rise
+     toward full strength and hairline borders thicken into real lines, per
+     theme, so low-vision readers never meet gray-on-gray. */
+  [data-contrast="high"][data-theme="dark"] {
+    --color-border: #4a4a4a;
+    --color-border-hover: #5f5f5f;
+    --color-text-2: #e2ddd6;
+    --color-text-3: #cfc9c1;
+    --color-text-4: #b5afa7;
+    --color-accent: #a3c4f5;
+  }
+
+  [data-contrast="high"][data-theme="light"] {
+    --color-border: #8f8b80;
+    --color-border-hover: #6f6b60;
+    --color-text-2: #1a1a1a;
+    --color-text-3: #2e2b26;
+    --color-text-4: #3f3b35;
+    --color-accent: #1d4a9e;
+  }
+
 
   html {
     -webkit-font-smoothing: antialiased;

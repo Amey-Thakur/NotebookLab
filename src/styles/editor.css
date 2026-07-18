@@ -125,6 +125,18 @@
   outline: none;
 }
 
+/* Notepad feel: an obvious blinking caret, a tall writing surface, and a
+   text cursor over the whole pane so it always reads as editable. */
+.milkdown-editor-root {
+  cursor: text;
+  min-height: 55vh;
+}
+
+.milkdown-editor-root .ProseMirror {
+  caret-color: var(--color-accent);
+  min-height: 50vh;
+}
+
 /* Placeholder text for empty editor */
 .milkdown-editor-root .ProseMirror p.is-editor-empty:first-child::before {
   content: "Start writing...";

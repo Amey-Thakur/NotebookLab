@@ -16,7 +16,9 @@
  */
 
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
+import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 interface TourStep {
@@ -171,6 +173,15 @@ export function ProductTour({ open, onFinish, onOpenSample }: ProductTourProps) 
      without a reset effect. */
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const navigate = useNavigate();
+
+  /* The opening steps describe Home, so the tour must start there. Without
+     this, replaying from Settings spotlights "Home base" while a notebook or
+     the settings page stays on screen, and the walkthrough reads as broken. */
+  useEffect(() => {
+    if (open) navigate(ROUTES.HOME);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const current = STEPS[step];
   const isLast = step === STEPS.length - 1;

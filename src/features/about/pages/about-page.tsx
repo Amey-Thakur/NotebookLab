@@ -48,7 +48,7 @@ const MAKERS: Maker[] = [
 
 export function AboutPage() {
   return (
-    <div className="p-8 max-w-2xl mx-auto">
+    <div className="p-8 max-w-3xl mx-auto">
       {/* Why this exists */}
       <section className="mb-14">
         <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-5 pb-2 border-b border-border">

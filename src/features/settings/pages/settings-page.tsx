@@ -25,6 +25,15 @@ import { KeyCaps } from "@/components/shared/key-caps";
 import { useTheme } from "@/components/providers/theme-context";
 import { useUserStore, MAX_NAME_LENGTH } from "@/stores/user-store";
 import { useTourStore } from "@/stores/tour-store";
+import {
+  getUiScale,
+  setUiScale,
+  getHighContrast,
+  setHighContrast,
+  UI_SCALE_MIN,
+  UI_SCALE_MAX,
+  UI_SCALE_DEFAULT,
+} from "@/lib/accessibility";
 
 
 export function SettingsPage() {
@@ -33,6 +42,17 @@ export function SettingsPage() {
   const setDisplayName = useUserStore((s) => s.setDisplayName);
   const startTour = useTourStore((s) => s.start);
   const [copied, setCopied] = useState(false);
+  const [uiScale, setUiScaleState] = useState(getUiScale);
+  const [highContrast, setHighContrastState] = useState(getHighContrast);
+
+  const changeScale = (value: number) => {
+    setUiScaleState(setUiScale(value));
+  };
+  const toggleContrast = () => {
+    const next = !highContrast;
+    setHighContrast(next);
+    setHighContrastState(next);
+  };
 
   const { data: version } = useQuery({
     queryKey: [QUERY_KEYS.SETTINGS, "version"],
@@ -63,7 +83,7 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="p-8 max-w-2xl mx-auto">
+    <div className="p-8 max-w-4xl mx-auto">
       <h1 className="text-2xl font-display font-bold text-text-1 mb-8">Settings</h1>
 
       {/* Your name */}
@@ -113,6 +133,71 @@ export function SettingsPage() {
         </p>
       </section>
 
+      {/* Accessibility */}
+      <section className="mb-8">
+        <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-4 pb-2 border-b border-border">
+          Accessibility
+        </h2>
+
+        <label htmlFor="ui-scale" className="block text-sm text-text-2 mb-1">
+          Text and interface size
+        </label>
+        <p className="text-xs text-text-4 mb-2">
+          Scales everything, like a zoom that stays. {uiScale}%
+        </p>
+        <div className="flex items-center gap-3 max-w-md">
+          <span aria-hidden="true" className="text-xs text-text-4">A</span>
+          <input
+            id="ui-scale"
+            type="range"
+            min={UI_SCALE_MIN}
+            max={UI_SCALE_MAX}
+            step={5}
+            value={uiScale}
+            onChange={(e) => changeScale(Number(e.target.value))}
+            aria-valuetext={`${uiScale} percent`}
+            className="flex-1 accent-accent"
+          />
+          <span aria-hidden="true" className="text-lg text-text-4 leading-none">A</span>
+          {uiScale !== UI_SCALE_DEFAULT && (
+            <button
+              type="button"
+              onClick={() => changeScale(UI_SCALE_DEFAULT)}
+              className="px-3 py-1.5 text-xs font-mono border border-border text-text-3 hover:text-text-1 transition-colors"
+            >
+              Reset
+            </button>
+          )}
+        </div>
+
+        <div className="mt-5 flex items-center justify-between max-w-md">
+          <div>
+            <p className="text-sm text-text-2">High contrast</p>
+            <p className="text-xs text-text-4">
+              Stronger text and borders in both themes.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={highContrast}
+            onClick={toggleContrast}
+            className={`px-4 py-2 text-sm font-mono border transition-colors ${
+              highContrast
+                ? "border-accent-dim text-text-1 bg-surface-2"
+                : "border-border text-text-3 hover:text-text-1"
+            }`}
+          >
+            {highContrast ? "On" : "Off"}
+          </button>
+        </div>
+
+        <p className="text-xs text-text-4 mt-4">
+          Motion follows your system setting: with reduced motion on, animations in the app are
+          turned off automatically.
+        </p>
+      </section>
+
       {/* Documentation */}
       <section className="mb-8">
         <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-4 pb-2 border-b border-border">
@@ -151,7 +236,7 @@ export function SettingsPage() {
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-text-3">Data Directory</span>
-            <span className="font-mono text-text-4 text-xs max-w-[300px] truncate" title={dataDir}>
+            <span className="font-mono text-text-4 text-xs max-w-[440px] truncate" title={dataDir}>
               {dataDir || "..."}
             </span>
           </div>
@@ -264,7 +349,7 @@ function DeveloperLogs() {
       >
         {open ? "Hide developer logs" : "Show developer logs"}
       </button>
-      <p className="text-2xs text-text-4 mt-2 max-w-prose">
+      <p className="text-2xs text-text-4 mt-2">
         What the backend has been doing this session: model detection, imports, downloads, and
         errors. Kept in memory only (last 500 lines), never written to disk. Useful when reporting
         a bug or building against the local API.

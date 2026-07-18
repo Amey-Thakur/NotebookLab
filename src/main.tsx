@@ -20,9 +20,14 @@ import { BrowserRouter } from "react-router-dom";
 
 import { ErrorBoundary } from "./components/shared/error-boundary";
 import { ThemeProvider } from "./components/providers/theme-provider";
+import { initAccessibility } from "./lib/accessibility";
 import { App } from "./app";
 
 import "./styles/globals.css";
+
+/* Stored UI scale and contrast apply before first paint, so the app never
+   flashes at the wrong size for someone who depends on a larger one. */
+initAccessibility();
 
 
 const queryClient = new QueryClient({
