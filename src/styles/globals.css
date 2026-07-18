@@ -172,6 +172,17 @@
     outline-offset: 1px;
   }
 
+  /* Soften the square edges app-wide. Interactive controls get a small radius
+     here; any element that sets its own (a rounded-full pill toggle, a
+     rounded-none by intent) still wins, because Tailwind utilities sit in a
+     higher layer than this base rule. */
+  button,
+  input,
+  textarea,
+  select {
+    border-radius: 6px;
+  }
+
   /* Respect users who ask the OS for less motion */
   @media (prefers-reduced-motion: reduce) {
     *,

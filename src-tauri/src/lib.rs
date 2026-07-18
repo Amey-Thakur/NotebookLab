@@ -161,6 +161,7 @@ pub fn run() {
             commands::system_commands::get_data_directory,
             commands::system_commands::get_api_token,
             commands::system_commands::restart_app,
+            commands::system_commands::check_for_updates,
             commands::notebook_commands::list_notebooks,
             commands::notebook_commands::get_notebook,
             commands::notebook_commands::create_notebook,

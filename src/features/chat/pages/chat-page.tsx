@@ -47,7 +47,7 @@ export function ChatPage() {
 
   /* Drop a file onto chat to add it to this notebook as a source. The existing
      import pipeline indexes it (images via OCR); the next question can use it. */
-  const { isDragging, isImporting, importError } = useDropImport(activeNotebookId ?? undefined);
+  const { isDragging, isImporting, importError, attach } = useDropImport(activeNotebookId ?? undefined);
   const [justAdded, setJustAdded] = useState(false);
   const wasImporting = useRef(false);
 
@@ -379,6 +379,23 @@ export function ChatPage() {
         {/* Input area: stays enabled while pending so focus is never dropped */}
         <div className="px-8 py-4 border-t border-border">
           <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={attach}
+              disabled={isImporting}
+              title="Add a file to this notebook"
+              aria-label="Add a file"
+              className="px-3 py-3 border border-border text-text-3 hover:text-text-1
+                         hover:border-accent-dim disabled:opacity-50 transition-colors"
+            >
+              {isImporting ? (
+                <span className="text-xs font-mono">...</span>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                </svg>
+              )}
+            </button>
             <input
               ref={inputRef}
               type="text"

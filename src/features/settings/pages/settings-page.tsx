@@ -16,9 +16,10 @@
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
+import { formatError } from "@/lib/format-error";
 import { QUERY_KEYS, ROUTES } from "@/lib/constants";
 import { SHORTCUTS, GROUP_ORDER } from "@/lib/shortcuts";
 import { KeyCaps } from "@/components/shared/key-caps";
@@ -44,6 +45,18 @@ export function SettingsPage() {
   const [copied, setCopied] = useState(false);
   const [uiScale, setUiScaleState] = useState(getUiScale);
   const [highContrast, setHighContrastState] = useState(getHighContrast);
+  const [updateStatus, setUpdateStatus] = useState<string | null>(null);
+  const [updateStaged, setUpdateStaged] = useState(false);
+
+  /* Manually check GitHub for a newer release. If one is found it downloads and
+     stages, and the button becomes Restart to update. */
+  const checkUpdates = useMutation({
+    mutationFn: () => tauriInvoke<string>("check_for_updates"),
+    onSuccess: (message) => {
+      setUpdateStatus(message);
+      setUpdateStaged(message.toLowerCase().includes("restart"));
+    },
+  });
 
   const changeScale = (value: number) => {
     setUiScaleState(setUiScale(value));
@@ -240,6 +253,32 @@ export function SettingsPage() {
               {dataDir || "..."}
             </span>
           </div>
+        </div>
+        <div className="mt-4 flex items-center gap-3 flex-wrap">
+          <button
+            type="button"
+            onClick={() => checkUpdates.mutate()}
+            disabled={checkUpdates.isPending}
+            className="px-4 py-2 text-sm font-mono border border-border text-text-2
+                       hover:border-accent-dim disabled:opacity-50 transition-colors"
+          >
+            {checkUpdates.isPending ? "Checking..." : "Check for updates"}
+          </button>
+          {updateStatus && !updateStaged && (
+            <span className="text-xs text-text-4" role="status">{updateStatus}</span>
+          )}
+          {checkUpdates.isError && (
+            <span className="text-xs text-error" role="alert">{formatError(checkUpdates.error)}</span>
+          )}
+          {updateStaged && (
+            <button
+              type="button"
+              onClick={() => tauriInvoke("restart_app")}
+              className="px-4 py-2 text-sm font-mono bg-primary text-on-primary hover:bg-primary-hover transition-colors"
+            >
+              Restart to update
+            </button>
+          )}
         </div>
       </section>
 
