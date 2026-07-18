@@ -89,6 +89,37 @@ pub fn restart_app(app: AppHandle) {
     app.restart();
 }
 
+/// Check GitHub for a newer release and, if one exists, download and stage it.
+/// Returns a short status the Settings page shows. The same background check
+/// runs at startup; this is the manual "Check for updates" button. When an
+/// update is staged it emits "update-ready" so the status bar offers a restart,
+/// and the caller can restart with `restart_app`.
+#[tauri::command(rename_all = "snake_case")]
+pub async fn check_for_updates(app: AppHandle) -> AppResult<String> {
+    use tauri::Emitter;
+    use tauri_plugin_updater::UpdaterExt;
+
+    let updater = app
+        .updater()
+        .map_err(|e| crate::error::AppError::Internal(format!("Updater unavailable: {e}")))?;
+
+    match updater.check().await {
+        Ok(Some(update)) => {
+            let version = update.version.clone();
+            update
+                .download_and_install(|_, _| {}, || {})
+                .await
+                .map_err(|e| crate::error::AppError::Internal(format!("Download failed: {e}")))?;
+            app.emit("update-ready", version.clone()).ok();
+            Ok(format!("Version {version} downloaded. Restart to apply it."))
+        }
+        Ok(None) => Ok("You are on the latest version.".to_string()),
+        Err(e) => Err(crate::error::AppError::Internal(format!(
+            "Could not check for updates: {e}"
+        ))),
+    }
+}
+
 /// What this computer can run, for the local-model recommendations in the
 /// Models page. GPU detection is best-effort via nvidia-smi when present;
 /// absence simply means recommendations key off system RAM alone.

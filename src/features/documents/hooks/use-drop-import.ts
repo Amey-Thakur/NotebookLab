@@ -13,10 +13,11 @@
  * Date: 2026-07-12
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { open } from "@tauri-apps/plugin-dialog";
 
-import { isSupportedFileType } from "@/lib/constants";
+import { isSupportedFileType, SUPPORTED_FILE_TYPES } from "@/lib/constants";
 import { useImportDocument } from "./use-documents";
 
 
@@ -65,9 +66,26 @@ export function useDropImport(notebookId: string | undefined) {
     };
   }, [notebookId]);
 
+  /* Open the native file picker and import what is chosen, so a file can be
+     added right from the chat box (like attaching in a chat app) without going
+     to Documents first. Uses the same import pipeline as drag and drop. */
+  const attach = useCallback(async () => {
+    if (!notebookId) return;
+    const picked = await open({
+      multiple: true,
+      filters: [{ name: "Documents", extensions: SUPPORTED_FILE_TYPES.map((e) => e.slice(1)) }],
+    }).catch(() => null);
+    if (!picked) return;
+    const paths = Array.isArray(picked) ? picked : [picked];
+    for (const path of paths.filter(isSupportedFileType)) {
+      importRef.current.mutate(path);
+    }
+  }, [notebookId]);
+
   return {
     isDragging,
     isImporting: importDoc.isPending,
     importError: importDoc.isError ? importDoc.error : null,
+    attach,
   };
 }
