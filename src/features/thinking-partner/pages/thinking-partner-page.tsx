@@ -22,6 +22,7 @@ import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
 import { ROUTES } from "@/lib/constants";
 import { formatError } from "@/lib/format-error";
 import { useNotebookStore } from "@/stores/notebook-store";
+import { useRetainedState } from "@/lib/use-persistent-draft";
 import { safeJson, type MindMap } from "@/features/studio/api/studio-api";
 import { MindMapView } from "@/features/studio/components/mind-map-view";
 
@@ -31,9 +32,12 @@ type Mode = "mindmap" | "socratic";
 
 export function ThinkingPartnerPage() {
   const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
-  const [mode, setMode] = useState<Mode>("mindmap");
+  const [mode, setMode] = useRetainedState<Mode>("notebooklab-state-think-mode", "mindmap");
   const [input, setInput] = useState("");
-  const [result, setResult] = useState<string | null>(null);
+  const [result, setResult] = useRetainedState<string | null>(
+    "notebooklab-state-think-result",
+    null,
+  );
 
   const generate = useMutation({
     mutationFn: (text: string) => {

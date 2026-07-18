@@ -49,3 +49,34 @@ export function usePersistentDraft(
 
   return [value, setValue, clear];
 }
+
+/**
+ * A useState whose value survives navigation and reload, for any JSON value.
+ *
+ * The sidebar features (Transform, the Studio, Audio, the thinking partner,
+ * Search) hold a selection and a generated result in component state, which is
+ * thrown away when the page unmounts on navigation. Backing that state with
+ * localStorage means returning to a feature reopens the last selection and
+ * result instead of a blank screen, so the app picks up where the user left
+ * off. Keys should be stable per surface (prefix "notebooklab-state-").
+ */
+export function useRetainedState<T>(key: string, initial: T): [T, (next: T) => void] {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw != null ? (JSON.parse(raw) as T) : initial;
+    } catch {
+      return initial;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch {
+      /* Storage full or unavailable: the value simply is not persisted. */
+    }
+  }, [key, value]);
+
+  return [value, setValue];
+}

@@ -14,14 +14,13 @@
  * Date: 2026-07-13
  */
 
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 
 import { ROUTES } from "@/lib/constants";
 import { formatError } from "@/lib/format-error";
 import { useNotebookStore } from "@/stores/notebook-store";
-import { usePersistentDraft } from "@/lib/use-persistent-draft";
+import { usePersistentDraft, useRetainedState } from "@/lib/use-persistent-draft";
 import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
 import {
   generateStudio,
@@ -57,10 +56,16 @@ const FORMATS: { id: StudioFormat; label: string; blurb: string }[] = [
 
 export function StudioPage() {
   const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
-  const [format, setFormat] = useState<StudioFormat>("study_guide");
+  const [format, setFormat] = useRetainedState<StudioFormat>(
+    "notebooklab-state-studio-format",
+    "study_guide",
+  );
   /* Preserve the typed focus across navigation and reload. */
   const [focus, setFocus] = usePersistentDraft("notebooklab-draft-studio-focus");
-  const [result, setResult] = useState<{ format: StudioFormat; text: string } | null>(null);
+  const [result, setResult] = useRetainedState<{ format: StudioFormat; text: string } | null>(
+    "notebooklab-state-studio-result",
+    null,
+  );
 
   const generate = useMutation({
     mutationFn: () => generateStudio(activeNotebookId as string, format, focus),

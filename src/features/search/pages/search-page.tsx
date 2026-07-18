@@ -11,12 +11,13 @@
  * Date: 2026-07-12
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
 import { debounce } from "@/lib/utils";
+import { useRetainedState } from "@/lib/use-persistent-draft";
 import { formatError } from "@/lib/format-error";
 import { QUERY_KEYS, ROUTES } from "@/lib/constants";
 import { useNotebookStore } from "@/stores/notebook-store";
@@ -26,12 +27,17 @@ import type { UnifiedSearchResult } from "@/types/models";
 export function SearchPage() {
   const navigate = useNavigate();
   const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
-  const [query, setQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
+  /* Retain the query so returning to Search shows the last results (the query
+     itself drives a cached lookup) instead of an empty box. */
+  const [query, setQuery] = useRetainedState<string>("notebooklab-state-search-query", "");
+  const [debouncedQuery, setDebouncedQuery] = useRetainedState<string>(
+    "notebooklab-state-search-debounced",
+    "",
+  );
 
   const debouncedSearch = useMemo(
     () => debounce((q: string) => setDebouncedQuery(q), 300),
-    [],
+    [setDebouncedQuery],
   );
 
   useEffect(() => {

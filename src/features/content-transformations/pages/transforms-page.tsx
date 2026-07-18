@@ -20,7 +20,7 @@ import { tauriInvoke } from "@/services/tauri-client";
 import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
 import { ROUTES } from "@/lib/constants";
 import { formatError } from "@/lib/format-error";
-import { usePersistentDraft } from "@/lib/use-persistent-draft";
+import { usePersistentDraft, useRetainedState } from "@/lib/use-persistent-draft";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { useDocuments } from "@/features/documents/hooks/use-documents";
 
@@ -37,10 +37,16 @@ const TRANSFORM_LABELS: Record<TransformType, string> = {
 export function TransformsPage() {
   const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
   const [selectedDoc, setSelectedDoc] = useState<string>("");
-  const [transformType, setTransformType] = useState<TransformType>("summarize");
+  const [transformType, setTransformType] = useRetainedState<TransformType>(
+    "notebooklab-state-transform-type",
+    "summarize",
+  );
   /* Preserve the typed custom instruction across navigation and reload. */
   const [customPrompt, setCustomPrompt] = usePersistentDraft("notebooklab-draft-transform-custom");
-  const [result, setResult] = useState<string | null>(null);
+  const [result, setResult] = useRetainedState<string | null>(
+    "notebooklab-state-transform-result",
+    null,
+  );
   const [copied, setCopied] = useState(false);
 
   const { data: documents } = useDocuments(activeNotebookId ?? undefined);
