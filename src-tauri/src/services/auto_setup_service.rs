@@ -98,14 +98,8 @@ pub fn probe_local_providers(existing_names: &[String]) -> Vec<DetectedProvider>
 /// never overridden by whatever local server happened to answer.
 pub fn register_detected(router: &mut ProviderRouter, detected: Vec<DetectedProvider>) {
     for d in detected {
-        let provider = OpenAiCompatibleProvider::with_kind(
-            d.name.clone(),
-            d.kind,
-            d.url,
-            None,
-            d.model,
-            true,
-        );
+        let provider =
+            OpenAiCompatibleProvider::with_kind(d.name.clone(), d.kind, d.url, None, d.model, true);
         let index = router.register_or_replace(Box::new(provider));
         if router.active_name().is_none() && router.set_active(index).is_ok() {
             tracing::info!("Auto-activated provider: {} (index {index})", d.name);
@@ -116,7 +110,11 @@ pub fn register_detected(router: &mut ProviderRouter, detected: Vec<DetectedProv
 
 /// Read the router's current provider names for the skip-duplicates check.
 pub fn provider_names(router: &ProviderRouter) -> Vec<String> {
-    router.list_providers().iter().map(|p| p.name.clone()).collect()
+    router
+        .list_providers()
+        .iter()
+        .map(|p| p.name.clone())
+        .collect()
 }
 
 /// Pull the first model id out of an OpenAI-style /v1/models response body.
