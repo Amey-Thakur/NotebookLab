@@ -630,26 +630,49 @@ console.log(
   'font:700 22px Play,sans-serif;color:#4a7dd6','font:13px monospace;color:#8a857f'
 );
 
-/* Resolve exact installer links and version from the latest release.
-   Falls back to the releases page when the API is unavailable. */
-fetch('https://api.github.com/repos/Amey-Thakur/NotebookLab/releases/latest')
-  .then(r=>r.ok?r.json():null)
-  .then(rel=>{
-    if(!rel||!rel.assets)return;
-    const meta=document.getElementById('hero-meta');
+/* One-click download of the latest installer. The buttons start pointing at
+   the releases page as a safe fallback; this resolves each to the exact
+   installer for the newest release. It resolves both on load (so a normal
+   click is instant) and again on click (so a click that beat the first fetch,
+   or a fetch that failed, still lands on the real download, not the releases
+   page). The release is fetched once and cached. */
+(function(){
+  var cached=null;
+  function getRelease(){
+    if(cached)return Promise.resolve(cached);
+    return fetch('https://api.github.com/repos/Amey-Thakur/NotebookLab/releases/latest')
+      .then(function(r){return r.ok?r.json():null;})
+      .then(function(rel){if(rel&&rel.assets)cached=rel;return cached;})
+      .catch(function(){return null;});
+  }
+  function assetUrl(rel,dl){
+    if(!rel||!rel.assets)return null;
+    var pick=function(re){var a=rel.assets.find(function(x){return re.test(x.name);});return a?a.browser_download_url:null;};
+    if(dl==='windows')return pick(/\.msi$/)||pick(/setup\.exe$/);
+    if(dl==='mac')return pick(/aarch64\.dmg$/)||pick(/\.dmg$/);
+    if(dl==='linux')return pick(/\.deb$/)||pick(/\.rpm$/);
+    return null;
+  }
+  var buttons=document.querySelectorAll('[data-dl]');
+  /* Pre-resolve so a normal click is a direct download with no wait. */
+  getRelease().then(function(rel){
+    if(!rel)return;
+    var meta=document.getElementById('hero-meta');
     if(meta&&rel.tag_name)meta.textContent=rel.tag_name+' · Windows, macOS, Linux';
-    const pick=(re)=>rel.assets.find(a=>re.test(a.name));
-    const targets={
-      windows:pick(/\.msi$/)||pick(/setup\.exe$/),
-      mac:pick(/aarch64\.dmg$/)||pick(/\.dmg$/),
-      linux:pick(/\.deb$/)||pick(/\.rpm$/)
-    };
-    document.querySelectorAll('[data-dl]').forEach(a=>{
-      const asset=targets[a.dataset.dl];
-      if(asset)a.href=asset.browser_download_url;
+    buttons.forEach(function(a){var url=assetUrl(rel,a.dataset.dl);if(url)a.href=url;});
+  });
+  /* Guarantee the click downloads even if the pre-resolve did not finish. */
+  buttons.forEach(function(a){
+    a.addEventListener('click',function(e){
+      if(!/\/releases\/latest\/?$/.test(a.getAttribute('href')))return; /* already a direct link */
+      e.preventDefault();
+      getRelease().then(function(rel){
+        var url=assetUrl(rel,a.dataset.dl);
+        window.location.href=url||a.getAttribute('href');
+      });
     });
-  })
-  .catch(()=>{});
+  });
+})();
 </script>
 
 </body>
