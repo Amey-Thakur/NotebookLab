@@ -153,7 +153,8 @@ export function PromptStudioPage() {
     <div className="p-8 max-w-5xl mx-auto">
       <h1 className="text-2xl font-display font-bold text-text-1 mb-1">Prompt Studio</h1>
       <p className="text-sm text-text-3 mb-6">
-        Describe the job and get a complete, ready-to-run prompt, or build one from parts.
+        Describe the job in your own words, typos and all, and your model cleans it up and writes a
+        strict, agent-ready prompt. Or build one from parts.
       </p>
 
       <ModelRequiredNotice action="Prompt Studio" />
@@ -197,7 +198,7 @@ export function PromptStudioPage() {
               value={describe}
               onChange={(e) => setDescribe(e.target.value)}
               placeholder={
-                "Say it like you would to a colleague. For example: sort incoming support emails into billing, bug, or feature request, with a one-line reason. Or: write a warm launch announcement for our new app aimed at students."
+                "Say it however it comes out, typos and all. The model reads past the mess to your real goal. For example: pls sort incoming support emails into billing, bug, or feature request w a one-line reason. Or: write a warm launch announcement for our new app aimed at students."
               }
               rows={7}
               className="w-full px-3 py-2 text-sm bg-surface border border-border text-text-1
