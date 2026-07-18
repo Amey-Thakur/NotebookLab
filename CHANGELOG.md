@@ -4,6 +4,27 @@ All notable changes to NotebookLab will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-07-18
+
+### Fixed
+
+- The app no longer freezes on startup. Detecting local model servers used to
+  hold a lock while probing the network; a slow or filtered port could stall
+  every feature with no output and no error. Probing now runs without the lock,
+  so chat and everything else stay responsive.
+- A model you connect now activates immediately, so a fresh Gemini key or a
+  downloaded model works without an extra step.
+
+### Changed
+
+- Every feature remembers where you left off. Leave Chat for the Studio or
+  Audio and come back, and your conversation, transform, overview, mind map,
+  and last search are still there, so a notebook feels like one workspace.
+- Notes edit like a notepad: a formatting toolbar, a visible blinking cursor,
+  click anywhere to write, and a wider, roomier layout.
+- Accessibility settings: a text and interface size slider and a high-contrast
+  mode, both remembered across restarts.
+
 ## [0.4.0] - 2026-07-17
 
 ### Added
