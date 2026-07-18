@@ -24,7 +24,7 @@ import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
 import { ROUTES } from "@/lib/constants";
 import { formatError } from "@/lib/format-error";
 import { useNotebookStore } from "@/stores/notebook-store";
-import { usePersistentDraft } from "@/lib/use-persistent-draft";
+import { usePersistentDraft, useRetainedState } from "@/lib/use-persistent-draft";
 
 
 interface PodcastTurn {
@@ -51,8 +51,14 @@ export function PodcastPage() {
   const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
   /* Preserve the typed topic across navigation and reload. */
   const [topic, setTopic] = usePersistentDraft("notebooklab-draft-podcast-topic");
-  const [format, setFormat] = useState<AudioFormat>("discussion");
-  const [script, setScript] = useState<PodcastScript | null>(null);
+  const [format, setFormat] = useRetainedState<AudioFormat>(
+    "notebooklab-state-audio-format",
+    "discussion",
+  );
+  const [script, setScript] = useRetainedState<PodcastScript | null>(
+    "notebooklab-state-audio-script",
+    null,
+  );
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTurn, setCurrentTurn] = useState(-1);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
