@@ -101,11 +101,25 @@ export function AppShell({ children }: AppShellProps) {
       import("@tauri-apps/api/window")
         .then(async ({ getCurrentWindow }) => {
           const appWindow = getCurrentWindow();
+          /* One click must always be enough to close. The flush is best
+             effort behind a cap, destroy always runs, and if destroy is ever
+             refused the next close request passes through untouched instead
+             of being prevented into a window that can never close. */
+          let closing = false;
           const stop = await appWindow.onCloseRequested(async (event) => {
+            if (closing) return;
+            closing = true;
             event.preventDefault();
-            const cap = new Promise((resolve) => setTimeout(resolve, 2000));
-            await Promise.race([flushAllAutosaves(), cap]);
-            await appWindow.destroy();
+            try {
+              const cap = new Promise((resolve) => setTimeout(resolve, 2000));
+              await Promise.race([flushAllAutosaves(), cap]);
+            } catch {
+              /* A failed save must not hold the window hostage. */
+            }
+            await appWindow.destroy().catch(() => {
+              /* Destroy refused: leave closing latched so the next click
+                 skips preventDefault and the OS close proceeds natively. */
+            });
           });
           if (disposed) stop();
           else unlisten = stop;
