@@ -102,6 +102,55 @@
   margin: 2em 0;
 }
 
+/* Task lists: drop the bullet, line the checkbox up with the text, and let
+   the box be clicked to toggle done. */
+.milkdown-editor-root li.task-list-item,
+.milkdown-editor-root li[data-item-type="task"] {
+  list-style: none;
+  position: relative;
+}
+
+.milkdown-editor-root li.task-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.milkdown-editor-root li.task-list-item > label,
+.milkdown-editor-root li.task-list-item input[type="checkbox"] {
+  margin-top: 0.45em;
+  cursor: pointer;
+  accent-color: var(--color-accent);
+}
+
+/* Tables: a plain, readable grid that matches the design system. */
+.milkdown-editor-root table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+  font-size: 0.875rem;
+}
+
+.milkdown-editor-root th,
+.milkdown-editor-root td {
+  border: 1px solid var(--color-border);
+  padding: 6px 10px;
+  text-align: left;
+  vertical-align: top;
+  color: var(--color-text-2);
+}
+
+.milkdown-editor-root th {
+  background: var(--color-surface-2);
+  color: var(--color-text-1);
+  font-weight: 600;
+}
+
+/* The cell you are editing reads as selected without shouting. */
+.milkdown-editor-root .selectedCell {
+  background: var(--color-surface-2);
+}
+
 /* Wiki-links [[note name]] */
 .milkdown-editor-root .wiki-link {
   color: var(--color-accent);
