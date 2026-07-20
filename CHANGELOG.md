@@ -4,6 +4,27 @@ All notable changes to NotebookLab will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-07-20
+
+### Fixed
+
+- The note editor's toolbar and auto-save now actually work. Change listeners
+  were registered on a manager the editor replaced during startup, so edits
+  were never reported and notes could silently fail to save. Every toolbar
+  command is now verified live against the running editor.
+- Closing the window closes the app. The close handler needed a window
+  permission the app never granted, so the close click was swallowed and the
+  local AI server kept running. One click now closes the window and shuts the
+  server down with it.
+
+### Added
+
+- A fuller formatting toolbar in notes: Heading 3, task lists with clickable
+  checkboxes, tables, code blocks, dividers, and links with inline URL entry.
+- Toolbar buttons light up to show the formatting active at the cursor.
+- Markdown copy and paste keeps its structure, and typing shortcuts like
+  `# `, `- [ ] `, and `> ` convert as you write.
+
 ## [0.4.2] - 2026-07-18
 
 ### Added
