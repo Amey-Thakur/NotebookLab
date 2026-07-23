@@ -26,7 +26,7 @@ import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS } from "@/lib/constants";
 import { cn, formatBytes } from "@/lib/utils";
 import { formatError } from "@/lib/format-error";
-import type { GgufCatalogEntry, ModelFileInfo } from "@/types/models";
+import type { GgufCatalogEntry, ModelFileInfo, SidecarStatus } from "@/types/models";
 
 import { useHardwareProfile } from "../hooks/use-model-management";
 import { recommendGguf } from "../data/gguf-recommend";
@@ -68,6 +68,23 @@ export function BundledModels({ onDownloaded }: BundledModelsProps) {
         setProgress(null);
         queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SIDECAR] });
         onDownloaded();
+        /* Bridge download -> running: if the bundled server is idle, start it
+           with the downloaded model so the user lands on a working state rather
+           than a downloaded-but-inert model. Best-effort; the Local AI Server
+           card and the model notice both still offer a manual Start. */
+        void (async () => {
+          try {
+            if (!(await tauriInvoke<boolean>("sidecar_available"))) return;
+            const s = await tauriInvoke<SidecarStatus>("get_sidecar_status");
+            if (s.state === "stopped" || s.state === "crashed") {
+              await tauriInvoke<SidecarStatus>("start_sidecar", { model_path: null });
+              queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SIDECAR, "status"] });
+              queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ACTIVE_PROVIDER] });
+            }
+          } catch {
+            /* Ignore: a manual Start remains available on the Models page. */
+          }
+        })();
       } else if (payload.status.startsWith("error")) {
         setProgress(payload);
       } else {

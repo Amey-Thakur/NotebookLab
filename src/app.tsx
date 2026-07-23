@@ -21,6 +21,7 @@ import { ROUTES } from "./lib/constants";
 import { AppShell } from "./components/layout/app-shell";
 import { PageLoader } from "./components/shared/page-loader";
 import { HomePage } from "./features/home/pages/home-page";
+import { useLocalModelAutostart } from "./features/model-manager/hooks/use-local-model-autostart";
 
 /* Each page becomes its own chunk, fetched from local disk on first visit. */
 const NotebooksPage = lazy(() =>
@@ -86,6 +87,10 @@ const AboutPage = lazy(() =>
 );
 
 export function App() {
+  /* Bring a downloaded local model back on launch when it is the only option,
+     so offline users land on a working state without a manual Start. */
+  useLocalModelAutostart();
+
   return (
     <AppShell>
       <Suspense fallback={<PageLoader />}>
