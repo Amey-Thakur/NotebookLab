@@ -68,14 +68,17 @@ export function ConnectCloudDialog({ provider, onClose }: ConnectCloudDialogProp
         model: chosenModel,
         is_local: false,
       });
-      /* Probe reachability so the result step can say "connected" honestly.
-         The listing re-checks every provider; find ours by name. */
+      /* Make it the active model no matter what the reachability probe says.
+         The user connected this provider to use it, and the probe (a 4s GET on
+         /v1/models or /v1beta/models) can fail while chat still works: a slow
+         network, or a key allowed to generate but not to list models. Gating
+         activation on the probe left users saved-but-not-active, still pointed
+         at whatever was active before (often the slow local server). The probe
+         now only informs the result message. */
+      await setActive.mutateAsync(index);
       const providers = await tauriInvoke<ProviderInfo[]>("list_providers");
       const mine = providers.find((p) => p.name === provider.name);
       setVerified(mine?.is_available ?? false);
-      if (mine?.is_available) {
-        await setActive.mutateAsync(index);
-      }
     } catch {
       /* register.isError renders the message on the result step */
     }
@@ -286,12 +289,14 @@ export function ConnectCloudDialog({ provider, onClose }: ConnectCloudDialogProp
               ) : (
                 <>
                   <p className="text-sm font-semibold text-amber-500 mb-1">
-                    Saved, but not answering
+                    Set as active, but the test did not answer
                   </p>
                   <p className="text-xs text-text-3 mb-4 leading-relaxed">
-                    The connection is saved, but {provider.name} did not answer the test call.
-                    The usual causes: the key was copied incompletely, it has no credit yet, or
-                    the network blocks the API. Edit the key from the provider card anytime.
+                    {provider.name} is now your active model, but it did not answer the quick test
+                    call. That is often just a slow network or a key that cannot list models, so try
+                    a question first. If chat fails, the usual causes are a key copied incompletely,
+                    no credit yet, or a network that blocks the API. Edit the key from the provider
+                    card anytime.
                   </p>
                 </>
               )}
