@@ -211,6 +211,13 @@ pub fn generate_session_key() -> String {
     format!("nbl-{}", key.simple())
 }
 
+/// Context window the bundled server is started with. 2048 proved too small in
+/// practice: the RAG prompt (system rules, history, retrieved passages) plus a
+/// reasoning model's <think> preamble overflowed it, truncating answers or
+/// leaving none. 4096 fits the pipeline's budget with room to spare while the
+/// KV cache stays modest even for 7B models.
+pub const SIDECAR_CONTEXT_TOKENS: u32 = 4096;
+
 /// Build the argument list for llama-server.
 /// Deliberately no --embeddings flag: on this llama.cpp release it restricts
 /// the server to embeddings only, which would break chat. Semantic search
@@ -223,7 +230,7 @@ pub fn build_sidecar_args(port: u16, model_path: &str) -> Vec<String> {
         "-m".to_string(),
         model_path.to_string(),
         "-c".to_string(),
-        "2048".to_string(),
+        SIDECAR_CONTEXT_TOKENS.to_string(),
         "-t".to_string(),
         (num_cpus().max(2) / 2).to_string(),
     ]

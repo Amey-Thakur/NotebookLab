@@ -134,7 +134,7 @@ const GGUF_CATALOG: &[GgufCatalogEntry] = &[
         download_gb: 4.36,
         min_ram_gb: 16,
         recommended_ram_gb: 16,
-        use_note: "Deliberate step-by-step reasoning, fully offline.",
+        use_note: "Deliberate step-by-step reasoning, fully offline. Thinks before answering, so replies take minutes on CPU; pick a smaller model for quick answers.",
         url: "https://huggingface.co/bartowski/DeepSeek-R1-Distill-Qwen-7B-GGUF/resolve/main/DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf",
     },
 ];

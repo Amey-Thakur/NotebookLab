@@ -21,6 +21,31 @@ pub fn escape_like_pattern(query: &str) -> String {
     format!("%{escaped}%")
 }
 
+/// Strip a leading `<think>...</think>` block from model output.
+/// Reasoning models (DeepSeek R1, Qwen with thinking on) emit their hidden
+/// chain of thought before the answer; showing it verbatim buries the answer
+/// under minutes of monologue. Only a closed leading block with a non-empty
+/// answer after it is stripped: an unclosed block (output cut off mid-think)
+/// or a think-only reply is returned unchanged, so the user always sees
+/// something rather than an empty message.
+pub fn strip_reasoning_block(content: &str) -> &str {
+    let trimmed = content.trim_start();
+    let Some(rest) = trimmed.strip_prefix("<think>") else {
+        return content;
+    };
+    match rest.find("</think>") {
+        Some(position) => {
+            let answer = rest[position + "</think>".len()..].trim();
+            if answer.is_empty() {
+                content
+            } else {
+                answer
+            }
+        }
+        None => content,
+    }
+}
+
 /// Truncate a string to at most `max_bytes` without splitting a UTF-8 character.
 /// Byte-index slicing panics on multi-byte boundaries; this walks back to the
 /// nearest valid boundary instead.
@@ -38,6 +63,44 @@ pub fn truncate_to_char_boundary(text: &str, max_bytes: usize) -> &str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn strip_reasoning_removes_closed_leading_block() {
+        let output = "<think>Let me work through this...</think>\n\nThe answer is 4.";
+        assert_eq!(strip_reasoning_block(output), "The answer is 4.");
+    }
+
+    #[test]
+    fn strip_reasoning_leaves_plain_output_unchanged() {
+        assert_eq!(
+            strip_reasoning_block("The answer is 4."),
+            "The answer is 4."
+        );
+        /* A think tag mid-text is content, not a reasoning preamble. */
+        let mid = "The tag <think> appears in HTML-like text.";
+        assert_eq!(strip_reasoning_block(mid), mid);
+    }
+
+    #[test]
+    fn strip_reasoning_keeps_unclosed_block() {
+        /* Output cut off mid-think: better the partial monologue than nothing. */
+        let cut = "<think>Still reasoning about";
+        assert_eq!(strip_reasoning_block(cut), cut);
+    }
+
+    #[test]
+    fn strip_reasoning_keeps_think_only_reply() {
+        let only = "<think>All thought, no answer.</think>";
+        assert_eq!(strip_reasoning_block(only), only);
+        let whitespace_after = "<think>thought</think>   \n ";
+        assert_eq!(strip_reasoning_block(whitespace_after), whitespace_after);
+    }
+
+    #[test]
+    fn strip_reasoning_tolerates_leading_whitespace() {
+        let output = "\n  <think>hmm</think>Answer.";
+        assert_eq!(strip_reasoning_block(output), "Answer.");
+    }
 
     #[test]
     fn truncate_ascii_at_limit() {

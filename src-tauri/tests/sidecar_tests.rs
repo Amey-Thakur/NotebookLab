@@ -68,7 +68,7 @@ fn build_sidecar_args_includes_port_and_model() {
     assert!(args.contains(&"-m".to_string()));
     assert!(args.contains(&"/path/to/model.gguf".to_string()));
     assert!(args.contains(&"-c".to_string()));
-    assert!(args.contains(&"2048".to_string()));
+    assert!(args.contains(&sidecar_service::SIDECAR_CONTEXT_TOKENS.to_string()));
     assert!(args.contains(&"-t".to_string()));
 }
 

@@ -118,14 +118,14 @@ pub fn score(kind: &str, model: &str, is_local: bool, purpose: TaskPurpose) -> i
 }
 
 /// Known context windows in tokens. The sidecar's is whatever we start
-/// llama-server with (-c 2048 in sidecar_service). Cloud windows are the
-/// providers' documented figures. Ollama and custom endpoints are None: their
-/// effective window is user configuration we cannot see, and an honest
-/// display shows no percentage rather than a made-up one.
+/// llama-server with (SIDECAR_CONTEXT_TOKENS in sidecar_service). Cloud
+/// windows are the providers' documented figures. Ollama and custom endpoints
+/// are None: their effective window is user configuration we cannot see, and
+/// an honest display shows no percentage rather than a made-up one.
 pub fn context_window(kind: &str, model: &str) -> Option<u32> {
     let m = model.to_lowercase();
     match kind {
-        "sidecar" => Some(2048),
+        "sidecar" => Some(crate::services::sidecar_service::SIDECAR_CONTEXT_TOKENS),
         "anthropic" => Some(200_000),
         "gemini" => Some(1_048_576),
         "deepseek" => Some(131_072),
@@ -194,7 +194,10 @@ mod tests {
 
     #[test]
     fn windows_are_stated_only_when_known() {
-        assert_eq!(context_window("sidecar", "anything"), Some(2048));
+        assert_eq!(
+            context_window("sidecar", "anything"),
+            Some(crate::services::sidecar_service::SIDECAR_CONTEXT_TOKENS)
+        );
         assert_eq!(
             context_window("anthropic", "claude-sonnet-5"),
             Some(200_000)
