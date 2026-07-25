@@ -159,8 +159,13 @@ impl LlmProvider for OpenAiCompatibleProvider {
             .next()
             .ok_or_else(|| ProviderError::InvalidResponse("No choices in response".into()))?;
 
+        /* Local reasoning models (DeepSeek R1 and kin) prefix their answer
+        with a <think> monologue; keep only the answer the user asked for. */
+        let content =
+            crate::utils::text_utils::strip_reasoning_block(&choice.message.content).to_string();
+
         Ok(ChatResponse {
-            content: choice.message.content,
+            content,
             model: api_response.model,
             usage: api_response.usage.map(|u| TokenUsage {
                 prompt_tokens: u.prompt_tokens,
