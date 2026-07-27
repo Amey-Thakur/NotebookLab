@@ -115,3 +115,21 @@ pub enum ProviderError {
     #[error("Configuration error: {0}")]
     Configuration(String),
 }
+
+/// Describe a transport failure in terms the user can act on.
+///
+/// reqwest words a timeout and an unreachable host identically ("error sending
+/// request for url ..."), which left a model that was merely too slow looking
+/// like a server that was never there. Naming the difference is the difference
+/// between "pick a smaller model" and "start the server".
+pub fn describe_transport_error(error: &reqwest::Error) -> String {
+    if error.is_timeout() {
+        "The model did not answer in time. It is likely too large for this \
+         computer; pick a smaller model in Models."
+            .to_string()
+    } else if error.is_connect() {
+        "Could not connect to the model server. Check that it is running in Models.".to_string()
+    } else {
+        error.to_string()
+    }
+}

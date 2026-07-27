@@ -8,11 +8,15 @@
  *   typed in. Base URLs are the official endpoints; the backend enforces
  *   https and re-validates everything. Adding a provider the backend already
  *   speaks (openai-compatible, anthropic, gemini) is one more entry here.
+ *   Model ids expire: providers retire them on a schedule and a retired id
+ *   fails every request with a 404, so these lists need a look whenever a
+ *   provider announces a shutdown. The custom field is the escape hatch until
+ *   then.
  * Tech Stack: TypeScript
  * License: MIT
  * Authors: Amey Thakur (https://github.com/Amey-Thakur)
  *          Archit Konde (https://github.com/Archit-Konde)
- * Date: 2026-07-17
+ * Date: 2026-07-27
  */
 
 export interface CloudModelSuggestion {
@@ -47,7 +51,7 @@ export const CLOUD_PROVIDERS: CloudProviderDef[] = [
     costNote: "Paid API. New consoles usually include trial credit.",
     models: [
       { id: "claude-sonnet-5", label: "Claude Sonnet 5", note: "Best balance of quality and cost" },
-      { id: "claude-opus-4-8", label: "Claude Opus 4.8", note: "Deepest reasoning" },
+      { id: "claude-opus-5", label: "Claude Opus 5", note: "Deepest reasoning" },
       { id: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5", note: "Fast and inexpensive" },
     ],
   },
@@ -76,9 +80,9 @@ export const CLOUD_PROVIDERS: CloudProviderDef[] = [
     blurb: "Gemini models: fast, capable, and generous with long context.",
     costNote: "Has a real free tier; a Google account is enough to start.",
     models: [
-      { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash", note: "Fast; free tier available" },
-      { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro", note: "Highest quality" },
-      { id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite", note: "Cheapest and fastest" },
+      { id: "gemini-3.6-flash", label: "Gemini 3.6 Flash", note: "Latest; fast and capable" },
+      { id: "gemini-3.5-flash", label: "Gemini 3.5 Flash", note: "Strongest for hard questions" },
+      { id: "gemini-3.5-flash-lite", label: "Gemini 3.5 Flash-Lite", note: "Cheapest and fastest" },
     ],
   },
   {

@@ -95,7 +95,9 @@ impl LlmProvider for AnthropicProvider {
             .header("anthropic-version", ANTHROPIC_VERSION)
             .json(&body)
             .send()
-            .map_err(|e| ProviderError::RequestFailed(e.to_string()))?;
+            .map_err(|e| {
+                ProviderError::RequestFailed(super::traits::describe_transport_error(&e))
+            })?;
 
         if !response.status().is_success() {
             let status = response.status();
