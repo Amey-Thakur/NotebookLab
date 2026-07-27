@@ -62,7 +62,7 @@ url = "2"
 chrono = { version = "0.4", features = ["serde"] }
 
 # File hashing for document deduplication
-sha2 = "0.10"
+sha2 = "0.11"
 
 # Hardware detection (RAM, CPU) for local-model recommendations in the
 # Models page. System-only feature set keeps the dependency lean.
@@ -70,7 +70,7 @@ sysinfo = { version = "0.39", default-features = false, features = ["system"] }
 
 
 # PDF text extraction
-pdf-extract = "0.10"
+pdf-extract = "0.12"
 
 # Local REST API server for automation
 tiny_http = "0.12"
@@ -78,8 +78,8 @@ tiny_http = "0.12"
 # DOCX text extraction: a .docx is a ZIP of XML. `zip` opens the container
 # (pure-Rust DEFLATE via flate2/miniz_oxide, no C codecs) and `quick-xml`
 # pull-parses word/document.xml.
-zip = { version = "4.2.0", default-features = false, features = ["deflate-flate2"] }
-quick-xml = "0.39.4"
+zip = { version = "8.6.0", default-features = false, features = ["deflate-flate2"] }
+quick-xml = "0.41.0"
 
 # Offline OCR for images. ocrs is a pure-Rust OCR engine on the rten ML runtime
 # (no ONNXRuntime, no system libraries), so it cross-compiles cleanly. The two
