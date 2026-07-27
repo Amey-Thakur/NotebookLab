@@ -4,6 +4,31 @@ All notable changes to NotebookLab will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-07-27
+
+### Security
+
+- React Router moves to version 8, which closes a high severity advisory in
+  the 7.x line (an RSC mode CSRF bypass that could run an action before a
+  rejected request returned). The routing package was consolidated upstream,
+  so `react-router-dom` is replaced by `react-router` throughout. The app uses
+  only the standard navigation pieces, and behaviour is unchanged.
+
+### Changed
+
+- Dependencies updated: React 19.2.8, TanStack Query 5.101, jsdom 30,
+  Testing Library jest-dom 7, PostCSS 8.5.23, typescript-eslint 8.65, and
+  serde_json 1.0.151.
+- Automated dependency updates are quieter and safer. They now arrive monthly,
+  grouped into a single pull request per ecosystem rather than up to thirteen
+  at once, and major bumps are excluded so a breaking change cannot block a
+  batch of otherwise safe updates.
+
+### Added
+
+- Test coverage for the accessibility preferences, the autosave registry, and
+  the keyboard shortcut registry.
+
 ## [0.4.4] - 2026-07-27
 
 ### Fixed
