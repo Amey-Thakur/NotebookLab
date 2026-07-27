@@ -59,7 +59,11 @@ impl Serialize for AppError {
         let msg = match self {
             Self::NotFound(s) => s.as_str(),
             Self::InvalidInput(s) => s.as_str(),
-            Self::Provider(_) => "An AI provider error occurred",
+            /* Pass the provider's reason through: it is already display-safe
+            (response bodies truncated, keys never echoed), and masking it made
+            a rejected API key, an exhausted quota, and a dead local server all
+            read as the same unhelpful line, leaving users nothing to act on. */
+            Self::Provider(s) => s.as_str(),
             Self::Database(_) => "A database error occurred",
             Self::Http(_) => "A network error occurred",
             Self::Io(_) => "A file system error occurred",

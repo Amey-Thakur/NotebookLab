@@ -24,7 +24,22 @@ const HINTS: ErrorHint[] = [
     message: "No AI model is connected. Open Models and pick a provider to continue.",
   },
   {
-    match: /connection refused|error sending request|request failed|network/i,
+    match: /api key not valid|invalid api key|invalid x-api-key|http 401|unauthorized/i,
+    message:
+      "The provider rejected the API key. Open Models and re-enter it; check it was copied completely.",
+  },
+  {
+    match: /http 429|rate limit|resource.?exhausted|exceeded your current quota/i,
+    message:
+      "The provider's usage limit was hit (free-tier quota or rate limit). Wait a bit and retry, or switch models in Models.",
+  },
+  {
+    match: /http 404|is not found|model.*not.*(found|exist|supported)/i,
+    message:
+      "The provider does not recognize the chosen model id. Open Models and pick a different model.",
+  },
+  {
+    match: /connection refused|error sending request|request failed.*(connect|reach)|network/i,
     message: "Could not reach the AI provider. Check that it is running, then try again.",
   },
   {

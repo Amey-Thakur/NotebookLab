@@ -34,6 +34,30 @@ describe("formatError", () => {
     expect(formatError(error)).toContain("Could not reach the AI provider");
   });
 
+  it("maps rejected API keys to actionable guidance", () => {
+    const error = new TauriError(
+      "send_chat_message",
+      "Request failed: HTTP 400: API key not valid. Please pass a valid API key.",
+    );
+    expect(formatError(error)).toContain("rejected the API key");
+  });
+
+  it("maps provider quota and rate limits to actionable guidance", () => {
+    const error = new TauriError(
+      "send_chat_message",
+      "Request failed: HTTP 429: RESOURCE_EXHAUSTED: You exceeded your current quota.",
+    );
+    expect(formatError(error)).toContain("usage limit");
+  });
+
+  it("maps unknown model ids to actionable guidance", () => {
+    const error = new TauriError(
+      "send_chat_message",
+      "Request failed: HTTP 404: models/gemini-1.0-ultra is not found for API version v1beta.",
+    );
+    expect(formatError(error)).toContain("does not recognize the chosen model");
+  });
+
   it("passes through unknown errors after cleaning", () => {
     expect(formatError(new Error("Disk quota exceeded"))).toBe("Disk quota exceeded");
   });
