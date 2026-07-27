@@ -62,15 +62,28 @@ impl OpenAiCompatibleProvider {
             api_key,
             model,
             is_local,
-            /* 120s timeout prevents hanging on unresponsive providers */
+            /* A timeout prevents hanging on unresponsive providers. A model on
+            this machine is free but slow: a 7B answering on CPU can take
+            several minutes, and cutting it off at the cloud's 120s turned a
+            working setup into an error. Cloud endpoints that go quiet are
+            failing, so they keep the shorter limit. */
             client: Client::builder()
-                .timeout(Duration::from_secs(120))
+                .timeout(if is_local {
+                    LOCAL_REQUEST_TIMEOUT
+                } else {
+                    CLOUD_REQUEST_TIMEOUT
+                })
                 .connect_timeout(Duration::from_secs(10))
                 .build()
                 .unwrap_or_else(|_| Client::new()),
         }
     }
 }
+
+/// How long to wait for a model running on this computer.
+const LOCAL_REQUEST_TIMEOUT: Duration = Duration::from_secs(600);
+/// How long to wait for a hosted endpoint.
+const CLOUD_REQUEST_TIMEOUT: Duration = Duration::from_secs(120);
 
 impl LlmProvider for OpenAiCompatibleProvider {
     fn name(&self) -> &str {
@@ -135,9 +148,9 @@ impl LlmProvider for OpenAiCompatibleProvider {
             req = req.bearer_auth(key);
         }
 
-        let response = req
-            .send()
-            .map_err(|e| ProviderError::RequestFailed(e.to_string()))?;
+        let response = req.send().map_err(|e| {
+            ProviderError::RequestFailed(super::traits::describe_transport_error(&e))
+        })?;
 
         if !response.status().is_success() {
             let status = response.status();

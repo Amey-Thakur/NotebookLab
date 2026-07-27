@@ -34,9 +34,9 @@ const HINTS: ErrorHint[] = [
       "The provider's usage limit was hit (free-tier quota or rate limit). Wait a bit and retry, or switch models in Models.",
   },
   {
-    match: /http 404|is not found|model.*not.*(found|exist|supported)/i,
+    match: /http 404|is not found|no longer available|model.*not.*(found|exist|supported)/i,
     message:
-      "The provider does not recognize the chosen model id. Open Models and pick a different model.",
+      "The provider no longer offers the chosen model (ids get retired). Open Models, connect the provider again, and pick a current model.",
   },
   {
     match: /connection refused|error sending request|request failed.*(connect|reach)|network/i,

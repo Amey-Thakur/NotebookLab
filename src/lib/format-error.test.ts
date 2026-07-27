@@ -50,12 +50,19 @@ describe("formatError", () => {
     expect(formatError(error)).toContain("usage limit");
   });
 
-  it("maps unknown model ids to actionable guidance", () => {
-    const error = new TauriError(
+  it("maps unknown and retired model ids to actionable guidance", () => {
+    const unknown = new TauriError(
       "send_chat_message",
       "Request failed: HTTP 404: models/gemini-1.0-ultra is not found for API version v1beta.",
     );
-    expect(formatError(error)).toContain("does not recognize the chosen model");
+    expect(formatError(unknown)).toContain("no longer offers the chosen model");
+
+    /* The shape a retired id actually returns, from a real failure log. */
+    const retired = new TauriError(
+      "generate_studio",
+      'Request failed: HTTP 404 Not Found: {"error": {"code": 404, "message": "This model models/gemini-2.5-flash is no longer available to new users."',
+    );
+    expect(formatError(retired)).toContain("pick a current model");
   });
 
   it("passes through unknown errors after cleaning", () => {

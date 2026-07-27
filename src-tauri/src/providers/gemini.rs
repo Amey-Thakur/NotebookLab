@@ -92,7 +92,9 @@ impl LlmProvider for GeminiProvider {
             .header("x-goog-api-key", &self.api_key)
             .json(&body)
             .send()
-            .map_err(|e| ProviderError::RequestFailed(e.to_string()))?;
+            .map_err(|e| {
+                ProviderError::RequestFailed(super::traits::describe_transport_error(&e))
+            })?;
 
         if !response.status().is_success() {
             let status = response.status();
@@ -117,25 +119,37 @@ impl LlmProvider for GeminiProvider {
 /// whole budget can go to the hidden reasoning and none to the answer.
 const THINKING_HEADROOM_TOKENS: u32 = 4096;
 
-/// The thinking budget to request for a model, or None to leave the default.
+/// How to stop a thinking model from spending its whole output allowance on
+/// hidden reasoning.
 ///
-/// Gemini 2.5 models reason before answering and those tokens count against
-/// maxOutputTokens. At this app's 1-2k budgets the model could spend the entire
-/// allowance thinking and return a candidate with no text at all (finish reason
-/// MAX_TOKENS), which surfaced as a failure on every AI feature. Flash and
-/// Flash-Lite allow thinking to be switched off, which is right for grounded
-/// summarizing and question answering; Pro requires a minimum budget, so it
-/// gets output headroom instead (see build_request_body).
-fn thinking_budget(model: &str) -> Option<u32> {
+/// Gemini 2.5 and 3.x models reason before answering, and those tokens count
+/// against maxOutputTokens. At this app's 1-2k budgets a model could spend the
+/// entire allowance thinking and return a candidate with no text at all (finish
+/// reason MAX_TOKENS), which surfaced as a failure on every AI feature.
+#[derive(Debug, PartialEq, Eq)]
+enum ThinkingPlan {
+    /// The model does not think; send nothing extra.
+    Off,
+    /// Thinking can be switched off (2.5 Flash family), which is what grounded
+    /// summarizing and question answering want.
+    Disable,
+    /// Thinking cannot be reliably switched off (2.5 Pro, the 3.x family), so
+    /// grant extra output tokens and let the answer follow the reasoning.
+    Headroom,
+}
+
+fn thinking_plan(model: &str) -> ThinkingPlan {
     let m = model.to_lowercase();
-    /* Only the 2.5 generation thinks; older models have no such field. */
-    if !m.contains("2.5") {
-        return None;
+    let is_2_5 = m.contains("2.5");
+    /* Matches "gemini-3.5-flash" and a fully qualified "models/gemini-3...". */
+    let is_3_x = m.contains("gemini-3");
+    if !is_2_5 && !is_3_x {
+        return ThinkingPlan::Off;
     }
-    if m.contains("pro") {
-        None
+    if is_2_5 && !m.contains("pro") {
+        ThinkingPlan::Disable
     } else {
-        Some(0)
+        ThinkingPlan::Headroom
     }
 }
 
@@ -143,9 +157,7 @@ fn thinking_budget(model: &str) -> Option<u32> {
 /// become systemInstruction, and consecutive same-role turns merge because the
 /// API requires strict user/model alternation.
 fn build_request_body(request: ChatRequest, model: &str) -> GenerateRequest {
-    let budget = thinking_budget(model);
-    /* Thinking is on unless we switched it off: 2.5 Pro cannot disable it. */
-    let thinks = model.to_lowercase().contains("2.5") && budget != Some(0);
+    let plan = thinking_plan(model);
     let mut system_parts: Vec<String> = Vec::new();
     let mut contents: Vec<Content> = Vec::new();
 
@@ -188,15 +200,15 @@ fn build_request_body(request: ChatRequest, model: &str) -> GenerateRequest {
         generation_config: GenerationConfig {
             /* A model that still thinks needs room for the reasoning on top of
             the answer the caller asked for. */
-            max_output_tokens: match (request.max_tokens, budget) {
-                (Some(max), Some(0)) => Some(max),
-                (Some(max), _) if thinks => Some(max + THINKING_HEADROOM_TOKENS),
+            max_output_tokens: match (request.max_tokens, &plan) {
+                (Some(max), ThinkingPlan::Headroom) => Some(max + THINKING_HEADROOM_TOKENS),
                 (max, _) => max,
             },
             temperature: request.temperature,
-            thinking_config: budget.map(|budget_tokens| ThinkingConfig {
-                thinking_budget: budget_tokens,
-            }),
+            thinking_config: match plan {
+                ThinkingPlan::Disable => Some(ThinkingConfig { thinking_budget: 0 }),
+                _ => None,
+            },
         },
     }
 }
@@ -426,6 +438,28 @@ mod tests {
             body.generation_config.max_output_tokens,
             Some(2048 + THINKING_HEADROOM_TOKENS)
         );
+    }
+
+    #[test]
+    fn newer_generations_gain_output_headroom() {
+        /* 3.x models think as well, and their budget field differs, so they get
+        room for the answer rather than a thinkingConfig we cannot rely on. */
+        for model in [
+            "gemini-3.6-flash",
+            "gemini-3.5-flash",
+            "models/gemini-3.5-flash-lite",
+        ] {
+            let body = body_for(model, Some(2048));
+            assert!(
+                body.generation_config.thinking_config.is_none(),
+                "{model} should not send thinkingConfig"
+            );
+            assert_eq!(
+                body.generation_config.max_output_tokens,
+                Some(2048 + THINKING_HEADROOM_TOKENS),
+                "{model} should gain headroom"
+            );
+        }
     }
 
     #[test]
