@@ -54,7 +54,8 @@ export function ConnectCloudDialog({ provider, onClose }: ConnectCloudDialogProp
 
   const chosenModel = modelId === "__custom__" ? customModel.trim() : modelId;
   const keyLooksOff =
-    apiKey.trim().length > 0 && !apiKey.trim().startsWith(provider.keyPrefix);
+    apiKey.trim().length > 0 &&
+    !provider.keyPrefixes.some((prefix) => apiKey.trim().startsWith(prefix));
 
   const connect = async () => {
     setStep("result");
@@ -194,7 +195,8 @@ export function ConnectCloudDialog({ provider, onClose }: ConnectCloudDialogProp
               </div>
               {keyLooksOff && (
                 <p className="text-2xs text-amber-500 mb-2">
-                  Keys from {provider.name} usually start with "{provider.keyPrefix}". Double-check
+                  Keys from {provider.name} usually start with{" "}
+                  {provider.keyPrefixes.map((prefix) => `"${prefix}"`).join(" or ")}. Double-check
                   you copied the right one; you can still continue.
                 </p>
               )}
