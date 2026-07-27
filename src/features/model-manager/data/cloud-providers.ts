@@ -31,8 +31,11 @@ export interface CloudProviderDef {
   baseUrl: string;
   /** Where to create an API key. */
   keyUrl: string;
-  /** What a key from this provider looks like, shown as a soft hint. */
-  keyPrefix: string;
+  /** Prefixes a key from this provider may start with, shown as a soft hint.
+      A list because providers add new key formats without retiring the old
+      ones: Google issues both "AIza..." and the newer "AQ..." keys, and
+      warning on a valid key is worse than not warning at all. */
+  keyPrefixes: string[];
   keyPlaceholder: string;
   blurb: string;
   costNote: string;
@@ -45,7 +48,7 @@ export const CLOUD_PROVIDERS: CloudProviderDef[] = [
     name: "Anthropic",
     baseUrl: "https://api.anthropic.com",
     keyUrl: "https://console.anthropic.com/settings/keys",
-    keyPrefix: "sk-ant-",
+    keyPrefixes: ["sk-ant-"],
     keyPlaceholder: "sk-ant-...",
     blurb: "Claude models: strong reasoning, careful writing, and long documents.",
     costNote: "Paid API. New consoles usually include trial credit.",
@@ -60,7 +63,7 @@ export const CLOUD_PROVIDERS: CloudProviderDef[] = [
     name: "OpenAI",
     baseUrl: "https://api.openai.com",
     keyUrl: "https://platform.openai.com/api-keys",
-    keyPrefix: "sk-",
+    keyPrefixes: ["sk-"],
     keyPlaceholder: "sk-...",
     blurb: "GPT models: broad knowledge and strong all-round capability.",
     costNote: "Paid API, billed per token.",
@@ -75,7 +78,7 @@ export const CLOUD_PROVIDERS: CloudProviderDef[] = [
     name: "Google Gemini",
     baseUrl: "https://generativelanguage.googleapis.com",
     keyUrl: "https://aistudio.google.com/apikey",
-    keyPrefix: "AIza",
+    keyPrefixes: ["AIza", "AQ."],
     keyPlaceholder: "AIza...",
     blurb: "Gemini models: fast, capable, and generous with long context.",
     costNote: "Has a real free tier; a Google account is enough to start.",
@@ -90,7 +93,7 @@ export const CLOUD_PROVIDERS: CloudProviderDef[] = [
     name: "DeepSeek",
     baseUrl: "https://api.deepseek.com",
     keyUrl: "https://platform.deepseek.com/api_keys",
-    keyPrefix: "sk-",
+    keyPrefixes: ["sk-"],
     keyPlaceholder: "sk-...",
     blurb: "Very capable models at some of the lowest API prices anywhere.",
     costNote: "Paid API, but markedly cheaper than the big labs.",
