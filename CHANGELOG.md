@@ -4,6 +4,39 @@ All notable changes to NotebookLab will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Cloud models answer again. Connecting a provider only activated it when a
+  four-second availability probe happened to succeed, so a valid Gemini key
+  could sit saved but inactive while a slower local model kept answering.
+  Connecting now always activates, and the probe only shapes the message you
+  see.
+- Gemini no longer returns empty replies. Flash models spent their whole
+  output budget on internal thinking and came back with nothing; when a reply
+  is genuinely empty the app now names the cause instead of showing a blank.
+- Retired Gemini model identifiers have been refreshed, so a model the
+  provider has since withdrawn no longer fails with an unexplained error.
+- Newer Gemini key formats are accepted. Validation checked a single prefix
+  and turned away keys issued under the newer one.
+- Provider failures explain themselves. A refused request carries the
+  provider's own reason through to the interface, with a hint pointing at the
+  usual causes: the key, the quota, or the model.
+
+### Changed
+
+- Local models start on their own. A model starts once its download finishes,
+  a one-click banner starts it when it is stopped, and the last local model is
+  restored on launch.
+- Model suggestions favour responsive sizes. A 16 GB machine was being pointed
+  at a 7B reasoning model that takes minutes per answer on CPU; suggestions are
+  now capped at sizes that reply promptly.
+- Local reasoning output no longer shows the model's internal monologue, and
+  the sidecar's context window has doubled to 4096 tokens.
+- Timeouts say plainly that they are timeouts, and local models are given
+  longer before one is declared.
+- Dependencies updated: five npm packages, five cargo crates, sysinfo 0.33 to
+  0.39, and the checkout action pinned.
+
 ## [0.4.3] - 2026-07-20
 
 ### Fixed
