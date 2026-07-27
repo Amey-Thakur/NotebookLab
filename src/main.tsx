@@ -16,7 +16,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter } from "react-router";
 
 import { ErrorBoundary } from "./components/shared/error-boundary";
 import { ThemeProvider } from "./components/providers/theme-provider";

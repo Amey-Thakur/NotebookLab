@@ -17,7 +17,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { ROUTES, EDITOR_AUTOSAVE_MS, QUERY_KEYS } from "@/lib/constants";
 import { debounce } from "@/lib/utils";

@@ -14,7 +14,7 @@
  * Date: 2026-07-13
  */
 
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { useMutation } from "@tanstack/react-query";
 
 import { ROUTES } from "@/lib/constants";

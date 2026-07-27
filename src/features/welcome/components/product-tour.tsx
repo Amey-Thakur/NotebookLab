@@ -16,7 +16,7 @@
  */
 
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 
 import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/utils";

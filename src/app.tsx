@@ -7,7 +7,7 @@
  *   mark, which keeps the initial bundle (and cold start) small even as heavy
  *   features (the Markdown editor, the canvas, the graph) grow. Routes use
  *   ROUTES constants from lib/constants.ts.
- * Tech Stack: React 19, React Router v7
+ * Tech Stack: React 19, React Router v8
  * License: MIT
  * Authors: Amey Thakur (https://github.com/Amey-Thakur)
  *          Archit Konde (https://github.com/Archit-Konde)
@@ -15,7 +15,7 @@
  */
 
 import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router";
 
 import { ROUTES } from "./lib/constants";
 import { AppShell } from "./components/layout/app-shell";
