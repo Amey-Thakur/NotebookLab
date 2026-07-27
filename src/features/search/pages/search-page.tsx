@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";

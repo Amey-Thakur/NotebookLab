@@ -15,7 +15,7 @@
  */
 
 import { useMemo } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";

@@ -16,7 +16,7 @@
  */
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";

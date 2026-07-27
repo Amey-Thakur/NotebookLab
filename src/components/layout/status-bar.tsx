@@ -18,7 +18,7 @@
 
 import { useEffect, useState } from "react";
 import { useQuery, useIsMutating } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { listen } from "@tauri-apps/api/event";
 
 import { tauriInvoke } from "@/services/tauri-client";
