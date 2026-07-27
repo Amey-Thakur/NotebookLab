@@ -84,7 +84,7 @@ impl LlmProvider for GeminiProvider {
             "{}/v1beta/models/{}:generateContent",
             self.base_url, self.model
         );
-        let body = build_request_body(request);
+        let body = build_request_body(request, &self.model);
 
         let response = self
             .client
@@ -112,10 +112,40 @@ impl LlmProvider for GeminiProvider {
     }
 }
 
+/// Extra output tokens granted when a model thinks and cannot be told not to.
+/// Gemini charges thinking against maxOutputTokens, so without headroom the
+/// whole budget can go to the hidden reasoning and none to the answer.
+const THINKING_HEADROOM_TOKENS: u32 = 4096;
+
+/// The thinking budget to request for a model, or None to leave the default.
+///
+/// Gemini 2.5 models reason before answering and those tokens count against
+/// maxOutputTokens. At this app's 1-2k budgets the model could spend the entire
+/// allowance thinking and return a candidate with no text at all (finish reason
+/// MAX_TOKENS), which surfaced as a failure on every AI feature. Flash and
+/// Flash-Lite allow thinking to be switched off, which is right for grounded
+/// summarizing and question answering; Pro requires a minimum budget, so it
+/// gets output headroom instead (see build_request_body).
+fn thinking_budget(model: &str) -> Option<u32> {
+    let m = model.to_lowercase();
+    /* Only the 2.5 generation thinks; older models have no such field. */
+    if !m.contains("2.5") {
+        return None;
+    }
+    if m.contains("pro") {
+        None
+    } else {
+        Some(0)
+    }
+}
+
 /// Fold the app's message list into the generateContent shape: system messages
 /// become systemInstruction, and consecutive same-role turns merge because the
 /// API requires strict user/model alternation.
-fn build_request_body(request: ChatRequest) -> GenerateRequest {
+fn build_request_body(request: ChatRequest, model: &str) -> GenerateRequest {
+    let budget = thinking_budget(model);
+    /* Thinking is on unless we switched it off: 2.5 Pro cannot disable it. */
+    let thinks = model.to_lowercase().contains("2.5") && budget != Some(0);
     let mut system_parts: Vec<String> = Vec::new();
     let mut contents: Vec<Content> = Vec::new();
 
@@ -156,8 +186,17 @@ fn build_request_body(request: ChatRequest) -> GenerateRequest {
             })
         },
         generation_config: GenerationConfig {
-            max_output_tokens: request.max_tokens,
+            /* A model that still thinks needs room for the reasoning on top of
+            the answer the caller asked for. */
+            max_output_tokens: match (request.max_tokens, budget) {
+                (Some(max), Some(0)) => Some(max),
+                (Some(max), _) if thinks => Some(max + THINKING_HEADROOM_TOKENS),
+                (max, _) => max,
+            },
             temperature: request.temperature,
+            thinking_config: budget.map(|budget_tokens| ThinkingConfig {
+                thinking_budget: budget_tokens,
+            }),
         },
     }
 }
@@ -170,6 +209,7 @@ fn parse_response(response: GenerateResponse, model: &str) -> Result<ChatRespons
         .next()
         .ok_or_else(|| ProviderError::InvalidResponse("No candidates in response".into()))?;
 
+    let finish_reason = candidate.finish_reason.unwrap_or_default();
     let content: String = candidate
         .content
         .map(|c| {
@@ -183,7 +223,16 @@ fn parse_response(response: GenerateResponse, model: &str) -> Result<ChatRespons
 
     if content.is_empty() {
         return Err(ProviderError::InvalidResponse(
-            "No text content in response".into(),
+            match finish_reason.as_str() {
+                "MAX_TOKENS" => "The model hit its output limit before writing an answer. \
+                 Try a shorter question, or pick a smaller model in Models."
+                    .into(),
+                "SAFETY" | "PROHIBITED_CONTENT" => {
+                    "The provider blocked this response for safety reasons.".into()
+                }
+                "" => "No text content in response".into(),
+                other => format!("No text content in response (finish reason {other})"),
+            },
         ));
     }
 
@@ -231,6 +280,14 @@ struct GenerationConfig {
     max_output_tokens: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     temperature: Option<f32>,
+    #[serde(rename = "thinkingConfig", skip_serializing_if = "Option::is_none")]
+    thinking_config: Option<ThinkingConfig>,
+}
+
+#[derive(Serialize)]
+struct ThinkingConfig {
+    #[serde(rename = "thinkingBudget")]
+    thinking_budget: u32,
 }
 
 #[derive(Deserialize)]
@@ -244,6 +301,10 @@ struct GenerateResponse {
 #[derive(Deserialize)]
 struct Candidate {
     content: Option<CandidateContent>,
+    /// Why generation stopped ("STOP", "MAX_TOKENS", "SAFETY", ...). Reported
+    /// when no text came back, so an empty reply names its own cause.
+    #[serde(rename = "finishReason")]
+    finish_reason: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -281,16 +342,19 @@ mod tests {
 
     #[test]
     fn system_becomes_instruction_and_roles_map() {
-        let body = build_request_body(ChatRequest {
-            messages: vec![
-                message(MessageRole::System, "Be brief."),
-                message(MessageRole::User, "Hi"),
-                message(MessageRole::Assistant, "Hello!"),
-            ],
-            max_tokens: Some(100),
-            purpose: Default::default(),
-            temperature: None,
-        });
+        let body = build_request_body(
+            ChatRequest {
+                messages: vec![
+                    message(MessageRole::System, "Be brief."),
+                    message(MessageRole::User, "Hi"),
+                    message(MessageRole::Assistant, "Hello!"),
+                ],
+                max_tokens: Some(100),
+                purpose: Default::default(),
+                temperature: None,
+            },
+            "gemini-2.5-flash",
+        );
         assert!(body.system_instruction.is_some());
         assert_eq!(body.contents.len(), 2);
         assert_eq!(body.contents[0].role, "user");
@@ -301,17 +365,82 @@ mod tests {
     fn merges_consecutive_same_role_turns() {
         /* RAG context and the question both arrive as user turns; Gemini
         requires alternation, so they must merge into one content entry. */
-        let body = build_request_body(ChatRequest {
-            messages: vec![
-                message(MessageRole::User, "Context: ..."),
-                message(MessageRole::User, "Question: ..."),
-            ],
-            max_tokens: None,
-            temperature: None,
-            purpose: Default::default(),
-        });
+        let body = build_request_body(
+            ChatRequest {
+                messages: vec![
+                    message(MessageRole::User, "Context: ..."),
+                    message(MessageRole::User, "Question: ..."),
+                ],
+                max_tokens: None,
+                temperature: None,
+                purpose: Default::default(),
+            },
+            "gemini-2.5-flash",
+        );
         assert_eq!(body.contents.len(), 1);
         assert_eq!(body.contents[0].parts.len(), 2);
+    }
+
+    fn body_for(model: &str, max_tokens: Option<u32>) -> GenerateRequest {
+        build_request_body(
+            ChatRequest {
+                messages: vec![message(MessageRole::User, "Hi")],
+                max_tokens,
+                temperature: None,
+                purpose: Default::default(),
+            },
+            model,
+        )
+    }
+
+    #[test]
+    fn flash_disables_thinking_and_keeps_the_whole_answer_budget() {
+        /* Thinking tokens are charged against maxOutputTokens, so leaving it on
+        at a 2048 budget let the model think until it had no room to answer. */
+        let body = body_for("gemini-2.5-flash", Some(2048));
+        assert_eq!(
+            body.generation_config
+                .thinking_config
+                .unwrap()
+                .thinking_budget,
+            0
+        );
+        assert_eq!(body.generation_config.max_output_tokens, Some(2048));
+
+        let lite = body_for("gemini-2.5-flash-lite", Some(2048));
+        assert_eq!(
+            lite.generation_config
+                .thinking_config
+                .unwrap()
+                .thinking_budget,
+            0
+        );
+    }
+
+    #[test]
+    fn pro_keeps_thinking_but_gains_output_headroom() {
+        /* 2.5 Pro cannot disable thinking, so it needs room for both. */
+        let body = body_for("gemini-2.5-pro", Some(2048));
+        assert!(body.generation_config.thinking_config.is_none());
+        assert_eq!(
+            body.generation_config.max_output_tokens,
+            Some(2048 + THINKING_HEADROOM_TOKENS)
+        );
+    }
+
+    #[test]
+    fn older_models_are_left_untouched() {
+        let body = body_for("gemini-2.0-flash", Some(2048));
+        assert!(body.generation_config.thinking_config.is_none());
+        assert_eq!(body.generation_config.max_output_tokens, Some(2048));
+    }
+
+    #[test]
+    fn empty_reply_reports_why_it_was_empty() {
+        let response: GenerateResponse =
+            serde_json::from_str(r#"{"candidates": [{"finishReason": "MAX_TOKENS"}]}"#).unwrap();
+        let error = parse_response(response, "gemini-2.5-pro").unwrap_err();
+        assert!(error.to_string().contains("output limit"));
     }
 
     #[test]
