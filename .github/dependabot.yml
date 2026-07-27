@@ -43,12 +43,11 @@ updates:
         patterns:
           - "*"
     ignore:
-      # Block major version bumps that require API migration
-      - dependency-name: "rusqlite"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "reqwest"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "tauri"
+      # Block every major bump: Rust crates routinely change their API across
+      # majors, and one grouped pull request that mixes a breaking bump with
+      # safe ones cannot be merged at all. sha2 0.11 alone changed the digest
+      # output type and broke the build. Majors are done by hand instead.
+      - dependency-name: "*"
         update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
