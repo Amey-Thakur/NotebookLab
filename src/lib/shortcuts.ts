@@ -81,7 +81,9 @@ export function isTypingTarget(target: EventTarget | null): boolean {
     tag === "INPUT" ||
     tag === "TEXTAREA" ||
     tag === "SELECT" ||
-    target.isContentEditable
+    /* Compared rather than returned directly: isContentEditable is absent in
+       some DOM implementations, which would leak undefined out of a boolean. */
+    target.isContentEditable === true
   );
 }
 
