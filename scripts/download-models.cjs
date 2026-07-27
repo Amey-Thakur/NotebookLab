@@ -62,11 +62,31 @@ for (const model of MODELS) {
   }
 
   console.log(`Downloading OCR model: ${model.file} (${(model.size / 1024 / 1024).toFixed(1)} MB)`);
-  try {
-    execSync(`curl -L --fail --progress-bar -o "${dest}" "${model.url}"`, { stdio: "inherit" });
-  } catch (err) {
-    console.error(`Download failed. URL: ${model.url}`);
-    process.exit(1);
+  /* Retry with a growing pause. The host rate-limits bursts (HTTP 429), and a
+     single refusal used to fail an entire release build even though the file
+     was fine and available a moment later. curl's own --retry handles 429 and
+     5xx; the outer loop covers the rest, including a dropped connection. */
+  const ATTEMPTS = 4;
+  let downloaded = false;
+  for (let attempt = 1; attempt <= ATTEMPTS && !downloaded; attempt++) {
+    try {
+      execSync(
+        `curl -L --fail --progress-bar --retry 3 --retry-delay 5 --retry-all-errors ` +
+          `--connect-timeout 30 -o "${dest}" "${model.url}"`,
+        { stdio: "inherit" },
+      );
+      downloaded = true;
+    } catch (err) {
+      if (attempt === ATTEMPTS) {
+        console.error(`Download failed after ${ATTEMPTS} attempts. URL: ${model.url}`);
+        process.exit(1);
+      }
+      const waitSeconds = attempt * 15;
+      console.error(`Attempt ${attempt} failed; retrying in ${waitSeconds}s...`);
+      execSync(process.platform === "win32" ? `timeout /t ${waitSeconds} /nobreak >nul` : `sleep ${waitSeconds}`, {
+        stdio: "ignore",
+      });
+    }
   }
 
   const actual = sha256Of(dest);
