@@ -4,6 +4,8 @@ All notable changes to NotebookLab will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-07-27
+
 ### Fixed
 
 - Cloud models answer again. Connecting a provider only activated it when a
