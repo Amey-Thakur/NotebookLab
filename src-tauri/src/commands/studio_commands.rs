@@ -69,7 +69,7 @@ pub async fn generate_studio(
         /* Phase 1: read the sources, then release the database lock */
         let context = {
             let conn = state.conn()?;
-            let passages: Vec<String> = if focus.trim().is_empty() {
+            let mut passages: Vec<String> = if focus.trim().is_empty() {
                 chunk_repository::sample_for_notebook(&conn, &notebook_id, 20)?
             } else {
                 search_service::search_chunks(&conn, &notebook_id, &focus, 15)?
@@ -78,10 +78,17 @@ pub async fn generate_studio(
                     .collect()
             };
 
+            /* A focus worded differently from the sources (or mistyped) matches
+            nothing by keyword even when the notebook is full. Widen to the whole
+            notebook rather than refusing: covering the sources broadly beats
+            telling the user to import documents they already have. */
+            if passages.is_empty() && !focus.trim().is_empty() {
+                passages = chunk_repository::sample_for_notebook(&conn, &notebook_id, 20)?;
+            }
+
             if passages.is_empty() {
                 return Err(AppError::InvalidInput(
-                    "No documents to work from yet. Import a document into this notebook first."
-                        .into(),
+                    "This notebook has no documents yet. Import one first.".into(),
                 ));
             }
 

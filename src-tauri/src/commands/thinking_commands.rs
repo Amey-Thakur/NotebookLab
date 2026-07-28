@@ -14,10 +14,41 @@
 
 use tauri::{Manager, State};
 
+use crate::database::repository::chunk_repository;
 use crate::error::{AppError, AppResult};
 use crate::providers::{ChatMessage, ChatRequest, MessageRole, TaskPurpose};
 use crate::services::search_service;
 use crate::state::AppState;
+
+/// Gather passages for a thinking prompt: the best keyword matches for the
+/// topic, or a spread across the notebook when nothing matches.
+///
+/// A topic worded differently from the documents (or simply mistyped) finds
+/// nothing by keyword even when the notebook is full, and the old behaviour
+/// told the user to import documents they had already imported. Falling back
+/// to a sample keeps the feature working on the sources that are actually
+/// there; only a genuinely empty notebook is an error.
+fn gather_context(
+    conn: &rusqlite::Connection,
+    notebook_id: &str,
+    topic: &str,
+    limit: usize,
+) -> AppResult<String> {
+    let matches = search_service::search_chunks(conn, notebook_id, topic, limit)?;
+    let passages: Vec<String> = if matches.is_empty() {
+        chunk_repository::sample_for_notebook(conn, notebook_id, limit)?
+    } else {
+        matches.into_iter().map(|c| c.content).collect()
+    };
+
+    if passages.is_empty() {
+        return Err(AppError::InvalidInput(
+            "This notebook has no documents yet. Import one first.".into(),
+        ));
+    }
+
+    Ok(passages.join("\n\n---\n\n"))
+}
 
 const MIND_MAP_PROMPT: &str = include_str!("../../resources/prompts/mind-map.txt");
 const SOCRATIC_PROMPT: &str = include_str!("../../resources/prompts/socratic.txt");
@@ -35,16 +66,10 @@ pub async fn generate_mind_map(
     tauri::async_runtime::spawn_blocking(move || {
         let state: State<'_, AppState> = app.state();
 
-        /* Phase 1: DB read -- search chunks, release lock */
+        /* Phase 1: DB read -- gather passages, release lock */
         let context = {
             let conn = state.conn()?;
-            let chunks = search_service::search_chunks(&conn, &notebook_id, &topic, 15)?;
-            if chunks.is_empty() {
-                return Err(AppError::InvalidInput(
-                    "No relevant documents found for this topic. Import documents first.".into(),
-                ));
-            }
-            chunks.iter().map(|c| c.content.clone()).collect::<Vec<_>>().join("\n\n---\n\n")
+            gather_context(&conn, &notebook_id, &topic, 15)?
         };
 
         /* Phase 2: LLM call -- no db lock held */
@@ -83,13 +108,7 @@ pub async fn generate_socratic_questions(
         /* Phase 1: DB read */
         let context = {
             let conn = state.conn()?;
-            let chunks = search_service::search_chunks(&conn, &notebook_id, &thinking, 10)?;
-            if chunks.is_empty() {
-                return Err(AppError::InvalidInput(
-                    "No relevant documents found. Import documents first.".into(),
-                ));
-            }
-            chunks.iter().map(|c| c.content.clone()).collect::<Vec<_>>().join("\n\n---\n\n")
+            gather_context(&conn, &notebook_id, &thinking, 10)?
         };
 
         /* Phase 2: LLM call */
