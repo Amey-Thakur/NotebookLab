@@ -525,3 +525,40 @@ fn studio_samples_a_notebooks_sources() {
 
     std::fs::remove_dir_all(&dir).ok();
 }
+
+#[test]
+fn a_topic_that_matches_nothing_still_has_sources_to_work_from() {
+    /* Thinking Partner and the Studio search by keyword. A topic worded
+    differently from the documents, or simply mistyped, matched nothing and
+    the features claimed the notebook was empty while it was full. Both now
+    fall back to a sample, so only a genuinely empty notebook is an error. */
+    use notebooklab_lib::database::repository::chunk_repository;
+    use notebooklab_lib::services::search_service;
+
+    let conn = test_db();
+    let nb = make_notebook(&conn);
+
+    let dir = std::env::temp_dir().join(format!("nbl-fallback-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("prompting.md");
+    std::fs::write(
+        &path,
+        "# Prompt engineering\n\nClear instructions beat clever wording.\n",
+    )
+    .unwrap();
+    ingestion_service::ingest_file(&conn, &nb, &path, None).expect("ingest");
+
+    /* The mistyped topic from the real report finds nothing by keyword. */
+    let missed = search_service::search_chunks(&conn, &nb, "priompt enfineringf", 15).unwrap();
+    assert!(missed.is_empty(), "a mistyped topic matches no chunk");
+
+    /* The fallback the features now use still yields the notebook's sources. */
+    let fallback = chunk_repository::sample_for_notebook(&conn, &nb, 15).unwrap();
+    assert!(
+        !fallback.is_empty(),
+        "a populated notebook always has passages to work from"
+    );
+    assert!(fallback.iter().any(|c| c.contains("instructions")));
+
+    std::fs::remove_dir_all(&dir).ok();
+}

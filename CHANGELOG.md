@@ -4,6 +4,22 @@ All notable changes to NotebookLab will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.6] - 2026-07-27
+
+### Fixed
+
+- Thinking Partner and the Studio no longer claim a full notebook is empty.
+  Both searched by keyword and refused to continue when nothing matched, so a
+  topic worded differently from your documents, or simply mistyped, produced
+  "no relevant documents found" beside a notebook with sources in it. When a
+  topic matches nothing they now work from a spread of the notebook instead,
+  and only a genuinely empty notebook is treated as an error.
+- A local model that cannot answer no longer holds a request for ten minutes
+  before automatic selection moves on. The ceiling for models running on this
+  computer is now four minutes, which is generous for a model sized for the
+  machine and short enough that fallback feels like a pause rather than a
+  hang.
+
 ## [0.4.5] - 2026-07-27
 
 ### Security
