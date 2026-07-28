@@ -31,4 +31,13 @@ impl TransformType {
             }
         }
     }
+
+    /// Short human name, shown next to the progress bar while it runs.
+    pub fn label(&self) -> &'static str {
+        match self {
+            Self::Summarize => "Summary",
+            Self::ExtractKeyPoints => "Key points",
+            Self::Custom => "Transform",
+        }
+    }
 }

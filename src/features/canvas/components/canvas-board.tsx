@@ -40,7 +40,6 @@ interface CanvasBoardProps {
   onSelect: (id: string | null) => void;
   onCommit: (elements: CanvasElement[]) => void;
   onToolChange: (tool: Tool) => void;
-  onDropImage: (file: File, world: Point) => void;
   /** Mirrors an uncommitted new text label so the page can include it in the
       save it makes on the way out. */
   pendingTextRef?: { current: CanvasElement | null };
@@ -299,15 +298,6 @@ export function CanvasBoard(props: CanvasBoardProps) {
     }
   };
 
-  const onDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const file = Array.from(e.dataTransfer.files).find((f) => f.type.startsWith("image/"));
-    if (!file) return;
-    const rect = svgRef.current!.getBoundingClientRect();
-    const world = screenToWorld(e.clientX - rect.left, e.clientY - rect.top, camera);
-    props.onDropImage(file, world);
-  };
-
   /* Apply an in-progress drag to the moved element so it follows the pointer. */
   const rendered = elements.map((el) =>
     drag && drag.id === el.id ? translateElement(el, drag.dx, drag.dy) : el,
@@ -329,8 +319,6 @@ export function CanvasBoard(props: CanvasBoardProps) {
   return (
     <div
       className="relative h-full w-full overflow-hidden bg-bg select-none"
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={onDrop}
     >
       <svg
         ref={svgRef}

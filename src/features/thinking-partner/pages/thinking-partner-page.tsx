@@ -13,16 +13,17 @@
  * Date: 2026-07-12
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { useMutation } from "@tanstack/react-query";
 
-import { tauriInvoke } from "@/services/tauri-client";
 import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
+import { NotebookScope } from "@/components/shared/notebook-scope";
+import { SourcePicker } from "@/components/shared/source-picker";
+import { JobProgress } from "@/components/shared/job-progress";
 import { ROUTES } from "@/lib/constants";
-import { formatError } from "@/lib/format-error";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { useRetainedState } from "@/lib/use-persistent-draft";
+import { useJobRun } from "@/features/jobs/use-job-run";
 import { safeJson, type MindMap } from "@/features/studio/api/studio-api";
 import { MindMapView } from "@/features/studio/components/mind-map-view";
 
@@ -39,21 +40,33 @@ export function ThinkingPartnerPage() {
     null,
   );
 
-  const generate = useMutation({
-    mutationFn: (text: string) => {
-      if (mode === "mindmap") {
-        return tauriInvoke<string>("generate_mind_map", {
-          notebook_id: activeNotebookId,
-          topic: text,
-        });
-      }
-      return tauriInvoke<string>("generate_socratic_questions", {
-        notebook_id: activeNotebookId,
-        thinking: text,
-      });
-    },
-    onSuccess: (data) => setResult(data),
-  });
+  /* One run per mode, each remembering its own job, so switching between Mind
+     Map and Socratic does not detach from a generation that is still going. */
+  const mindmap = useJobRun("generate_mind_map", "notebooklab-job-mindmap");
+  const socratic = useJobRun("generate_socratic_questions", "notebooklab-job-socratic");
+  const run = mode === "mindmap" ? mindmap : socratic;
+
+  const [sources, setSources] = useRetainedState<string[]>(
+    "notebooklab-think-sources",
+    [],
+  );
+
+  /* A finished job is the source of truth; the retained copy is what survives
+     the job history being cleared. */
+  useEffect(() => {
+    if (run.result) setResult(run.result);
+  }, [run.result, setResult]);
+
+  const submit = () => {
+    const text = input.trim();
+    if (!text) return;
+    setResult(null);
+    void run.start(
+      mode === "mindmap"
+        ? { notebook_id: activeNotebookId, topic: text, document_ids: sources }
+        : { notebook_id: activeNotebookId, thinking: text, document_ids: sources },
+    );
+  };
 
   if (!activeNotebookId) {
     return (
@@ -73,7 +86,8 @@ export function ThinkingPartnerPage() {
   return (
     <div className="flex flex-col h-full">
       <div className="px-8 pt-6 pb-4">
-        <h1 className="text-2xl font-display font-bold text-text-1 mb-4">Thinking Partner</h1>
+        <h1 className="text-2xl font-display font-bold text-text-1 mb-1">Thinking Partner</h1>
+        <NotebookScope />
 
         <ModelRequiredNotice action="The thinking partner" />
 
@@ -96,13 +110,20 @@ export function ThinkingPartnerPage() {
           ))}
         </div>
 
+        <SourcePicker
+          notebookId={activeNotebookId}
+          value={sources}
+          onChange={setSources}
+          disabled={run.isRunning}
+        />
+
         {/* Input */}
         <div className="flex gap-2">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && input.trim() && generate.mutate(input.trim())}
+            onKeyDown={(e) => e.key === "Enter" && submit()}
             placeholder={mode === "mindmap" ? "Topic for mind map..." : "Describe your current thinking..."}
             aria-label={mode === "mindmap" ? "Topic for mind map" : "Describe your current thinking"}
             className="flex-1 px-4 py-3 text-sm bg-surface border border-border text-text-1
@@ -110,8 +131,8 @@ export function ThinkingPartnerPage() {
           />
           <button
             type="button"
-            onClick={() => input.trim() && generate.mutate(input.trim())}
-            disabled={generate.isPending || !input.trim()}
+            onClick={submit}
+            disabled={run.isRunning || !input.trim()}
             className="px-4 py-3 text-sm font-mono bg-primary text-on-primary disabled:opacity-50"
           >
             {mode === "mindmap" ? "Generate" : "Ask"}
@@ -121,15 +142,15 @@ export function ThinkingPartnerPage() {
 
       {/* Results */}
       <div className="flex-1 overflow-auto px-8 py-4">
-        {generate.isPending && (
-          <div className="text-sm text-text-3 animate-pulse motion-reduce:animate-none">
-            {mode === "mindmap" ? "Generating mind map..." : "Thinking of questions..."}
+        {run.job && run.job.status !== "done" && (
+          <div className="mb-4">
+            <JobProgress job={run.job} onCancel={run.cancel} />
           </div>
         )}
 
-        {generate.isError && (
+        {run.error && (
           <div role="alert" className="p-3 border border-error text-xs text-error">
-            {formatError(generate.error)}
+            {run.error}
           </div>
         )}
 
@@ -148,7 +169,7 @@ export function ThinkingPartnerPage() {
           </div>
         )}
 
-        {!result && !generate.isPending && (
+        {!result && !run.job && run.ready && (
           <div className="flex items-center justify-center h-full text-text-4">
             <p className="text-sm">
               {mode === "mindmap"
