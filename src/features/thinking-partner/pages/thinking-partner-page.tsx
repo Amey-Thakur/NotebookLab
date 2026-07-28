@@ -20,6 +20,8 @@ import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
 import { NotebookScope } from "@/components/shared/notebook-scope";
 import { SourcePicker } from "@/components/shared/source-picker";
 import { JobProgress } from "@/components/shared/job-progress";
+import { DownloadButton } from "@/components/shared/download-button";
+import { downloadText, toFileName } from "@/lib/download";
 import { ROUTES } from "@/lib/constants";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { useRetainedState } from "@/lib/use-persistent-draft";
@@ -156,9 +158,27 @@ export function ThinkingPartnerPage() {
 
         {result && (
           <div className="p-6 border border-border bg-surface">
-            <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-4">
-              {mode === "mindmap" ? "Mind Map" : "Socratic Questions"}
-            </h2>
+            <div className="flex items-center gap-3 mb-4">
+              <h2 className="text-xs font-mono tracking-widest uppercase text-text-4">
+                {mode === "mindmap" ? "Mind Map" : "Socratic Questions"}
+              </h2>
+              <div className="ml-auto">
+                <DownloadButton
+                  format={mode === "mindmap" ? "JSON" : "Markdown"}
+                  what={mode === "mindmap" ? "the mind map" : "the questions"}
+                  onDownload={() =>
+                    downloadText(
+                      result,
+                      toFileName(
+                        mode === "mindmap" ? "notebooklab-mind-map" : "notebooklab-socratic",
+                        mode === "mindmap" ? "json" : "md",
+                      ),
+                      mode === "mindmap" ? "application/json" : "text/markdown",
+                    )
+                  }
+                />
+              </div>
+            </div>
             {mode === "mindmap" ? (
               <MindMapResult text={result} />
             ) : (
