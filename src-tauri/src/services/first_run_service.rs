@@ -217,7 +217,7 @@ The Thinking Partner. Generate a mind map from your research, or switch to Socra
 
 The Canvas. Every notebook has one open canvas for visual thinking. Draw freehand, add shapes and text, and drop in images, then pan, zoom, and rearrange.
 
-Audio overview. Turn a notebook into a spoken overview read aloud in your browser, as a two-host discussion, a short brief, a debate, or a critique.
+Audio Studio. Your notebook, read aloud in your browser: a two-host discussion, a short brief, an interview, a lecture, a run of questions, a debate, or a critique.
 
 Prompt Studio. Describe a job in plain words and NotebookLab writes a complete, ready-to-run prompt for any AI model, choosing the right technique for the task.
 

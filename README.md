@@ -74,8 +74,9 @@ help you think. Nothing leaves your computer.
 - **See the shape of things.** A document outline tree and a notes connection
   map make a large body of work easy to navigate.
 
-- **Listen instead.** Turn a notebook into a spoken audio overview, read aloud
-  offline, as a discussion, a brief, a debate, or a critique.
+- **Listen instead.** The Audio Studio reads a notebook aloud offline, told the
+  way you want it: a discussion, a brief, an interview, a lecture, a run of
+  questions, a debate, or a critique.
 
 - **Bring any model.** A bundled offline llama.cpp server, a curated catalog
   of open models installed through Ollama in one click, and first-class cloud

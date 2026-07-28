@@ -97,8 +97,8 @@ const STEPS: TourStep[] = [
   },
   {
     target: "nav-audio",
-    title: "Audio overview",
-    body: "Turn a notebook into a spoken overview, read aloud in the app: a two-host discussion, a one-minute brief, a debate, or a critique.",
+    title: "Audio Studio",
+    body: "Your notebook, read aloud in the app: a two-host discussion, a one-minute brief, an interview, a lecture, a run of questions, a debate, or a critique.",
     placement: "right",
   },
   {
