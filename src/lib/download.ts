@@ -62,13 +62,3 @@ export function downloadBlob(blob: Blob, fileName: string): void {
      a turn of the event loop rather than freeing it out from under the click. */
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
-
-/** Save a `data:` URL, such as the canvas image export, as a file. */
-export function downloadDataUrl(dataUrl: string, fileName: string): void {
-  const link = document.createElement("a");
-  link.href = dataUrl;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-}
