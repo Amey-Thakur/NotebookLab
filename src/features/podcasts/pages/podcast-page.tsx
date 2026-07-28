@@ -25,6 +25,8 @@ import { usePersistentDraft, useRetainedState } from "@/lib/use-persistent-draft
 import { NotebookScope } from "@/components/shared/notebook-scope";
 import { SourcePicker } from "@/components/shared/source-picker";
 import { JobProgress } from "@/components/shared/job-progress";
+import { DownloadButton } from "@/components/shared/download-button";
+import { downloadText, toFileName } from "@/lib/download";
 import { useJobRun } from "@/features/jobs/use-job-run";
 
 
@@ -73,6 +75,19 @@ function safeParseScript(raw: string): PodcastScript | null {
 /** No playback, nothing highlighted. A module constant so setting it twice is
     a no-op re-render rather than a new object each time. */
 const IDLE = { playing: false, turn: -1 } as const;
+
+/** Render a script as a plain transcript, one labelled line per turn.
+ *
+ *  The synthesized speech is generated live by the browser and cannot be
+ *  captured, so the transcript is the artefact worth keeping: it is what
+ *  someone quotes, edits, or hands to a real voice. */
+function toTranscript(script: PodcastScript): string {
+  const blocks = script.turns.map(
+    (t) => `${t.speaker === "A" ? "Speaker A" : "Speaker B"}: ${t.text}`,
+  );
+  const body = blocks.join("\n\n");
+  return `# ${script.title}\n\n${body}\n`;
+}
 
 export function PodcastPage() {
   const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
@@ -315,6 +330,20 @@ export function PodcastPage() {
             <h2 className="text-xs font-mono tracking-widest uppercase text-text-4">
               {script.title} ({script.turns.length} turns)
             </h2>
+            <div className="flex gap-2">
+              <DownloadButton
+                format="Transcript"
+                what="the audio script"
+                onDownload={() =>
+                  downloadText(
+                    toTranscript(script),
+                    toFileName(`notebooklab-${script.title}`, "md"),
+                    "text/markdown",
+                  )
+                }
+              />
+            </div>
+
             <div className="flex gap-2">
               {!isPlaying ? (
                 <button

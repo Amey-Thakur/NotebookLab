@@ -24,12 +24,14 @@ import { debounce } from "@/lib/utils";
 import { useAutosaveFlush } from "@/lib/autosave";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { tauriInvoke } from "@/services/tauri-client";
+import { downloadBlob, toFileName } from "@/lib/download";
 
 import { CANVAS_COLORS, type Camera, type CanvasElement, type Tool } from "../types";
 import * as api from "../api/canvas-api";
 import { useCanvas } from "../hooks/use-canvas";
 import { canRedo, canUndo, initHistory, newId, sceneReducer } from "../lib/scene";
 import { screenToWorld, zoomAt, type Point } from "../lib/geometry";
+import { svgToPng } from "../lib/export-png";
 import { fileToScaledImage, srcToScaledImage, type ScaledImage } from "../lib/image";
 import { CanvasToolbar } from "../components/canvas-toolbar";
 import { CanvasBoard } from "../components/canvas-board";
@@ -245,6 +247,25 @@ function CanvasEditor({ canvas }: { canvas: api.Canvas }) {
     [placeImage],
   );
 
+  /* Save the board as a PNG. The svg is read from the DOM rather than threaded
+     up through props: it is one query against a container this page already
+     holds a ref to, and a ref passed through the board would exist only to be
+     read here. */
+  const exportPng = useCallback(async () => {
+    const svg = mainRef.current?.querySelector("svg");
+    if (!svg) return;
+    try {
+      const background = getComputedStyle(document.documentElement)
+        .getPropertyValue("--color-bg")
+        .trim() || "#ffffff";
+      const blob = await svgToPng(svg, background);
+      downloadBlob(blob, toFileName("notebooklab-canvas", "png"));
+    } catch {
+      /* An export that cannot be produced does nothing rather than saving a
+         blank file the user would only discover was empty later. */
+    }
+  }, []);
+
   /* A file dropped on the window arrives as a path, so the bytes are fetched
      from the backend rather than read from a browser File. */
   const addImagePath = useCallback(
@@ -389,6 +410,7 @@ function CanvasEditor({ canvas }: { canvas: api.Canvas }) {
             hasSelection={selectedId !== null}
             onDelete={deleteSelected}
             onAddImage={(file) => addImageFile(file)}
+              onExportPng={exportPng}
             zoom={camera.zoom}
             onZoomIn={() => zoomAtCenter(1.2)}
             onZoomOut={() => zoomAtCenter(1 / 1.2)}

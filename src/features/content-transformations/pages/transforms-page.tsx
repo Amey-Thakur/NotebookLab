@@ -18,6 +18,8 @@ import { Link } from "react-router";
 import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
 import { NotebookScope } from "@/components/shared/notebook-scope";
 import { JobProgress } from "@/components/shared/job-progress";
+import { DownloadButton } from "@/components/shared/download-button";
+import { downloadText, toFileName } from "@/lib/download";
 import { useJobRun } from "@/features/jobs/use-job-run";
 import { ROUTES } from "@/lib/constants";
 import { usePersistentDraft, useRetainedState } from "@/lib/use-persistent-draft";
@@ -191,6 +193,17 @@ export function TransformsPage() {
               >
                 {copied ? "Copied" : "Copy"}
               </button>
+              <DownloadButton
+                format="Markdown"
+                what="the result"
+                onDownload={() =>
+                  downloadText(
+                    result,
+                    toFileName(`notebooklab-${transformType}`, "md"),
+                    "text/markdown",
+                  )
+                }
+              />
             </div>
             <pre className="text-sm font-body text-text-2 whitespace-pre-wrap leading-relaxed">
               {result}

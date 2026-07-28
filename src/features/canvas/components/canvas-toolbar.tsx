@@ -30,6 +30,7 @@ interface CanvasToolbarProps {
   hasSelection: boolean;
   onDelete: () => void;
   onAddImage: (file: File) => void;
+  onExportPng: () => void;
   zoom: number;
   onZoomIn: () => void;
   onZoomOut: () => void;
@@ -132,6 +133,9 @@ export function CanvasToolbar(props: CanvasToolbarProps) {
           disabled={!props.hasSelection}
         >
           <IconTrash />
+        </IconButton>
+        <IconButton label="Download as PNG" onClick={props.onExportPng}>
+          <IconDownload />
         </IconButton>
       </Group>
 
@@ -256,6 +260,16 @@ function IconImage() {
     </svg>
   );
 }
+function IconDownload() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+         strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M8 2.5v7m0 0L5.5 7M8 9.5 10.5 7" />
+      <path d="M3 11v1.5a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V11" />
+    </svg>
+  );
+}
+
 function IconTrash() {
   return (
     <svg className={svg} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
