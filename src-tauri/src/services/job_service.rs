@@ -333,8 +333,8 @@ impl JobHandle {
             e.job.phase = phase.label.to_string();
             e.job.percent = (fraction * 100.0).round() as u8;
             /* Only estimate once there is enough signal. Extrapolating from the
-               first fraction of a percent produces numbers that swing wildly and
-               teach the user to ignore the field. */
+            first fraction of a percent produces numbers that swing wildly and
+            teach the user to ignore the field. */
             e.job.eta_seconds = if fraction > 0.08 && elapsed > 2.0 {
                 let total = elapsed / fraction;
                 Some((total - elapsed).max(0.0).round() as u64)
@@ -366,8 +366,8 @@ mod tests {
     #[test]
     fn generating_dominates_the_bar() {
         /* The model call is the part that takes minutes. If it were not the
-           largest share the bar would race to nearly full and then stall,
-           which is the failure this design exists to avoid. */
+        largest share the bar would race to nearly full and then stall,
+        which is the failure this design exists to avoid. */
         assert!(PHASE_GENERATE.weight > 0.5);
     }
 
