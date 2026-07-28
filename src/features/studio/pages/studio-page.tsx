@@ -79,27 +79,35 @@ export function StudioPage() {
 
   /* The job holds the finished text; the retained copy is what survives the job
      history being trimmed, so a result stays on the page afterwards. */
-  useEffect(() => {
-    /* Safe to pair the result with the current format: picking a different
-       format detaches from the job, so a result can only ever arrive for the
-       format that started it. */
-    if (run.result) setResult({ format, text: run.result });
-  }, [run.result, format, setResult]);
+  /* Which format the running job belongs to. Remembered separately because the
+     result can arrive after the user has already switched to another format,
+     and tagging it with whatever is selected then would file it under the
+     wrong one. Retained, so it also survives a reload mid-generation. */
+  const [runningFormat, setRunningFormat] = useRetainedState<StudioFormat | null>(
+    "notebooklab-state-studio-running-format",
+    null,
+  );
 
-  const generate = () =>
+  useEffect(() => {
+    if (run.result && runningFormat) setResult({ format: runningFormat, text: run.result });
+  }, [run.result, runningFormat, setResult]);
+
+  const generate = () => {
+    setRunningFormat(format);
     void run.start({
       notebook_id: activeNotebookId,
       format,
       focus,
       document_ids: sources,
     });
+  };
 
   const pickFormat = (id: StudioFormat) => {
     setFormat(id);
-    setResult(null);
-    /* Detach from the previous format's job rather than cancelling it: the
-       user may well come back to it, and it costs nothing to let it finish. */
-    run.reset();
+    /* The job is left attached on purpose. Switching format while something is
+       generating used to detach from it, so the result landed nowhere and the
+       wait was wasted; now it still arrives and is filed under the format that
+       asked for it. */
   };
 
   if (!activeNotebookId) {

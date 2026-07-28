@@ -145,7 +145,7 @@ fn label_for(format: &str) -> String {
         "timeline" => "Timeline",
         "slide_deck" => "Slide deck",
         "data_table" => "Data table",
-        "briefing" => "Briefing",
+        "briefing" => "Briefing doc",
         "blog_post" => "Blog post",
         other => other,
     }
