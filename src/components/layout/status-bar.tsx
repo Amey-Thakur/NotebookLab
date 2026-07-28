@@ -25,6 +25,7 @@ import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS, ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { useNotebookStore } from "@/stores/notebook-store";
+import { countRunning, selectJobs, useJobStore } from "@/stores/job-store";
 import { useNotebooks } from "@/features/notebooks/hooks/use-notebooks";
 import { deriveStatus } from "./status-state";
 import { UsageChip } from "./usage-chip";
@@ -44,6 +45,14 @@ export function StatusBar() {
   /* Count in-flight user actions (chat, import, generation, download). Anything
      started with a mutation lights the working state. */
   const workCount = useIsMutating();
+  const jobs = useJobStore((s) => s.jobs);
+  const running = countRunning(jobs);
+  /* Naming them makes the count answerable: "which two?" is the immediate
+     question, and the alternative is opening every feature to find out. */
+  const runningLabel = selectJobs(jobs)
+    .filter((j) => j.status === "running")
+    .map((j) => `${j.label} (${j.percent}%)`)
+    .join(", ");
 
   /* The backend downloads updates in the background and announces when one
      is staged; restarting swaps it in. */
@@ -120,6 +129,23 @@ export function StatusBar() {
             {status.label}
           </span>
         </span>
+
+        {/* Generations keep running wherever the user goes, so the count has to
+
+            be visible from every page rather than only on the one that started
+
+            the work. */}
+
+        {running > 0 && (
+
+          <span className="font-mono text-2xs text-accent shrink-0" title={runningLabel}>
+
+            {running} {running === 1 ? "generation" : "generations"} running
+
+          </span>
+
+        )}
+
 
         {activeNotebook && (
           <Link

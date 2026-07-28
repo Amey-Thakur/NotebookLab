@@ -21,6 +21,7 @@ import { Link } from "react-router";
 import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
 import { ROUTES } from "@/lib/constants";
 import { useNotebookStore } from "@/stores/notebook-store";
+import { formatError } from "@/lib/format-error";
 import { usePersistentDraft, useRetainedState } from "@/lib/use-persistent-draft";
 import { NotebookScope } from "@/components/shared/notebook-scope";
 import { SourcePicker } from "@/components/shared/source-picker";
@@ -89,6 +90,33 @@ function toTranscript(script: PodcastScript): string {
   return `# ${script.title}\n\n${body}\n`;
 }
 
+/** Write the script to a real audio file using the platform's speech engine.
+ *
+ *  The webview's SpeechSynthesis cannot be recorded: it exposes no stream and
+ *  no buffer, so there is nothing to capture while it plays. The backend drives
+ *  the operating system's own engine instead, which is the same voice set, and
+ *  writes a file directly. */
+async function saveAudio(script: PodcastScript): Promise<void> {
+  const [{ save }, extension] = await Promise.all([
+    import("@tauri-apps/plugin-dialog"),
+    tauriInvoke<string>("audio_export_extension"),
+  ]);
+  const target = await save({
+    defaultPath: toFileName(`notebooklab-${script.title}`, extension),
+    filters: [{ name: "Audio", extensions: [extension] }],
+  });
+  if (!target) return;
+  await tauriInvoke<string>("export_audio_file", {
+    text: toSpokenText(script),
+    file_path: target,
+  });
+}
+
+/** The words only: speaker labels are for reading, not for listening to. */
+function toSpokenText(script: PodcastScript): string {
+  return script.turns.map((t) => t.text).join("\n\n");
+}
+
 export function PodcastPage() {
   const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
   /* Preserve the typed topic across navigation and reload. */
@@ -137,6 +165,8 @@ export function PodcastPage() {
   }, []);
 
   const [sources, setSources] = useRetainedState<string[]>("notebooklab-audio-sources", []);
+  /* "saving" while the engine writes, then any error it reported. */
+  const [audioSave, setAudioSave] = useState<"idle" | "saving" | string>("idle");
   const run = useJobRun("generate_podcast", "notebooklab-job-audio");
 
   const generate = () =>
@@ -332,6 +362,17 @@ export function PodcastPage() {
             </h2>
             <div className="flex gap-2">
               <DownloadButton
+                format={audioSave === "saving" ? "Saving..." : "Audio"}
+                what="the audio"
+                disabled={audioSave === "saving"}
+                onDownload={() => {
+                  setAudioSave("saving");
+                  saveAudio(script)
+                    .then(() => setAudioSave("idle"))
+                    .catch((e) => setAudioSave(formatError(e)));
+                }}
+              />
+              <DownloadButton
                 format="Transcript"
                 what="the audio script"
                 onDownload={() =>
@@ -363,6 +404,9 @@ export function PodcastPage() {
                 </button>
               )}
             </div>
+            {audioSave !== "idle" && audioSave !== "saving" && (
+              <p role="alert" className="text-xs text-error mb-3">{audioSave}</p>
+            )}
           </div>
 
           <div className="space-y-2">

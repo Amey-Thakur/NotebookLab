@@ -14,7 +14,6 @@
  * Date: 2026-07-13
  */
 
-import { tauriInvoke } from "@/services/tauri-client";
 
 export type StudioFormat =
   | "study_guide"
@@ -27,17 +26,6 @@ export type StudioFormat =
   | "briefing"
   | "blog_post";
 
-export function generateStudio(
-  notebookId: string,
-  format: StudioFormat,
-  focus: string,
-): Promise<string> {
-  return tauriInvoke<string>("generate_studio", {
-    notebook_id: notebookId,
-    format,
-    focus,
-  });
-}
 
 export interface Flashcard {
   front: string;

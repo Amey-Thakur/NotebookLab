@@ -177,6 +177,8 @@ pub fn run() {
             commands::note_commands::export_note,
             commands::note_commands::list_recent_notes,
             commands::note_commands::get_notes_graph,
+            commands::audio_commands::audio_export_extension,
+            commands::audio_commands::export_audio_file,
             commands::canvas_commands::get_or_create_canvas,
             commands::canvas_commands::update_canvas,
             commands::canvas_commands::read_image_data_url,
