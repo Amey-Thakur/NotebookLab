@@ -20,7 +20,7 @@ describe("HelpPage", () => {
   it("renders the guide with the current features", () => {
     const markup = renderToStaticMarkup(<HelpPage />);
     expect(markup).toContain("Guide");
-    for (const topic of ["The Studio", "Canvas", "Audio overview", "Sharing a notebook", "OCR"]) {
+    for (const topic of ["The Studio", "Canvas", "Audio Studio", "Sharing a notebook", "OCR"]) {
       expect(markup).toContain(topic);
     }
     /* The on-this-page list links to every section anchor. */

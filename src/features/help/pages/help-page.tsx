@@ -186,12 +186,14 @@ const SECTIONS: Section[] = [
   },
   {
     id: "audio",
-    title: "Audio overview",
+    title: "Audio Studio",
     body: (
       <P>
-        Turn a notebook into a spoken overview, read aloud in your browser. Choose a format: a two-host{" "}
-        <B>discussion</B>, a one-minute <B>brief</B> from a single narrator, a <B>debate</B> between
-        opposing speakers, or a <B>critique</B> that weighs the material's strengths and gaps.
+        Your notebook, read aloud in your browser. Choose how it should be told: a two-host{" "}
+        <B>discussion</B>, a one-minute <B>brief</B> from a single narrator, an <B>interview</B>{" "}
+        that presses an expert on the detail, a <B>lecture</B> that teaches it in order, a run of{" "}
+        <B>questions</B> the material raises with direct answers, a <B>debate</B> between opposing
+        speakers, or a <B>critique</B> that weighs strengths and gaps.
       </P>
     ),
   },

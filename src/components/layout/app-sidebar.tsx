@@ -58,7 +58,7 @@ const NAV_GROUPS: NavGroup[] = [
       { path: ROUTES.STUDIO, label: "Studio", icon: "studio", tour: "nav-studio" },
       { path: ROUTES.CANVAS, label: "Canvas", icon: "canvas", tour: "nav-canvas" },
       { path: ROUTES.TRANSFORMS, label: "Transform", icon: "transform", tour: "nav-transform" },
-      { path: ROUTES.PODCASTS, label: "Audio overview", icon: "audio", tour: "nav-audio" },
+      { path: ROUTES.PODCASTS, label: "Audio Studio", icon: "audio", tour: "nav-audio" },
       { path: ROUTES.PROMPT_STUDIO, label: "Prompt Studio", icon: "prompt", tour: "nav-prompt" },
     ],
   },

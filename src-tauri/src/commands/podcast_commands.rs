@@ -28,6 +28,9 @@ const DISCUSSION_PROMPT: &str = include_str!("../../resources/prompts/podcast-di
 const BRIEF_PROMPT: &str = include_str!("../../resources/prompts/podcast-brief.txt");
 const DEBATE_PROMPT: &str = include_str!("../../resources/prompts/podcast-debate.txt");
 const CRITIQUE_PROMPT: &str = include_str!("../../resources/prompts/podcast-critique.txt");
+const INTERVIEW_PROMPT: &str = include_str!("../../resources/prompts/podcast-interview.txt");
+const LECTURE_PROMPT: &str = include_str!("../../resources/prompts/podcast-lecture.txt");
+const QANDA_PROMPT: &str = include_str!("../../resources/prompts/podcast-qanda.txt");
 
 /// A single turn in the podcast script.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -88,6 +91,9 @@ pub async fn generate_podcast(
             "brief" => (BRIEF_PROMPT, "Brief"),
             "debate" => (DEBATE_PROMPT, "Debate"),
             "critique" => (CRITIQUE_PROMPT, "Critique"),
+            "interview" => (INTERVIEW_PROMPT, "Interview"),
+            "lecture" => (LECTURE_PROMPT, "Lecture"),
+            "qanda" => (QANDA_PROMPT, "Questions"),
             other => {
                 return Err(AppError::InvalidInput(format!(
                     "Unknown audio format: {other}"

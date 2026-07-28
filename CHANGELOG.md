@@ -6,6 +6,20 @@ All notable changes to NotebookLab will be documented in this file.
 
 ## [0.4.6] - 2026-07-27
 
+### Added
+
+- Three ways to hear a notebook, alongside the existing four. An **interview**
+  puts an interviewer and an expert on the detail, a **lecture** teaches the
+  material in order from the first idea to what is worth remembering, and
+  **questions** runs through what the material genuinely raises with a direct
+  answer to each.
+
+### Changed
+
+- Audio overview is now the **Audio Studio**, sitting alongside the Prompt
+  Studio, and it says what it does: your notebook, read aloud, told the way you
+  choose.
+
 ### Fixed
 
 - Thinking Partner and the Studio no longer claim a full notebook is empty.

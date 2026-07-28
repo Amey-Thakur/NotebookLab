@@ -37,11 +37,21 @@ interface PodcastScript {
   turns: PodcastTurn[];
 }
 
-type AudioFormat = "discussion" | "brief" | "debate" | "critique";
+type AudioFormat =
+  | "discussion"
+  | "brief"
+  | "debate"
+  | "critique"
+  | "interview"
+  | "lecture"
+  | "qanda";
 
 const FORMATS: { id: AudioFormat; label: string; blurb: string }[] = [
   { id: "discussion", label: "Discussion", blurb: "Two hosts explore the material together." },
   { id: "brief", label: "Brief", blurb: "A single narrator, the gist in under a minute." },
+  { id: "interview", label: "Interview", blurb: "An interviewer presses an expert on the detail." },
+  { id: "lecture", label: "Lecture", blurb: "One voice teaches it in order, from first idea to what to remember." },
+  { id: "qanda", label: "Questions", blurb: "The questions this material raises, each answered directly." },
   { id: "debate", label: "Debate", blurb: "Two speakers argue opposing sides." },
   { id: "critique", label: "Critique", blurb: "A careful look at strengths and gaps." },
 ];
@@ -167,8 +177,8 @@ export function PodcastPage() {
   if (!activeNotebookId) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-text-3 p-8">
-        <p className="text-lg font-display font-bold mb-2">Audio overview</p>
-        <p className="text-sm text-text-4 mb-4">Select a notebook first to generate an audio overview.</p>
+        <p className="text-lg font-display font-bold mb-2">Audio Studio</p>
+        <p className="text-sm text-text-4 mb-4">Select a notebook first to record from it.</p>
         <Link
           to={ROUTES.NOTEBOOKS}
           className="px-4 py-2 text-sm font-mono border border-border text-text-2 hover:border-accent-dim transition-colors"
@@ -181,12 +191,13 @@ export function PodcastPage() {
 
   return (
     <div className="p-8 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-display font-bold text-text-1 mb-2">Audio overview</h1>
+      <h1 className="text-2xl font-display font-bold text-text-1 mb-2">Audio Studio</h1>
       <p className="text-sm text-text-3 mb-6">
-        Turn this notebook into a spoken overview, read aloud in your browser.
+        Your notebook, read aloud. Choose how it should be told, from a quick brief to a
+        full lecture, and it is spoken from your own sources.
       </p>
 
-      <ModelRequiredNotice action="Audio overview" />
+      <ModelRequiredNotice action="Audio Studio" />
 
       {/* Generation form */}
       <div className="border border-border bg-surface-2 p-4 mb-6">
