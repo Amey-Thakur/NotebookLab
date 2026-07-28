@@ -26,7 +26,7 @@ help you think. Nothing leaves your computer.
 
 <br>
 
-**[Read the Handbook (PDF)](docs/notebooklab-booklet.pdf)** &nbsp;·&nbsp; twelve pages on what it
+**[Read the Handbook (PDF)](docs/notebooklab-handbook.pdf)** &nbsp;·&nbsp; twelve pages on what it
 does, why every answer carries its source, and how we built it
 
 <br>
@@ -158,7 +158,7 @@ source, and how to get from download to a first answer. Twelve pages,
 including a note from both of us on why we built it this way and the
 signed Makers' Pledge.
 
-**[Read the Handbook](docs/notebooklab-booklet.pdf)** &middot; the reference
+**[Read the Handbook](docs/notebooklab-handbook.pdf)** &middot; the reference
 cards and brand assets are in the [press kit](docs/press-kit/).
 
 <br>

@@ -14,16 +14,18 @@
  * Date: 2026-07-13
  */
 
+import { useEffect } from "react";
 import { Link } from "react-router";
-import { useMutation } from "@tanstack/react-query";
 
 import { ROUTES } from "@/lib/constants";
-import { formatError } from "@/lib/format-error";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { usePersistentDraft, useRetainedState } from "@/lib/use-persistent-draft";
 import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
+import { NotebookScope } from "@/components/shared/notebook-scope";
+import { SourcePicker } from "@/components/shared/source-picker";
+import { JobProgress } from "@/components/shared/job-progress";
+import { useJobRun } from "@/features/jobs/use-job-run";
 import {
-  generateStudio,
   safeJson,
   asItemArray,
   type StudioFormat,
@@ -67,15 +69,32 @@ export function StudioPage() {
     null,
   );
 
-  const generate = useMutation({
-    mutationFn: () => generateStudio(activeNotebookId as string, format, focus),
-    onSuccess: (text) => setResult({ format, text }),
-  });
+  const [sources, setSources] = useRetainedState<string[]>("notebooklab-studio-sources", []);
+  const run = useJobRun("generate_studio", "notebooklab-job-studio");
+
+  /* The job holds the finished text; the retained copy is what survives the job
+     history being trimmed, so a result stays on the page afterwards. */
+  useEffect(() => {
+    /* Safe to pair the result with the current format: picking a different
+       format detaches from the job, so a result can only ever arrive for the
+       format that started it. */
+    if (run.result) setResult({ format, text: run.result });
+  }, [run.result, format, setResult]);
+
+  const generate = () =>
+    void run.start({
+      notebook_id: activeNotebookId,
+      format,
+      focus,
+      document_ids: sources,
+    });
 
   const pickFormat = (id: StudioFormat) => {
     setFormat(id);
     setResult(null);
-    generate.reset();
+    /* Detach from the previous format's job rather than cancelling it: the
+       user may well come back to it, and it costs nothing to let it finish. */
+    run.reset();
   };
 
   if (!activeNotebookId) {
@@ -96,6 +115,7 @@ export function StudioPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto">
       <h1 className="text-2xl font-display font-bold text-text-1 mb-1">Studio</h1>
+      <NotebookScope />
       <p className="text-sm text-text-3 mb-8">
         Turn this notebook's sources into study aids. Everything is drawn from your own documents.
       </p>
@@ -122,13 +142,20 @@ export function StudioPage() {
       </div>
       <p className="text-xs text-text-4 mb-6">{active.blurb}</p>
 
+      <SourcePicker
+        notebookId={activeNotebookId}
+        value={sources}
+        onChange={setSources}
+        disabled={run.isRunning}
+      />
+
       {/* Focus + generate */}
       <div className="flex flex-col sm:flex-row gap-3 mb-8">
         <input
           type="text"
           value={focus}
           onChange={(e) => setFocus(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && !generate.isPending && generate.mutate()}
+          onKeyDown={(e) => e.key === "Enter" && !run.isRunning && generate()}
           placeholder="Focus (optional). Leave blank for the whole notebook."
           aria-label="Focus for generation"
           className="flex-1 px-3 py-2 text-sm bg-surface border border-border text-text-1
@@ -136,29 +163,29 @@ export function StudioPage() {
         />
         <button
           type="button"
-          onClick={() => generate.mutate()}
-          disabled={generate.isPending}
+          onClick={generate}
+          disabled={run.isRunning}
           className="px-5 py-2 text-sm font-mono bg-primary text-on-primary hover:bg-primary-hover
                      disabled:opacity-50 transition-colors"
         >
-          {generate.isPending ? "Generating..." : `Generate ${active.label.toLowerCase()}`}
+          {run.isRunning ? "Working..." : `Generate ${active.label.toLowerCase()}`}
         </button>
       </div>
 
       {/* Result */}
       <div className="min-h-[200px]">
-        {generate.isPending && (
-          <p className="text-sm text-text-3 motion-safe:animate-pulse">
-            Reading your sources and writing the {active.label.toLowerCase()}...
-          </p>
+        {run.job && run.job.status !== "done" && (
+          <div className="mb-4">
+            <JobProgress job={run.job} onCancel={run.cancel} />
+          </div>
         )}
-        {generate.isError && (
+        {run.error && (
           <p role="alert" className="text-sm text-error">
-            {formatError(generate.error)}
+            {run.error}
           </p>
         )}
-        {showResult && !generate.isPending && <StudioResult format={format} text={result.text} />}
-        {!showResult && !generate.isPending && !generate.isError && (
+        {showResult && !run.isRunning && <StudioResult format={format} text={result.text} />}
+        {!showResult && !run.isRunning && !run.error && run.ready && (
           <p className="text-sm text-text-4">
             Choose a format above and generate it from this notebook.
           </p>

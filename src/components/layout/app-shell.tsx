@@ -38,6 +38,7 @@ import { WelcomeDialog } from "@/features/welcome/components/welcome-dialog";
 import { ProductTour } from "@/features/welcome/components/product-tour";
 import { useFirstRun } from "@/features/welcome/hooks/use-first-run";
 import { useTourStore, hasSeenTour } from "@/stores/tour-store";
+import { useJobChannel } from "@/features/jobs/use-job-channel";
 
 
 interface AppShellProps {
@@ -81,6 +82,11 @@ export function AppShell({ children }: AppShellProps) {
   /* Files opened from the OS ("Open with NotebookLab"), at launch or while
      running, are imported into a notebook and brought on screen. */
   useOpenWith();
+
+  /* Listen for background generations here, above the router, so switching
+     features never tears down the subscription. A feature page reads the job it
+     started out of the store; it does not own the work. */
+  useJobChannel();
 
   /* Save pending edits before the app closes. The note editor, canvas, and the
      in-place notebook rename autosave debounced and flush on route changes, but

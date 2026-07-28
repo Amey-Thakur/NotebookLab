@@ -17,14 +17,15 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router";
-import { useMutation } from "@tanstack/react-query";
 
-import { tauriInvoke } from "@/services/tauri-client";
 import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
 import { ROUTES } from "@/lib/constants";
-import { formatError } from "@/lib/format-error";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { usePersistentDraft, useRetainedState } from "@/lib/use-persistent-draft";
+import { NotebookScope } from "@/components/shared/notebook-scope";
+import { SourcePicker } from "@/components/shared/source-picker";
+import { JobProgress } from "@/components/shared/job-progress";
+import { useJobRun } from "@/features/jobs/use-job-run";
 
 
 interface PodcastTurn {
@@ -57,6 +58,22 @@ const FORMATS: { id: AudioFormat; label: string; blurb: string }[] = [
 ];
 
 
+/** Read the script the job produced. Returns null rather than throwing, so a
+    malformed payload leaves the previous script on screen instead of taking the
+    page down from inside an effect. */
+function safeParseScript(raw: string): PodcastScript | null {
+  try {
+    const parsed = JSON.parse(raw) as PodcastScript;
+    return Array.isArray(parsed?.turns) && parsed.turns.length > 0 ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+/** No playback, nothing highlighted. A module constant so setting it twice is
+    a no-op re-render rather than a new object each time. */
+const IDLE = { playing: false, turn: -1 } as const;
+
 export function PodcastPage() {
   const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
   /* Preserve the typed topic across navigation and reload. */
@@ -69,8 +86,14 @@ export function PodcastPage() {
     "notebooklab-state-audio-script",
     null,
   );
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTurn, setCurrentTurn] = useState(-1);
+  /* Playing and which turn is speaking are one fact, not two. Kept together so
+     starting, stopping and adopting a new script is a single state write rather
+     than a pair that can be seen half-applied mid-render. */
+  const [playback, setPlayback] = useState<{ playing: boolean; turn: number }>({
+    playing: false,
+    turn: -1,
+  });
+  const { playing: isPlaying, turn: currentTurn } = playback;
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const synthRef = useRef(window.speechSynthesis);
   /* Set before cancel() so the interrupt event cannot re-enter the play loop and
@@ -98,23 +121,39 @@ export function PodcastPage() {
     };
   }, []);
 
-  const generate = useMutation({
-    mutationFn: () => tauriInvoke<PodcastScript>("generate_podcast", {
+  const [sources, setSources] = useRetainedState<string[]>("notebooklab-audio-sources", []);
+  const run = useJobRun("generate_podcast", "notebooklab-job-audio");
+
+  const generate = () =>
+    void run.start({
       notebook_id: activeNotebookId,
       topic: topic || null,
       format,
-    }),
-    onSuccess: (result) => {
-      /* Stop any in-flight playback before swapping the script; otherwise the
-         old utterance chain keeps reading while highlights track the new turns
-         and the new script cannot be played until the user hits Stop. */
-      cancelledRef.current = true;
-      synthRef.current.cancel();
-      setIsPlaying(false);
-      setScript(result);
-      setCurrentTurn(-1);
-    },
-  });
+      document_ids: sources,
+    });
+
+  /* The finished script arrives as JSON in the job result, because a job result
+     is a string. */
+  useEffect(() => {
+    if (!run.result) return;
+    const parsed = safeParseScript(run.result);
+    if (parsed) setScript(parsed);
+  }, [run.result, setScript]);
+
+  /* A new script stops playback. Without this the previous utterance chain
+     keeps reading while the highlights track the new turns, and the new script
+     cannot be played until the user hits Stop. Keyed on the script rather than
+     on the job, so it covers a script adopted any other way too. */
+  useEffect(() => {
+    if (!script) return;
+    cancelledRef.current = true;
+    synthRef.current.cancel();
+    /* Stopping the speech engine is the effect; this is the local mirror of the
+       state that engine is now in, so it has to be written here rather than
+       derived during render. */
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPlayback(IDLE);
+  }, [script]);
 
   /* Pick two distinct voices for the speakers */
   const getVoiceForSpeaker = useCallback((speaker: string): SpeechSynthesisVoice | null => {
@@ -136,16 +175,14 @@ export function PodcastPage() {
     if (!script || isPlaying) return;
 
     cancelledRef.current = false;
-    setIsPlaying(true);
-    setCurrentTurn(0);
+    setPlayback({ playing: true, turn: 0 });
 
     const speakTurn = (index: number) => {
       /* A cancel() during playback fires the current utterance's end/error, which
       would otherwise re-enter here; bail so Stop and navigation truly stop. */
       if (cancelledRef.current) return;
       if (index >= script.turns.length) {
-        setIsPlaying(false);
-        setCurrentTurn(-1);
+        setPlayback(IDLE);
         return;
       }
 
@@ -157,7 +194,7 @@ export function PodcastPage() {
       utterance.rate = 1.0;
       utterance.pitch = turn.speaker === "A" ? 1.1 : 0.9;
 
-      utterance.onstart = () => setCurrentTurn(index);
+      utterance.onstart = () => setPlayback({ playing: true, turn: index });
       utterance.onend = () => speakTurn(index + 1);
       utterance.onerror = () => speakTurn(index + 1);
 
@@ -170,8 +207,7 @@ export function PodcastPage() {
   const stopPlayback = () => {
     cancelledRef.current = true;
     synthRef.current.cancel();
-    setIsPlaying(false);
-    setCurrentTurn(-1);
+    setPlayback(IDLE);
   };
 
   if (!activeNotebookId) {
@@ -196,6 +232,9 @@ export function PodcastPage() {
         Your notebook, read aloud. Choose how it should be told, from a quick brief to a
         full lecture, and it is spoken from your own sources.
       </p>
+
+      <NotebookScope />
+
 
       <ModelRequiredNotice action="Audio Studio" />
 
@@ -225,6 +264,19 @@ export function PodcastPage() {
         </div>
         <p className="text-xs text-text-4 mb-3">{FORMATS.find((f) => f.id === format)?.blurb}</p>
 
+        <SourcePicker
+
+          notebookId={activeNotebookId}
+
+          value={sources}
+
+          onChange={setSources}
+
+          disabled={run.isRunning}
+
+        />
+
+
         <div className="flex gap-2 mb-3">
           <input
             type="text"
@@ -237,16 +289,22 @@ export function PodcastPage() {
           />
           <button
             type="button"
-            onClick={() => generate.mutate()}
-            disabled={generate.isPending}
+            onClick={generate}
+            disabled={run.isRunning}
             className="px-4 py-2 text-sm font-mono bg-primary text-on-primary
                        hover:bg-primary-hover transition-colors disabled:opacity-50"
           >
-            {generate.isPending ? "Writing script..." : "Generate"}
+            {run.isRunning ? "Working..." : "Generate"}
           </button>
         </div>
-        {generate.isError && (
-          <p role="alert" className="text-xs text-error">{formatError(generate.error)}</p>
+        {run.job && run.job.status !== "done" && (
+          <div className="mt-3">
+            <JobProgress job={run.job} onCancel={run.cancel} compact />
+          </div>
+        )}
+
+        {run.error && (
+          <p role="alert" className="text-xs text-error">{run.error}</p>
         )}
       </div>
 

@@ -12,14 +12,14 @@
  * Date: 2026-07-12
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { useMutation } from "@tanstack/react-query";
 
-import { tauriInvoke } from "@/services/tauri-client";
 import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
+import { NotebookScope } from "@/components/shared/notebook-scope";
+import { JobProgress } from "@/components/shared/job-progress";
+import { useJobRun } from "@/features/jobs/use-job-run";
 import { ROUTES } from "@/lib/constants";
-import { formatError } from "@/lib/format-error";
 import { usePersistentDraft, useRetainedState } from "@/lib/use-persistent-draft";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { useDocuments } from "@/features/documents/hooks/use-documents";
@@ -53,15 +53,19 @@ export function TransformsPage() {
 
   const processedDocs = documents?.filter((d) => d.status === "processed") || [];
 
-  const transform = useMutation({
-    mutationFn: () =>
-      tauriInvoke<string>("transform_document", {
-        document_id: selectedDoc,
-        transform_type: transformType,
-        custom_prompt: transformType === "custom" ? customPrompt : null,
-      }),
-    onSuccess: (data) => setResult(data),
-  });
+  const run = useJobRun("transform_document", "notebooklab-job-transform");
+
+  useEffect(() => {
+    if (run.result) setResult(run.result);
+  }, [run.result, setResult]);
+
+  const transform = () =>
+    void run.start({
+      document_id: selectedDoc,
+      notebook_id: activeNotebookId,
+      transform_type: transformType,
+      custom_prompt: transformType === "custom" ? customPrompt : null,
+    });
 
   if (!activeNotebookId) {
     return (
@@ -81,7 +85,8 @@ export function TransformsPage() {
   return (
     <div className="flex flex-col h-full">
       <div className="px-8 pt-6 pb-4">
-        <h1 className="text-2xl font-display font-bold text-text-1 mb-4">Content Transforms</h1>
+        <h1 className="text-2xl font-display font-bold text-text-1 mb-1">Content Transforms</h1>
+        <NotebookScope />
 
         <ModelRequiredNotice action="Transforms" />
 
@@ -143,19 +148,25 @@ export function TransformsPage() {
 
         <button
           type="button"
-          onClick={() => transform.mutate()}
-          disabled={!selectedDoc || transform.isPending || (transformType === "custom" && !customPrompt.trim())}
+          onClick={transform}
+          disabled={!selectedDoc || run.isRunning || (transformType === "custom" && !customPrompt.trim())}
           className="px-4 py-2 text-sm font-mono bg-primary text-on-primary disabled:opacity-50"
         >
-          {transform.isPending ? "Processing..." : "Transform"}
+          {run.isRunning ? "Working..." : "Transform"}
         </button>
       </div>
 
       {/* Result */}
       <div className="flex-1 overflow-auto px-8 py-4">
-        {transform.isError && (
+        {run.job && run.job.status !== "done" && (
+          <div className="mb-4">
+            <JobProgress job={run.job} onCancel={run.cancel} />
+          </div>
+        )}
+
+        {run.error && (
           <div role="alert" className="p-3 border border-error text-xs text-error">
-            {formatError(transform.error)}
+            {run.error}
           </div>
         )}
 
@@ -187,7 +198,7 @@ export function TransformsPage() {
           </div>
         )}
 
-        {!result && !transform.isPending && (
+        {!result && !run.isRunning && run.ready && (
           <div className="flex items-center justify-center h-full text-text-4">
             <p className="text-sm">Select a document and choose a transformation.</p>
           </div>

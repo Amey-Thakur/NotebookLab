@@ -87,3 +87,41 @@ pub fn sample_for_notebook(
 
     Ok(rows)
 }
+
+/// Sample passages from an explicit set of documents.
+///
+/// Used when the user picks which sources a generation should read instead of
+/// letting it range over the whole notebook. The spread is taken evenly across
+/// the chosen documents rather than in one ordered run, so selecting four files
+/// does not hand the model the first file and nothing else.
+pub fn sample_for_documents(
+    conn: &Connection,
+    document_ids: &[String],
+    limit: usize,
+) -> AppResult<Vec<String>> {
+    if document_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    /* Round up, so a limit that does not divide evenly still gives every chosen
+    document at least its share rather than starving the last one. */
+    let per_doc = limit.div_ceil(document_ids.len()).max(1);
+    let mut out = Vec::new();
+
+    let mut stmt = conn.prepare(
+        "SELECT content FROM chunks
+         WHERE document_id = ?1
+         ORDER BY position ASC
+         LIMIT ?2",
+    )?;
+
+    for id in document_ids {
+        let rows = stmt
+            .query_map(params![id, per_doc as i64], |row| row.get::<_, String>(0))?
+            .collect::<Result<Vec<_>, _>>()?;
+        out.extend(rows);
+    }
+
+    out.truncate(limit);
+    Ok(out)
+}

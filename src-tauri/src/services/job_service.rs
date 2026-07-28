@@ -118,6 +118,57 @@ pub struct JobRegistry {
     entries: Mutex<HashMap<String, Entry>>,
     /// Insertion order, so trimming drops the oldest finished job first.
     order: Mutex<Vec<String>>,
+    /// How long generation has actually taken on this machine, keyed by model.
+    /// See `expected_generate_secs`.
+    expectations: Mutex<HashMap<String, f32>>,
+}
+
+/// Weight given to the newest measurement when updating an expectation. Low
+/// enough that one unusually slow run does not dominate, high enough that
+/// switching from a 3B model to a 20B one is reflected within a few runs.
+const EXPECTATION_ALPHA: f32 = 0.3;
+
+/// First guess at how long a generation takes, before this machine has told us
+/// otherwise. A local model on a CPU is the slow case and the one where a
+/// missing progress bar hurts most, so it gets the longer default.
+pub const DEFAULT_LOCAL_GENERATE_SECS: f32 = 75.0;
+pub const DEFAULT_CLOUD_GENERATE_SECS: f32 = 12.0;
+
+impl JobRegistry {
+    /// How long the model call is expected to take, in seconds.
+    ///
+    /// There is no token stream to measure against, so the generate phase has no
+    /// signal of its own while it runs. Rather than leave the bar frozen for
+    /// minutes, progress is advanced against this expectation, which starts as a
+    /// default and is corrected by what actually happened on this machine with
+    /// this model. It is an estimate and the code treats it as one: the bar is
+    /// capped short of full until the call really returns.
+    pub fn expected_generate_secs(&self, key: &str, is_local: bool) -> f32 {
+        let fallback = if is_local {
+            DEFAULT_LOCAL_GENERATE_SECS
+        } else {
+            DEFAULT_CLOUD_GENERATE_SECS
+        };
+        self.expectations
+            .lock()
+            .ok()
+            .and_then(|m| m.get(key).copied())
+            .unwrap_or(fallback)
+    }
+
+    /// Fold a completed generation into the expectation for that model.
+    pub fn record_generate_secs(&self, key: &str, secs: f32) {
+        if !secs.is_finite() || secs <= 0.0 {
+            return;
+        }
+        if let Ok(mut m) = self.expectations.lock() {
+            let updated = match m.get(key) {
+                Some(prev) => prev * (1.0 - EXPECTATION_ALPHA) + secs * EXPECTATION_ALPHA,
+                None => secs,
+            };
+            m.insert(key.to_string(), updated);
+        }
+    }
 }
 
 impl JobRegistry {
@@ -211,6 +262,35 @@ impl JobRegistry {
         Ok(())
     }
 
+    /// Report progress for a job by id, without holding its handle.
+    ///
+    /// The handle cannot be shared with the ticker thread: the worker keeps it
+    /// so it can bank phase weights and finish the job. The ticker only needs to
+    /// move the bar inside a phase whose banked weight it was told once, which
+    /// this does with no borrow of the worker's state.
+    pub fn report(&self, app: &AppHandle, id: &str, phase: Phase, banked: f32, within: f32) {
+        let fraction = (banked + phase.weight * within.clamp(0.0, 1.0)).clamp(0.0, 0.99);
+        if let Some(job) = self.update(id, |e| {
+            /* A cancelled or finished job must not be dragged back to running by
+            a tick that was already in flight when it ended. */
+            if e.job.status != JobStatus::Running {
+                return;
+            }
+            let elapsed = e.started.elapsed().as_secs_f32();
+            e.job.phase = phase.label.to_string();
+            e.job.percent = (fraction * 100.0).round() as u8;
+            e.job.eta_seconds = if fraction > 0.08 && elapsed > 2.0 {
+                Some(((elapsed / fraction) - elapsed).max(0.0).round() as u64)
+            } else {
+                None
+            };
+        }) {
+            if job.status == JobStatus::Running {
+                app.emit(JOB_EVENT, &job).ok();
+            }
+        }
+    }
+
     fn update<F: FnOnce(&mut Entry)>(&self, id: &str, f: F) -> Option<Job> {
         let mut entries = self.lock_entries().ok()?;
         let entry = entries.get_mut(id)?;
@@ -273,6 +353,13 @@ impl JobHandle {
     /// streaming, and return early when it flips.
     pub fn cancelled(&self) -> bool {
         self.cancel.load(Ordering::SeqCst)
+    }
+
+    /// Fraction of the job already banked by completed phases. The ticker thread
+    /// needs this to place its progress inside the current phase, and cannot
+    /// borrow the handle itself.
+    pub fn done_weight(&self) -> f32 {
+        self.done_weight
     }
 
     /// Enter a phase. Progress from here advances within that phase's share.

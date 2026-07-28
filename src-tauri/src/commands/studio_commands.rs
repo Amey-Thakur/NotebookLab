@@ -16,13 +16,11 @@
  * Date: 2026-07-13
  */
 
-use tauri::{Manager, State};
-
 use crate::database::repository::chunk_repository;
 use crate::error::{AppError, AppResult};
-use crate::providers::{ChatMessage, ChatRequest, MessageRole, TaskPurpose};
+use crate::providers::TaskPurpose;
+use crate::services::job_runner::{self, Generation};
 use crate::services::search_service;
-use crate::state::AppState;
 
 const STUDY_GUIDE_PROMPT: &str = include_str!("../../resources/prompts/studio-study-guide.txt");
 const FLASHCARDS_PROMPT: &str = include_str!("../../resources/prompts/studio-flashcards.txt");
@@ -39,12 +37,18 @@ const BLOG_POST_PROMPT: &str = include_str!("../../resources/prompts/studio-blog
 /// `format` is one of: study_guide, flashcards, quiz, mind_map, timeline,
 /// slide_deck, data_table, briefing, blog_post.
 /// `focus` is optional; empty means cover the whole notebook.
+/// `document_ids` narrows the sources to the documents the user picked; empty
+/// or absent means the whole notebook.
+///
+/// Returns a job id, not the text. The generation runs as a tracked job so it
+/// reports progress and survives the user leaving the page.
 #[tauri::command(rename_all = "snake_case")]
-pub async fn generate_studio(
+pub fn generate_studio(
     app: tauri::AppHandle,
     notebook_id: String,
     format: String,
     focus: String,
+    document_ids: Option<Vec<String>>,
 ) -> AppResult<String> {
     let system_prompt = match format.as_str() {
         "study_guide" => STUDY_GUIDE_PROMPT,
@@ -63,68 +67,87 @@ pub async fn generate_studio(
         }
     };
 
-    tauri::async_runtime::spawn_blocking(move || {
-        let state: State<'_, AppState> = app.state();
-
-        /* Phase 1: read the sources, then release the database lock */
-        let context = {
-            let conn = state.conn()?;
-            let mut passages: Vec<String> = if focus.trim().is_empty() {
-                chunk_repository::sample_for_notebook(&conn, &notebook_id, 20)?
+    let docs = document_ids.unwrap_or_default();
+    let (nb, fc) = (notebook_id.clone(), focus.clone());
+    job_runner::spawn(
+        &app,
+        Generation {
+            kind: "studio",
+            label: label_for(&format),
+            notebook_id,
+            system_prompt: system_prompt.to_string(),
+            max_tokens: 2048,
+            temperature: 0.3,
+            purpose: TaskPurpose::Quality,
+        },
+        Box::new(move |conn| gather_sources(conn, &nb, &fc, &docs)),
+        Box::new(move |context| {
+            let directive = if focus.trim().is_empty() {
+                "Work from all of these sources.".to_string()
             } else {
-                search_service::search_chunks(&conn, &notebook_id, &focus, 15)?
-                    .into_iter()
-                    .map(|c| c.content)
-                    .collect()
+                format!("Focus especially on: {}", focus.trim())
             };
+            format!("<document_context>\n{context}\n</document_context>\n\n{directive}")
+        }),
+        Box::new(Ok),
+    )
+}
 
-            /* A focus worded differently from the sources (or mistyped) matches
-            nothing by keyword even when the notebook is full. Widen to the whole
-            notebook rather than refusing: covering the sources broadly beats
-            telling the user to import documents they already have. */
-            if passages.is_empty() && !focus.trim().is_empty() {
-                passages = chunk_repository::sample_for_notebook(&conn, &notebook_id, 20)?;
-            }
+/// Read the passages a Studio format is built from.
+///
+/// `documents` is the user's explicit choice of sources; empty means the whole
+/// notebook, which is what it always did.
+fn gather_sources(
+    conn: &rusqlite::Connection,
+    notebook_id: &str,
+    focus: &str,
+    documents: &[String],
+) -> AppResult<String> {
+    let mut passages: Vec<String> = if !documents.is_empty() {
+        chunk_repository::sample_for_documents(conn, documents, 20)?
+    } else if focus.trim().is_empty() {
+        chunk_repository::sample_for_notebook(conn, notebook_id, 20)?
+    } else {
+        search_service::search_chunks(conn, notebook_id, focus, 15)?
+            .into_iter()
+            .map(|c| c.content)
+            .collect()
+    };
 
-            if passages.is_empty() {
-                return Err(AppError::InvalidInput(
-                    "This notebook has no documents yet. Import one first.".into(),
-                ));
-            }
+    /* A focus worded differently from the sources (or mistyped) matches
+    nothing by keyword even when the notebook is full. Widen to the whole
+    notebook rather than refusing: covering the sources broadly beats
+    telling the user to import documents they already have. */
+    if passages.is_empty() && documents.is_empty() && !focus.trim().is_empty() {
+        passages = chunk_repository::sample_for_notebook(conn, notebook_id, 20)?;
+    }
 
-            passages.join("\n\n---\n\n")
-        };
-
-        /* Phase 2: the LLM call, with no database lock held */
-        let directive = if focus.trim().is_empty() {
-            "Work from all of these sources.".to_string()
+    if passages.is_empty() {
+        return Err(AppError::InvalidInput(if documents.is_empty() {
+            "This notebook has no documents yet. Import one first.".into()
         } else {
-            format!("Focus especially on: {}", focus.trim())
-        };
+            "The selected documents have no readable text yet. They may still \
+             be processing."
+                .to_string()
+        }));
+    }
 
-        let providers = state.provider_read()?;
-        let response = providers
-            .chat_completion(ChatRequest {
-                messages: vec![
-                    ChatMessage {
-                        role: MessageRole::System,
-                        content: system_prompt.to_string(),
-                    },
-                    ChatMessage {
-                        role: MessageRole::User,
-                        content: format!(
-                            "<document_context>\n{context}\n</document_context>\n\n{directive}"
-                        ),
-                    },
-                ],
-                max_tokens: Some(2048),
-                temperature: Some(0.3),
-                purpose: TaskPurpose::Quality,
-            })
-            .map_err(|e| AppError::Provider(e.to_string()))?;
+    Ok(passages.join("\n\n---\n\n"))
+}
 
-        Ok(response.content)
-    })
-    .await
-    .map_err(|e| AppError::Internal(format!("Studio task failed: {e}")))?
+/// Human label for a format, shown next to the progress bar.
+fn label_for(format: &str) -> String {
+    match format {
+        "study_guide" => "Study guide",
+        "flashcards" => "Flashcards",
+        "quiz" => "Quiz",
+        "mind_map" => "Mind map",
+        "timeline" => "Timeline",
+        "slide_deck" => "Slide deck",
+        "data_table" => "Data table",
+        "briefing" => "Briefing",
+        "blog_post" => "Blog post",
+        other => other,
+    }
+    .to_string()
 }

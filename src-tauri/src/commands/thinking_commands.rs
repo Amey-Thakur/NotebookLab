@@ -12,13 +12,11 @@
  * Date: 2026-07-12
  */
 
-use tauri::{Manager, State};
-
 use crate::database::repository::chunk_repository;
 use crate::error::{AppError, AppResult};
-use crate::providers::{ChatMessage, ChatRequest, MessageRole, TaskPurpose};
+use crate::providers::TaskPurpose;
+use crate::services::job_runner::{self, Generation};
 use crate::services::search_service;
-use crate::state::AppState;
 
 /// Gather passages for a thinking prompt: the best keyword matches for the
 /// topic, or a spread across the notebook when nothing matches.
@@ -28,23 +26,37 @@ use crate::state::AppState;
 /// told the user to import documents they had already imported. Falling back
 /// to a sample keeps the feature working on the sources that are actually
 /// there; only a genuinely empty notebook is an error.
+///
+/// `documents` restricts the sources to the ones the user picked. Empty means
+/// the whole notebook. The filter is applied after retrieval rather than inside
+/// the search so that a selection which happens to match nothing by keyword
+/// still falls back to a sample of *those* documents, not of the notebook.
 fn gather_context(
     conn: &rusqlite::Connection,
     notebook_id: &str,
     topic: &str,
     limit: usize,
+    documents: &[String],
 ) -> AppResult<String> {
-    let matches = search_service::search_chunks(conn, notebook_id, topic, limit)?;
-    let passages: Vec<String> = if matches.is_empty() {
-        chunk_repository::sample_for_notebook(conn, notebook_id, limit)?
+    let passages = if documents.is_empty() {
+        let matches = search_service::search_chunks(conn, notebook_id, topic, limit)?;
+        if matches.is_empty() {
+            chunk_repository::sample_for_notebook(conn, notebook_id, limit)?
+        } else {
+            matches.into_iter().map(|c| c.content).collect()
+        }
     } else {
-        matches.into_iter().map(|c| c.content).collect()
+        chunk_repository::sample_for_documents(conn, documents, limit)?
     };
 
     if passages.is_empty() {
-        return Err(AppError::InvalidInput(
-            "This notebook has no documents yet. Import one first.".into(),
-        ));
+        return Err(AppError::InvalidInput(if documents.is_empty() {
+            "This notebook has no documents yet. Import one first.".into()
+        } else {
+            "The selected documents have no readable text yet. They may still \
+             be processing."
+                .to_string()
+        }));
     }
 
     Ok(passages.join("\n\n---\n\n"))
@@ -53,48 +65,52 @@ fn gather_context(
 const MIND_MAP_PROMPT: &str = include_str!("../../resources/prompts/mind-map.txt");
 const SOCRATIC_PROMPT: &str = include_str!("../../resources/prompts/socratic.txt");
 
+/// Start a mind map and return its job id at once.
+///
+/// `document_ids` narrows the sources to the documents the user picked; empty
+/// means the whole notebook, which is what it always did.
 #[tauri::command(rename_all = "snake_case")]
-pub async fn generate_mind_map(
+pub fn generate_mind_map(
     app: tauri::AppHandle,
     notebook_id: String,
     topic: String,
+    document_ids: Option<Vec<String>>,
 ) -> AppResult<String> {
     if topic.trim().is_empty() {
         return Err(AppError::InvalidInput("Topic cannot be empty".into()));
     }
 
-    tauri::async_runtime::spawn_blocking(move || {
-        let state: State<'_, AppState> = app.state();
-
-        /* Phase 1: DB read -- gather passages, release lock */
-        let context = {
-            let conn = state.conn()?;
-            gather_context(&conn, &notebook_id, &topic, 15)?
-        };
-
-        /* Phase 2: LLM call -- no db lock held */
-        let providers = state.provider_read()?;
-        let response = providers.chat_completion(ChatRequest {
-            messages: vec![
-                ChatMessage { role: MessageRole::System, content: MIND_MAP_PROMPT.to_string() },
-                ChatMessage { role: MessageRole::User, content: format!("<document_context>\n{context}\n</document_context>\n\nGenerate a mind map about: {topic}") },
-            ],
-            max_tokens: Some(2048),
-            temperature: Some(0.3),
+    let docs = document_ids.unwrap_or_default();
+    let (nb, tp) = (notebook_id.clone(), topic.clone());
+    job_runner::spawn(
+        &app,
+        Generation {
+            kind: "mindmap",
+            label: format!("Mind map: {}", topic.trim()),
+            notebook_id,
+            system_prompt: MIND_MAP_PROMPT.to_string(),
+            max_tokens: 2048,
+            temperature: 0.3,
             purpose: TaskPurpose::Quality,
-        }).map_err(|e| AppError::Provider(e.to_string()))?;
-
-        Ok(response.content)
-    })
-    .await
-    .map_err(|e| AppError::Internal(format!("Mind map task failed: {e}")))?
+        },
+        Box::new(move |conn| gather_context(conn, &nb, &tp, 15, &docs)),
+        Box::new(move |context| {
+            format!(
+                "<document_context>\n{context}\n</document_context>\n\n\
+                 Generate a mind map about: {topic}"
+            )
+        }),
+        Box::new(Ok),
+    )
 }
 
+/// Start a Socratic questioning run and return its job id at once.
 #[tauri::command(rename_all = "snake_case")]
-pub async fn generate_socratic_questions(
+pub fn generate_socratic_questions(
     app: tauri::AppHandle,
     notebook_id: String,
     thinking: String,
+    document_ids: Option<Vec<String>>,
 ) -> AppResult<String> {
     if thinking.trim().is_empty() {
         return Err(AppError::InvalidInput(
@@ -102,29 +118,26 @@ pub async fn generate_socratic_questions(
         ));
     }
 
-    tauri::async_runtime::spawn_blocking(move || {
-        let state: State<'_, AppState> = app.state();
-
-        /* Phase 1: DB read */
-        let context = {
-            let conn = state.conn()?;
-            gather_context(&conn, &notebook_id, &thinking, 10)?
-        };
-
-        /* Phase 2: LLM call */
-        let providers = state.provider_read()?;
-        let response = providers.chat_completion(ChatRequest {
-            messages: vec![
-                ChatMessage { role: MessageRole::System, content: SOCRATIC_PROMPT.to_string() },
-                ChatMessage { role: MessageRole::User, content: format!("<document_context>\n{context}\n</document_context>\n\nMy current thinking:\n{thinking}\n\nAsk me probing questions.") },
-            ],
-            max_tokens: Some(1024),
-            temperature: Some(0.7),
+    let docs = document_ids.unwrap_or_default();
+    let (nb, th) = (notebook_id.clone(), thinking.clone());
+    job_runner::spawn(
+        &app,
+        Generation {
+            kind: "socratic",
+            label: "Socratic questions".to_string(),
+            notebook_id,
+            system_prompt: SOCRATIC_PROMPT.to_string(),
+            max_tokens: 1024,
+            temperature: 0.7,
             purpose: TaskPurpose::Quality,
-        }).map_err(|e| AppError::Provider(e.to_string()))?;
-
-        Ok(response.content)
-    })
-    .await
-    .map_err(|e| AppError::Internal(format!("Socratic task failed: {e}")))?
+        },
+        Box::new(move |conn| gather_context(conn, &nb, &th, 10, &docs)),
+        Box::new(move |context| {
+            format!(
+                "<document_context>\n{context}\n</document_context>\n\n\
+                 My current thinking:\n{thinking}\n\nAsk me probing questions."
+            )
+        }),
+        Box::new(Ok),
+    )
 }

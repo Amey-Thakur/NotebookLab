@@ -173,6 +173,22 @@ impl ProviderRouter {
         Ok(())
     }
 
+    /// Identify the model that will answer the next request: a stable key and
+    /// whether it runs locally.
+    ///
+    /// The job runner uses this to remember how long generation takes per model,
+    /// so a progress estimate reflects the machine it is on rather than a
+    /// constant. Falls back to a generic key when nothing is active, which keeps
+    /// the estimate usable instead of making the caller handle an `Option` it
+    /// cannot act on.
+    pub fn active_profile(&self) -> (String, bool) {
+        let active = self.active_index.read().ok().and_then(|a| *a);
+        match active.and_then(|idx| self.providers.get(idx)) {
+            Some(p) => (format!("{}::{}", p.kind(), p.model()), p.is_local()),
+            None => ("unknown".to_string(), true),
+        }
+    }
+
     /// Get the name of the currently active provider.
     pub fn active_name(&self) -> Option<String> {
         let active = self.active_index.read().ok()?;

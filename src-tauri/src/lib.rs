@@ -179,6 +179,7 @@ pub fn run() {
             commands::note_commands::get_notes_graph,
             commands::canvas_commands::get_or_create_canvas,
             commands::canvas_commands::update_canvas,
+            commands::canvas_commands::read_image_data_url,
             commands::share_commands::export_notebook,
             commands::share_commands::import_notebook,
             commands::document_commands::import_document,

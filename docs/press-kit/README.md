@@ -18,12 +18,12 @@ The Handbook and the reference cards, free to use anywhere, with attribution app
 
 ## Handbook
 
-**[NotebookLab: Handbook](../notebooklab-booklet.pdf)** &middot; 12 pages, A4 landscape, 1.0 MB
+**[NotebookLab: Handbook](../notebooklab-handbook.pdf)** &middot; 12 pages, A4 landscape, 1.0 MB
 
 What NotebookLab is and is not, a worked answer with its citation, why provenance lives in the chunk shape, a note from both makers, how to pick a model that fits your machine, and what happens to a file between opening it and getting an answer. Every link inside it is clickable, including the download buttons on the last page.
 
 ```
-https://github.com/Amey-Thakur/NotebookLab/raw/main/docs/notebooklab-booklet.pdf
+https://github.com/Amey-Thakur/NotebookLab/raw/main/docs/notebooklab-handbook.pdf
 ```
 
 ## The cards
