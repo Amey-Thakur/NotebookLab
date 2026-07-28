@@ -141,11 +141,15 @@ fn gather_sources(
              ORDER BY d.created_at, c.position
              LIMIT 20",
         )?;
-        stmt.query_map(rusqlite::params![notebook_id], |row| {
-            row.get::<_, String>(0)
-        })?
-        .filter_map(|r| r.ok())
-        .collect()
+        /* Bound to a local rather than left as the block's tail expression:
+        the mapped rows borrow `stmt`, and as a tail they would outlive it. */
+        let rows: Vec<String> = stmt
+            .query_map(rusqlite::params![notebook_id], |row| {
+                row.get::<_, String>(0)
+            })?
+            .filter_map(|r| r.ok())
+            .collect();
+        rows
     } else {
         crate::database::repository::chunk_repository::sample_for_documents(conn, documents, 20)?
     };

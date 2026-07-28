@@ -21,6 +21,8 @@ import { ROUTES } from "@/lib/constants";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { usePersistentDraft, useRetainedState } from "@/lib/use-persistent-draft";
 import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
+import { DownloadButton } from "@/components/shared/download-button";
+import { downloadText, toFileName } from "@/lib/download";
 import { NotebookScope } from "@/components/shared/notebook-scope";
 import { SourcePicker } from "@/components/shared/source-picker";
 import { JobProgress } from "@/components/shared/job-progress";
@@ -55,6 +57,9 @@ const FORMATS: { id: StudioFormat; label: string; blurb: string }[] = [
   { id: "briefing", label: "Briefing doc", blurb: "A concise briefing for a busy reader." },
   { id: "blog_post", label: "Blog post", blurb: "An accessible write-up for a general audience." },
 ];
+
+/* Formats the model answers in Markdown; the rest come back as JSON. */
+const MARKDOWN_FORMATS = new Set<StudioFormat>(["study_guide", "briefing", "blog_post"]);
 
 export function StudioPage() {
   const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
@@ -184,7 +189,27 @@ export function StudioPage() {
             {run.error}
           </p>
         )}
-        {showResult && !run.isRunning && <StudioResult format={format} text={result.text} />}
+        {showResult && !run.isRunning && (
+          <>
+            <div className="flex justify-end mb-3">
+              <DownloadButton
+                format={MARKDOWN_FORMATS.has(format) ? "Markdown" : "JSON"}
+                what={`the ${active.label.toLowerCase()}`}
+                onDownload={() =>
+                  downloadText(
+                    result.text,
+                    toFileName(
+                      `notebooklab-${active.label}`,
+                      MARKDOWN_FORMATS.has(format) ? "md" : "json",
+                    ),
+                    MARKDOWN_FORMATS.has(format) ? "text/markdown" : "application/json",
+                  )
+                }
+              />
+            </div>
+            <StudioResult format={format} text={result.text} />
+          </>
+        )}
         {!showResult && !run.isRunning && !run.error && run.ready && (
           <p className="text-sm text-text-4">
             Choose a format above and generate it from this notebook.
