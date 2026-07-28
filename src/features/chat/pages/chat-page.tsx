@@ -22,6 +22,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS, ROUTES } from "@/lib/constants";
+import { DownloadButton } from "@/components/shared/download-button";
+import { downloadText, toFileName } from "@/lib/download";
 import { formatError } from "@/lib/format-error";
 import { cn } from "@/lib/utils";
 import { useNotebookStore } from "@/stores/notebook-store";
@@ -31,6 +33,18 @@ import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
 import { CitationList } from "../components/citation-list";
 import type { Conversation, Message, ChatResponse, Document } from "@/types/models";
 
+
+/** Render a conversation as Markdown.
+ *
+ *  A chat that cannot leave the app is a chat you have to keep the app open
+ *  to read. The roles become headings so the file is still legible as a
+ *  document rather than a wall of alternating paragraphs. */
+function toTranscript(title: string, messages: Message[]): string {
+  const blocks = messages.map(
+    (m) => `## ${m.role === "user" ? "You" : "NotebookLab"}\n\n${m.content}`,
+  );
+  return `# ${title}\n\n${blocks.join("\n\n")}\n`;
+}
 
 export function ChatPage() {
   const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
@@ -275,6 +289,22 @@ export function ChatPage() {
               or drop one here so Chat can answer from it.
             </p>
           )}
+          {messages && messages.length > 0 && (
+            <div className="mt-3">
+              <DownloadButton
+                format="Markdown"
+                what="this conversation"
+                onDownload={() =>
+                  downloadText(
+                    toTranscript(activeNotebook?.name ?? "Conversation", messages),
+                    toFileName(`notebooklab-chat-${activeNotebook?.name ?? "conversation"}`, "md"),
+                    "text/markdown",
+                  )
+                }
+              />
+            </div>
+          )}
+
           {docCount > 0 && (
             <p className="mt-3 text-2xs font-mono text-text-4">
               Answering from {docCount} {docCount === 1 ? "source" : "sources"}
