@@ -67,15 +67,19 @@ for (const model of MODELS) {
      was fine and available a moment later. curl's own --retry handles 429 and
      5xx; the outer loop covers the rest, including a dropped connection. */
   const ATTEMPTS = 4;
-  let downloaded = false;
-  for (let attempt = 1; attempt <= ATTEMPTS && !downloaded; attempt++) {
+  /* Per-attempt flag. Named apart from the outer tally, which it used to
+     shadow: `downloaded += 1` then incremented the boolean and left the
+     tally at zero, so the summary always claimed everything was already
+     in place, including in the release log right after a fresh download. */
+  let gotFile = false;
+  for (let attempt = 1; attempt <= ATTEMPTS && !gotFile; attempt++) {
     try {
       execSync(
         `curl -L --fail --progress-bar --retry 3 --retry-delay 5 --retry-all-errors ` +
           `--connect-timeout 30 -o "${dest}" "${model.url}"`,
         { stdio: "inherit" },
       );
-      downloaded = true;
+      gotFile = true;
     } catch (err) {
       if (attempt === ATTEMPTS) {
         console.error(`Download failed after ${ATTEMPTS} attempts. URL: ${model.url}`);
