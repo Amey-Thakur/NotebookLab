@@ -1,7 +1,11 @@
 ## Name: pages.yml
 ## Purpose: Deploys the static landing page in site/ to GitHub Pages.
-## Description: Runs only when site content or this workflow changes.
-##   Third-party actions are pinned to commit SHAs.
+## Description: Runs when site content or this workflow changes, and again
+##   whenever a release is published so the page always names the current
+##   version. The version and the direct download links are written into the
+##   HTML here rather than fetched by the visitor's browser, which used to
+##   leave the version blank whenever the anonymous GitHub API limit (60 an
+##   hour per IP) was reached. Third-party actions are pinned to commit SHAs.
 ## Tech Stack: GitHub Actions, GitHub Pages
 ## License: MIT
 ## Authors: Amey Thakur (https://github.com/Amey-Thakur)
@@ -15,7 +19,12 @@ on:
     branches: [main]
     paths:
       - site/**
+      - scripts/inject-release.cjs
       - .github/workflows/pages.yml
+  # Publishing a release (including flipping the draft that release.yml builds)
+  # redeploys the page, so the version it shows follows the release by itself.
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -27,6 +36,9 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
+env:
+  NODE_VERSION: "22"
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -34,9 +46,27 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      # Always the current site content, never the tag's. A release event
+      # would otherwise check out the tagged commit and redeploy whatever the
+      # page looked like then, undoing any site edit made since.
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: main
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
       - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+
+      # Writes the current tag and the direct .msi/.dmg/.deb links into the
+      # page. Uses the workflow token, so it is not subject to the anonymous
+      # rate limit a visitor's browser hits. Fails the deploy rather than
+      # publishing a page that names the wrong version.
+      - name: Bake the current release into the page
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/inject-release.cjs site/index.html
 
       - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
         with:
