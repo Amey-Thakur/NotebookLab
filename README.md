@@ -26,6 +26,11 @@ help you think. Nothing leaves your computer.
 
 <br>
 
+**[Read the field guide (PDF)](docs/notebooklab-booklet.pdf)** &nbsp;·&nbsp; eleven pages on what it
+does, why every answer carries its source, and how we built it
+
+<br>
+
 <img src="docs/brand/hero.svg" alt="NotebookLab answering a question with answers grounded in cited sources from the user's documents" width="820">
 
 <br>
@@ -39,7 +44,8 @@ help you think. Nothing leaves your computer.
 [Develop](#develop) ·
 [Architecture](docs/ARCHITECTURE.md) ·
 [REST API](#local-rest-api) ·
-[Privacy](#privacy)
+[Privacy](#privacy) ·
+[Field guide](#the-field-guide)
 
 <br>
 
@@ -114,10 +120,15 @@ Download the installer for your platform from the
 The app updates itself on Windows and macOS. Verify any download against the
 `SHA256SUMS` file attached to the release.
 
-macOS builds are not yet notarized with Apple; the pipeline is wired for it
-and signs automatically once the maintainers add Apple credentials. Until
-then, on first open right-click the app and choose Open, or run
-`xattr -dr com.apple.quarantine /Applications/NotebookLab.app` once.
+> [!WARNING]
+> **macOS will refuse to open it the first time.** The builds are signed but not
+> yet notarized with Apple, so Gatekeeper blocks them. Right-click the app and
+> choose Open, or run this once:
+> ```
+> xattr -dr com.apple.quarantine /Applications/NotebookLab.app
+> ```
+> The pipeline is already wired for notarization and switches on the moment
+> Apple credentials are added.
 
 <br>
 
@@ -131,6 +142,12 @@ then, on first open right-click the app and choose Open, or run
 3. Import a PDF, Word, text, Markdown, or image file into a notebook.
 4. Open **Chat** and ask a question about it.
 5. Press `?` any time for the full list of keyboard shortcuts.
+
+> [!TIP]
+> **Pick a model that fits your machine, not the biggest one.** On a laptop with
+> no GPU, something in the 3 to 4B instruct range answers while you are still
+> watching. A 7B reasoning model on a CPU can think for minutes before its first
+> word, which looks exactly like the app has hung.
 
 <br>
 
@@ -228,6 +245,12 @@ curl -H "Authorization: Bearer <token>" http://127.0.0.1:8484/api/notebooks
 <br>
 
 ## Privacy
+
+> [!NOTE]
+> With a local model there is no request to make, so there is nothing to
+> intercept: it works with the network cable out. Add a cloud key and the
+> context for that one question does go to that provider, which is exactly why
+> cloud is a choice rather than the default.
 
 Your documents, notes, chats, and embeddings live in a local SQLite database.
 The bundled model runs entirely offline. Cloud providers are optional, off by
