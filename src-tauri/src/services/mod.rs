@@ -17,6 +17,7 @@ pub mod chunking_service;
 pub mod embedding_service;
 pub mod first_run_service;
 pub mod ingestion_service;
+pub mod job_service;
 pub mod ollama_service;
 pub mod provider_config_service;
 pub mod rag_service;
