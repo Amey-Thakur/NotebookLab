@@ -48,3 +48,7 @@ src-tauri/gen/
 
 # Third-party documents
 *.pdf
+# The field guide is a published deliverable, not a build artifact: the README
+# and the site both link to it, so it has to be in the tree.
+!docs/notebooklab-booklet.pdf
+!docs/press-kit/*.pdf
