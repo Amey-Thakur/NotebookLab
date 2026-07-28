@@ -1,6 +1,6 @@
 <!--
   Name: README.md
-  Purpose: The press kit: Fieldnotes and the reference cards, free to reuse.
+  Purpose: The press kit: the Handbook and the reference cards, free to reuse.
   Description: Everything here is generated from the repository's own palette,
     typefaces and facts, so a card cannot claim something the app does not do.
     Published so that anyone writing about NotebookLab has an accurate image to
@@ -14,11 +14,11 @@
 
 # Press kit
 
-Fieldnotes and the reference cards, free to use anywhere, with attribution appreciated but not required. Everything is MIT licensed like the rest of the project.
+The Handbook and the reference cards, free to use anywhere, with attribution appreciated but not required. Everything is MIT licensed like the rest of the project.
 
-## Fieldnotes
+## Handbook
 
-**[NotebookLab: Fieldnotes](../notebooklab-booklet.pdf)** &middot; 12 pages, A4 landscape, 1.0 MB
+**[NotebookLab: Handbook](../notebooklab-booklet.pdf)** &middot; 12 pages, A4 landscape, 1.0 MB
 
 What NotebookLab is and is not, a worked answer with its citation, why provenance lives in the chunk shape, a note from both makers, how to pick a model that fits your machine, and what happens to a file between opening it and getting an answer. Every link inside it is clickable, including the download buttons on the last page.
 
