@@ -26,7 +26,7 @@ help you think. Nothing leaves your computer.
 
 <br>
 
-**[Read the field guide (PDF)](docs/notebooklab-booklet.pdf)** &nbsp;·&nbsp; eleven pages on what it
+**[Read Fieldnotes (PDF)](docs/notebooklab-booklet.pdf)** &nbsp;·&nbsp; twelve pages on what it
 does, why every answer carries its source, and how we built it
 
 <br>
@@ -45,7 +45,7 @@ does, why every answer carries its source, and how we built it
 [Architecture](docs/ARCHITECTURE.md) ·
 [REST API](#local-rest-api) ·
 [Privacy](#privacy) ·
-[Field guide](#the-field-guide)
+[Fieldnotes](#fieldnotes)
 
 <br>
 
@@ -151,13 +151,14 @@ The app updates itself on Windows and macOS. Verify any download against the
 
 <br>
 
-## The field guide
+## Fieldnotes
 
-A short booklet covering what NotebookLab is, why every answer carries its
-source, and how to get from download to a first answer. Eleven pages,
-including a note from both of us on why we built it this way.
+Fieldnotes covers what NotebookLab is, why every answer carries its
+source, and how to get from download to a first answer. Twelve pages,
+including a note from both of us on why we built it this way and the
+signed Makers' Pledge.
 
-**[Read the booklet](docs/notebooklab-booklet.pdf)** &middot; the reference
+**[Read Fieldnotes](docs/notebooklab-booklet.pdf)** &middot; the reference
 cards and brand assets are in the [press kit](docs/press-kit/).
 
 <br>
