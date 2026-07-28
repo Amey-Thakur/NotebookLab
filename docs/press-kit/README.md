@@ -18,9 +18,9 @@ The booklet and the reference cards, free to use anywhere, with attribution appr
 
 ## The booklet
 
-**[NotebookLab: the field guide](../notebooklab-booklet.pdf)** &middot; 11 pages, A4 landscape, 598 KB
+**[NotebookLab: the field guide](../notebooklab-booklet.pdf)** &middot; 11 pages, A4 landscape, 632 KB
 
-What NotebookLab is and is not, why provenance lives in the chunk shape, a note from both makers, and how to get from download to a first answer. Every link inside it is clickable.
+What NotebookLab is and is not, a worked answer with its citation, why provenance lives in the chunk shape, a note from both makers, how to pick a model that fits your machine, and what happens to a file between opening it and getting an answer. Every link inside it is clickable, including the download buttons on the last page.
 
 ```
 https://github.com/Amey-Thakur/NotebookLab/raw/main/docs/notebooklab-booklet.pdf
