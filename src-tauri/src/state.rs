@@ -34,6 +34,9 @@ pub struct AppState {
     /// a clear error in that case). Loading the models is the expensive step, so
     /// it happens lazily rather than at startup.
     ocr: Mutex<Option<Arc<OcrEngineHandle>>>,
+    /// Long AI work, tracked so it survives the user leaving the page that
+    /// started it and so several features can generate at once.
+    pub jobs: crate::services::job_service::JobRegistry,
 }
 
 impl AppState {
@@ -142,6 +145,7 @@ impl AppState {
             providers: RwLock::new(provider_router),
             api_token: format!("nbl-api-{}", uuid::Uuid::new_v4().simple()),
             ocr: Mutex::new(None),
+            jobs: crate::services::job_service::JobRegistry::new(),
         })
     }
 

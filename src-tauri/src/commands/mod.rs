@@ -15,6 +15,7 @@ pub mod canvas_commands;
 pub mod chat_commands;
 pub mod document_commands;
 pub mod download_commands;
+pub mod job_commands;
 pub mod model_commands;
 pub mod note_commands;
 pub mod notebook_commands;
