@@ -174,7 +174,7 @@ impl JobRegistry {
     }
 
     pub fn get(&self, id: &str) -> AppResult<Option<Job>> {
-        Ok(self.lock_entries()?.get(id).map(|e| snapshot(e)))
+        Ok(self.lock_entries()?.get(id).map(snapshot))
     }
 
     /// Everything this session, newest first, so the frontend can rebuild its
