@@ -134,6 +134,17 @@ then, on first open right-click the app and choose Open, or run
 
 <br>
 
+## The field guide
+
+A short booklet covering what NotebookLab is, why every answer carries its
+source, and how to get from download to a first answer. Eleven pages,
+including a note from both of us on why we built it this way.
+
+**[Read the booklet](docs/notebooklab-booklet.pdf)** &middot; the reference
+cards and brand assets are in the [press kit](docs/press-kit/).
+
+<br>
+
 ## Develop
 
 You need [Node.js](https://nodejs.org/) 22+ and [Rust](https://rustup.rs/) 1.89+.
