@@ -21,6 +21,7 @@ import { Link } from "react-router";
 import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
 import { ROUTES } from "@/lib/constants";
 import { useNotebookStore } from "@/stores/notebook-store";
+import { tauriInvoke } from "@/services/tauri-client";
 import { formatError } from "@/lib/format-error";
 import { usePersistentDraft, useRetainedState } from "@/lib/use-persistent-draft";
 import { NotebookScope } from "@/components/shared/notebook-scope";
