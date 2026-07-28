@@ -101,9 +101,14 @@ pub fn register_detected(router: &mut ProviderRouter, detected: Vec<DetectedProv
         let provider =
             OpenAiCompatibleProvider::with_kind(d.name.clone(), d.kind, d.url, None, d.model, true);
         let index = router.register_or_replace(Box::new(provider));
+        /* Activate the first one found, then keep registering the rest.
+        This used to return, which ended the whole function rather than the
+        iteration, so a machine running both Ollama and LM Studio showed only
+        one of them on the Models page. It only ever bit on a fresh install,
+        because once something is active the condition is false and every
+        provider registers, which is why a manual re-scan appeared to fix it. */
         if router.active_name().is_none() && router.set_active(index).is_ok() {
             tracing::info!("Auto-activated provider: {} (index {index})", d.name);
-            return;
         }
     }
 }
