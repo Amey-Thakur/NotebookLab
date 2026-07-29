@@ -80,12 +80,20 @@ impl OpenAiCompatibleProvider {
     }
 }
 
-/// How long to wait for a model running on this computer. Long enough for a
-/// small model on a busy CPU, short enough that automatic selection can give
-/// up and fall back to a working provider without the user staring at a
-/// spinner for ten minutes. A model that needs longer than this is the wrong
-/// size for the machine (see the bundled catalog's guidance).
-const LOCAL_REQUEST_TIMEOUT: Duration = Duration::from_secs(240);
+/// How long to wait for a model running on this computer.
+///
+/// This was four minutes, chosen so a stalled provider could not leave the user
+/// "staring at a spinner". That reasoning no longer holds, and the limit was
+/// cutting off work that was going perfectly well: a 2000-token script from a
+/// local model on a CPU runs at a few tokens a second, which is fifteen minutes
+/// of legitimate work, and every feature failed at exactly 4m00s with "the model
+/// did not answer in time" while the model was still writing.
+///
+/// There is no blind spinner any more. A generation reports its phase, a
+/// percentage and an estimate, and the user can stop it whenever they like. So
+/// the ceiling exists only to catch a server that has genuinely died, and it can
+/// be generous enough not to punish a slow machine for being slow.
+const LOCAL_REQUEST_TIMEOUT: Duration = Duration::from_secs(1800);
 /// How long to wait for a hosted endpoint.
 const CLOUD_REQUEST_TIMEOUT: Duration = Duration::from_secs(120);
 
