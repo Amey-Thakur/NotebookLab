@@ -272,12 +272,26 @@ pub fn call_llm_streaming(
         purpose: TaskPurpose::Balanced,
     };
 
-    let response = if providers.active_supports_streaming() {
-        providers.stream_chat_completion(request, on_token)
+    let streaming = providers.active_supports_streaming();
+    let outcome = if streaming {
+        providers.stream_chat_completion(request.clone(), on_token)
     } else {
-        providers.chat_completion(request)
-    }
-    .map_err(|e| AppError::Provider(e.to_string()))?;
+        providers.chat_completion(request.clone())
+    };
+
+    /* A stream that fails, or ends having said nothing, is retried without it.
+    Some servers advertise the endpoint and then behave differently under
+    `stream: true`, and the user should get their answer either way. */
+    let response = match outcome {
+        Ok(response) if !response.content.trim().is_empty() => response,
+        other => if streaming {
+            tracing::warn!("Chat stream unusable, retrying without streaming");
+            providers.chat_completion(request)
+        } else {
+            other
+        }
+        .map_err(|e| AppError::Provider(e.to_string()))?,
+    };
 
     Ok(response.content)
 }
