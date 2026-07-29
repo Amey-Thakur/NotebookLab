@@ -259,6 +259,7 @@ impl LlmProvider for OpenAiCompatibleProvider {
         }
 
         let mut answer = String::new();
+        let mut usage = None;
         let reader = BufReader::new(response);
         for line in reader.lines() {
             let line = line.map_err(|e| {
@@ -268,6 +269,13 @@ impl LlmProvider for OpenAiCompatibleProvider {
                 StreamEvent::Token(text) => {
                     on_token(&text);
                     answer.push_str(&text);
+                }
+                StreamEvent::Usage(prompt_tokens, completion_tokens, total_tokens) => {
+                    usage = Some(TokenUsage {
+                        prompt_tokens,
+                        completion_tokens,
+                        total_tokens,
+                    });
                 }
                 StreamEvent::Done => break,
                 StreamEvent::Ignore => {}
@@ -286,10 +294,9 @@ impl LlmProvider for OpenAiCompatibleProvider {
         Ok(ChatResponse {
             content: crate::utils::text_utils::strip_reasoning_block(&answer).to_string(),
             model: self.model.clone(),
-            /* Streamed responses carry usage only if the server was asked for
-            it, and not every one supports that; the caller treats None as
-            "unknown" rather than zero. */
-            usage: None,
+            /* Present only when the server volunteered it in the final chunk;
+            None means unknown rather than zero. */
+            usage,
         })
     }
 
@@ -398,6 +405,9 @@ struct StreamDelta {
 pub enum StreamEvent {
     /// Text to append to the answer.
     Token(String),
+    /// Token counts, which some servers report in the final chunk. Captured
+    /// rather than discarded so the usage display stays real for those.
+    Usage(u32, u32, u32),
     /// The server said it is finished.
     Done,
     /// A keep-alive, a comment, or a field this client does not use.
@@ -424,15 +434,21 @@ pub fn parse_stream_line(line: &str) -> StreamEvent {
         return StreamEvent::Done;
     }
     match serde_json::from_str::<StreamChunk>(payload) {
-        Ok(chunk) => match chunk
-            .choices
-            .into_iter()
-            .next()
-            .and_then(|c| c.delta.content)
-        {
-            Some(text) if !text.is_empty() => StreamEvent::Token(text),
-            _ => StreamEvent::Ignore,
-        },
+        Ok(chunk) => {
+            if let Some(text) = chunk
+                .choices
+                .into_iter()
+                .next()
+                .and_then(|c| c.delta.content)
+                .filter(|t| !t.is_empty())
+            {
+                return StreamEvent::Token(text);
+            }
+            match chunk.usage {
+                Some(u) => StreamEvent::Usage(u.prompt_tokens, u.completion_tokens, u.total_tokens),
+                None => StreamEvent::Ignore,
+            }
+        }
         /* A malformed chunk is not worth failing a whole answer over: servers
         occasionally emit padding, and the stream recovers on the next line. */
         Err(_) => StreamEvent::Ignore,
@@ -481,6 +497,20 @@ mod stream_tests {
         /* One bad line must not fail an otherwise good answer. */
         assert_eq!(parse_stream_line("data: {not json"), StreamEvent::Ignore);
         assert_eq!(parse_stream_line("event: message"), StreamEvent::Ignore);
+    }
+
+    #[test]
+    fn captures_usage_when_a_server_reports_it() {
+        let line = r#"data: {"choices":[],"usage":{"prompt_tokens":10,"completion_tokens":5,"total_tokens":15}}"#;
+        assert_eq!(parse_stream_line(line), StreamEvent::Usage(10, 5, 15));
+    }
+
+    #[test]
+    fn prefers_content_over_usage_in_the_same_chunk() {
+        /* Content is what the user is waiting for; usage can wait for the next
+        chunk or be missed entirely without harm. */
+        let line = r#"data: {"choices":[{"delta":{"content":"hi"}}],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}"#;
+        assert_eq!(parse_stream_line(line), StreamEvent::Token("hi".into()));
     }
 
     #[test]
