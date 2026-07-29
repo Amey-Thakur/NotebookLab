@@ -236,12 +236,26 @@ fn build_note_map(conn: &Connection, notebook_id: &str) -> String {
     )
 }
 
+/// Most an answer from a model on this computer is allowed to run to.
+///
+/// The same reasoning as the generation features: time to answer scales with
+/// tokens written, and a small model on a CPU writes slowly enough that a
+/// 2048-token ceiling is minutes of silence. A chat answer rarely needs to be
+/// that long anyway, and a shorter reply that arrives beats a longer one that
+/// times out.
+const LOCAL_CHAT_MAX_TOKENS: u32 = 900;
+
 /// Phase 2: Call LLM provider (no locks needed).
 pub fn call_llm(providers: &ProviderRouter, context: &RagContext) -> AppResult<String> {
+    let (_, is_local) = providers.active_profile();
     let response = providers
         .chat_completion(ChatRequest {
             messages: context.messages.clone(),
-            max_tokens: Some(2048),
+            max_tokens: Some(if is_local {
+                LOCAL_CHAT_MAX_TOKENS
+            } else {
+                2048
+            }),
             temperature: Some(0.3),
             purpose: TaskPurpose::Balanced,
         })

@@ -49,6 +49,22 @@ const TICK: Duration = Duration::from_millis(600);
 /// at 100% while the user keeps waiting is the exact failure this replaces.
 const ESTIMATE_CEILING: f32 = 0.95;
 
+/// Most a model on this computer is asked to write.
+///
+/// Generation time is roughly linear in tokens produced, and a small model on a
+/// CPU manages single-digit tokens per second. Two thousand tokens is therefore
+/// several minutes of writing before a single word appears. This is the length
+/// that comes back in about a minute on the hardware the app is aimed at.
+const LOCAL_MAX_TOKENS: u32 = 900;
+
+/// Most of the prompt a model on this computer is asked to read.
+///
+/// Reading is not free either: the whole prompt is processed before the first
+/// token is written, so an eight-thousand-token context adds minutes to a reply
+/// that has not started. Roughly 1500 tokens of sources, which is enough for a
+/// grounded answer and short enough to be read quickly.
+const LOCAL_PROMPT_CHARS: usize = 6000;
+
 /// What to generate, and how to label it while it runs.
 pub struct Generation {
     /// Feature family, e.g. "audio" or "studio". The frontend routes a finished
@@ -110,7 +126,7 @@ pub fn spawn(
             }
 
             handle.begin(jobs, PHASE_PROMPT);
-            let user_content = compose(&context);
+            let composed = compose(&context);
             handle.finish_phase(jobs, PHASE_PROMPT);
             if handle.cancelled() {
                 return Err(AppError::Internal(CANCELLED.into()));
@@ -123,6 +139,25 @@ pub fn spawn(
             than averaged into one meaningless number. */
             let (key, is_local) = providers.active_profile();
             let expected = jobs.expected_generate_secs(&key, is_local);
+
+            /* Size the request to the machine. A hosted model reads eight
+            thousand tokens and writes two thousand in seconds; a 3B model on a
+            CPU does perhaps ten tokens a second, so the same request is twenty
+            minutes of work and reads as a hang however patient the timeout is.
+            Asking a local model for less produces a shorter answer, which beats
+            a longer one the user never receives. */
+            let (user_content, max_tokens) = if is_local {
+                (
+                    crate::utils::text_utils::truncate_to_char_boundary(
+                        &composed,
+                        LOCAL_PROMPT_CHARS,
+                    )
+                    .to_string(),
+                    spec.max_tokens.min(LOCAL_MAX_TOKENS),
+                )
+            } else {
+                (composed, spec.max_tokens)
+            };
 
             let started = Instant::now();
             let ticker = Ticker::start(&app, &handle, expected);
@@ -138,7 +173,7 @@ pub fn spawn(
                             content: user_content,
                         },
                     ],
-                    max_tokens: Some(spec.max_tokens),
+                    max_tokens: Some(max_tokens),
                     temperature: Some(spec.temperature),
                     purpose: spec.purpose,
                 })
