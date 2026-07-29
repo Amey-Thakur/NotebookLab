@@ -18,6 +18,8 @@ use tauri::{Manager, State};
 use crate::database::models::{Conversation, Message};
 use crate::database::repository::conversation_repository::{self, CitationSource};
 use crate::error::{AppError, AppResult};
+use crate::services::job_runner;
+use crate::services::job_service::{PHASE_FINALIZE, PHASE_GENERATE, PHASE_PROMPT, PHASE_SOURCES};
 use crate::services::rag_service;
 use crate::state::AppState;
 
@@ -37,13 +39,21 @@ pub fn start_chat(
     rag_service::start_conversation(&conn, &notebook_id, title)
 }
 
+/// Send a message and return the job id that will carry the answer.
+///
+/// This used to run the whole exchange inside the command while the frontend
+/// awaited it. The answer was saved to the database either way, so the work was
+/// never lost, but nothing told the user it was still coming: leaving Chat and
+/// returning showed their question sitting alone with no reply and no sign that
+/// one was on its way. As a job it reports the same phases as every other
+/// feature, and rejoining the page rejoins the work.
 #[tauri::command(rename_all = "snake_case")]
-pub async fn send_chat_message(
+pub fn send_chat_message(
     app: tauri::AppHandle,
     conversation_id: String,
     notebook_id: String,
     message: String,
-) -> AppResult<ChatResponse> {
+) -> AppResult<String> {
     if message.trim().is_empty() {
         return Err(AppError::InvalidInput("Message cannot be empty".into()));
     }
@@ -54,12 +64,19 @@ pub async fn send_chat_message(
         ));
     }
 
-    tauri::async_runtime::spawn_blocking(move || {
-        let state: State<'_, AppState> = app.state();
+    /* The label is the question itself, trimmed: with several generations in
+    flight the status bar has to say which one this is. */
+    let label = crate::utils::text_utils::truncate_to_char_boundary(message.trim(), 48).to_string();
 
-        /* Phase 0: Embed the question for semantic retrieval, when supported,
-        and read the planned model's context window so retrieval packs to what
-        will actually fit. Read lock only; other reads proceed concurrently. */
+    let nb = notebook_id.clone();
+    job_runner::spawn_task(&app, "chat", &nb, &label, move |app, handle| {
+        let state: State<'_, AppState> = app.state();
+        let jobs = &state.jobs;
+
+        /* Phase 0/1: embed the question, read the planned context window, then
+        search and assemble. Both DB and provider locks are released before the
+        model call, exactly as before. */
+        handle.begin(jobs, PHASE_SOURCES);
         let (query_vector, context_window) = {
             let providers = state.provider_read()?;
             (
@@ -67,8 +84,6 @@ pub async fn send_chat_message(
                 providers.planned_context_window(),
             )
         };
-
-        /* Phase 1: DB read (search + history). Lock released after this block. */
         let rag_context = {
             let conn = state.conn()?;
             rag_service::prepare_rag_context(
@@ -80,14 +95,23 @@ pub async fn send_chat_message(
                 context_window,
             )?
         };
+        handle.finish_phase(jobs, PHASE_SOURCES);
+        handle.begin(jobs, PHASE_PROMPT);
+        handle.finish_phase(jobs, PHASE_PROMPT);
+        if handle.cancelled() {
+            return Err(AppError::Internal("cancelled".into()));
+        }
 
-        /* Phase 2: LLM call. No db lock held. Other commands can proceed. */
+        /* Phase 2: the model call, with no lock held. */
+        handle.begin(jobs, PHASE_GENERATE);
         let response_content = {
             let providers = state.provider_read()?;
             rag_service::call_llm(&providers, &rag_context)?
         };
+        handle.finish_phase(jobs, PHASE_GENERATE);
 
-        /* Phase 3: Save response + citations. Re-acquire DB lock. */
+        /* Phase 3: save the answer and its citations. */
+        handle.begin(jobs, PHASE_FINALIZE);
         let message_id = {
             let conn = state.conn()?;
             rag_service::save_response(
@@ -97,14 +121,14 @@ pub async fn send_chat_message(
                 &rag_context.sources,
             )?
         };
+        handle.finish_phase(jobs, PHASE_FINALIZE);
 
-        Ok(ChatResponse {
+        serde_json::to_string(&ChatResponse {
             message_id,
             content: response_content,
         })
+        .map_err(|e| AppError::Internal(format!("Could not encode the reply: {e}")))
     })
-    .await
-    .map_err(|e| AppError::Internal(format!("Chat task failed: {e}")))?
 }
 
 /// Fetch the sources cited by an assistant message for display in the chat UI.
