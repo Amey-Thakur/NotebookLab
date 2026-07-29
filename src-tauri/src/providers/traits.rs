@@ -124,8 +124,12 @@ pub enum ProviderError {
 /// between "pick a smaller model" and "start the server".
 pub fn describe_transport_error(error: &reqwest::Error) -> String {
     if error.is_timeout() {
-        "The model did not answer in time. It is likely too large for this \
-         computer; pick a smaller model in Models."
+        /* Reaching the ceiling now means half an hour, not four minutes, so a
+        model that hits it really is the wrong size for the machine rather than
+        merely slow. The advice can be specific about that. */
+        "The model ran for half an hour without finishing. That usually means \
+         it is too large for this computer: try a 3 to 4B model in Models, or \
+         add a cloud provider for long pieces."
             .to_string()
     } else if error.is_connect() {
         "Could not connect to the model server. Check that it is running in Models.".to_string()
