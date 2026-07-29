@@ -247,19 +247,37 @@ const LOCAL_CHAT_MAX_TOKENS: u32 = 900;
 
 /// Phase 2: Call LLM provider (no locks needed).
 pub fn call_llm(providers: &ProviderRouter, context: &RagContext) -> AppResult<String> {
+    call_llm_streaming(providers, context, &mut |_| {})
+}
+
+/// Phase 2, reporting the answer as it is written.
+///
+/// Chat is where waiting is felt most: the user has asked a question and is
+/// watching for the reply. Streaming turns minutes of nothing into words
+/// appearing, without changing what is finally saved.
+pub fn call_llm_streaming(
+    providers: &ProviderRouter,
+    context: &RagContext,
+    on_token: &mut dyn FnMut(&str),
+) -> AppResult<String> {
     let (_, is_local) = providers.active_profile();
-    let response = providers
-        .chat_completion(ChatRequest {
-            messages: context.messages.clone(),
-            max_tokens: Some(if is_local {
-                LOCAL_CHAT_MAX_TOKENS
-            } else {
-                2048
-            }),
-            temperature: Some(0.3),
-            purpose: TaskPurpose::Balanced,
-        })
-        .map_err(|e| AppError::Provider(e.to_string()))?;
+    let request = ChatRequest {
+        messages: context.messages.clone(),
+        max_tokens: Some(if is_local {
+            LOCAL_CHAT_MAX_TOKENS
+        } else {
+            2048
+        }),
+        temperature: Some(0.3),
+        purpose: TaskPurpose::Balanced,
+    };
+
+    let response = if providers.active_supports_streaming() {
+        providers.stream_chat_completion(request, on_token)
+    } else {
+        providers.chat_completion(request)
+    }
+    .map_err(|e| AppError::Provider(e.to_string()))?;
 
     Ok(response.content)
 }
