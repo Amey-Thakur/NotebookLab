@@ -25,7 +25,7 @@
  * Date: 2026-07-28
  */
 
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -203,42 +203,57 @@ pub fn spawn(
             };
 
             let started = Instant::now();
-            let response = if providers.active_supports_streaming() {
-                /* Measured progress. Words arriving against the ceiling asked
-                for is a real fraction of the work, so the bar no longer has to
-                extrapolate from how long previous runs took. */
-                let banked = handle.done_weight();
-                let id = handle.id.clone();
-                let app_for_tokens = app.clone();
-                let mut written = 0usize;
-                let mut last_report = Instant::now();
+
+            /* Tokens written so far, shared with the ticker.
+            The first version reported progress from inside the token
+            callback, which made the bar depend entirely on the model
+            producing something: a stream that stayed quiet left it frozen at
+            the phase boundary with no elapsed time and no estimate, which is
+            indistinguishable from the app having died. The ticker always
+            runs now and takes whichever signal is further along, so the bar
+            moves on time alone and sharpens to a real measurement once words
+            start arriving. */
+            let written = Arc::new(AtomicUsize::new(0));
+            let streaming = providers.active_supports_streaming();
+
+            let ticker = Ticker::start(
+                &app,
+                &handle,
+                expected,
+                streaming.then(|| (Arc::clone(&written), max_tokens)),
+            );
+
+            let outcome = if streaming {
+                let counted = Arc::clone(&written);
                 let mut on_token = |fragment: &str| {
-                    written += approximate_tokens(fragment);
-                    /* Throttled: a fast model emits hundreds of fragments a
-                    second and each report crosses to the webview. */
-                    if last_report.elapsed() >= TICK {
-                        last_report = Instant::now();
-                        let within =
-                            (written as f32 / max_tokens.max(1) as f32).min(ESTIMATE_CEILING);
-                        let state: tauri::State<'_, AppState> = app_for_tokens.state();
-                        state
-                            .jobs
-                            .report(&app_for_tokens, &id, PHASE_GENERATE, banked, within);
-                    }
+                    counted.fetch_add(approximate_tokens(fragment), Ordering::Relaxed);
                 };
-                providers
-                    .stream_chat_completion(request, &mut on_token)
-                    .map_err(|e| AppError::Provider(e.to_string()))
+                providers.stream_chat_completion(request.clone(), &mut on_token)
             } else {
-                /* No stream to measure, so fall back to advancing against how
-                long this model has taken before. */
-                let ticker = Ticker::start(&app, &handle, expected);
-                let result = providers
-                    .chat_completion(request)
-                    .map_err(|e| AppError::Provider(e.to_string()));
-                ticker.stop();
-                result
+                providers.chat_completion(request.clone())
             };
+
+            /* A stream that fails, or finishes having said nothing, is retried
+            without streaming. Servers advertise the endpoint and then behave
+            differently under `stream: true`, and the user should get their
+            answer rather than a report about transport. */
+            let outcome = match outcome {
+                Ok(response) if !response.content.trim().is_empty() => Ok(response),
+                other => {
+                    if streaming {
+                        if let Err(ref e) = other {
+                            tracing::warn!("Streaming failed, retrying without it: {e}");
+                        } else {
+                            tracing::warn!("Stream produced nothing, retrying without it");
+                        }
+                        providers.chat_completion(request)
+                    } else {
+                        other
+                    }
+                }
+            };
+            ticker.stop();
+            let response = outcome.map_err(|e| AppError::Provider(e.to_string()));
             drop(providers);
 
             let response = response?;
@@ -298,13 +313,24 @@ fn size_request(prompt: &str, max_tokens: u32, is_local: bool) -> (String, u32) 
 const CANCELLED: &str = "cancelled";
 
 /// Advances the generate phase on a timer while the model call blocks.
-struct Ticker {
+///
+/// Public so features that drive their own phases, such as Chat, get the same
+/// guarantee that the bar keeps moving whatever the provider does.
+pub struct Ticker {
     stop: Arc<AtomicBool>,
     thread: Option<std::thread::JoinHandle<()>>,
 }
 
 impl Ticker {
-    fn start(app: &AppHandle, handle: &JobHandle, expected: f32) -> Self {
+    /// `tokens` carries a live count and the ceiling it is measured against,
+    /// when the provider streams. Without it the phase advances on elapsed time
+    /// against what this model has taken before.
+    pub fn start(
+        app: &AppHandle,
+        handle: &JobHandle,
+        expected: f32,
+        tokens: Option<(Arc<AtomicUsize>, u32)>,
+    ) -> Self {
         let stop = Arc::new(AtomicBool::new(false));
         let flag = Arc::clone(&stop);
         let app = app.clone();
@@ -318,8 +344,22 @@ impl Ticker {
                 if flag.load(Ordering::SeqCst) {
                     break;
                 }
-                let within =
-                    (started.elapsed().as_secs_f32() / expected.max(1.0)).min(ESTIMATE_CEILING);
+
+                let by_time = started.elapsed().as_secs_f32() / expected.max(1.0);
+                /* Whichever signal is further along. Time keeps the bar moving
+                when the model is quiet; the token count overtakes it once the
+                answer is genuinely being written, which is the honest
+                measurement. */
+                let within = match &tokens {
+                    Some((counter, ceiling)) => {
+                        let by_tokens =
+                            counter.load(Ordering::Relaxed) as f32 / (*ceiling).max(1) as f32;
+                        by_time.max(by_tokens)
+                    }
+                    None => by_time,
+                }
+                .min(ESTIMATE_CEILING);
+
                 let state: tauri::State<'_, AppState> = app.state();
                 state.jobs.report(&app, &id, PHASE_GENERATE, banked, within);
             }
@@ -331,7 +371,7 @@ impl Ticker {
         }
     }
 
-    fn stop(mut self) {
+    pub fn stop(mut self) {
         self.halt();
     }
 

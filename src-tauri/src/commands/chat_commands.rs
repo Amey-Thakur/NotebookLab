@@ -23,6 +23,11 @@ use crate::services::job_service::{PHASE_FINALIZE, PHASE_GENERATE, PHASE_PROMPT,
 use crate::services::rag_service;
 use crate::state::AppState;
 
+/// Roughly how long a chat answer runs to, for turning a token count into a
+/// fraction. Only used to move a progress bar, so the exact value matters less
+/// than it being in the right region.
+const CHAT_ANSWER_CEILING: u32 = 900;
+
 /// The channel Chat listens on for an answer being written.
 pub const CHAT_PARTIAL_EVENT: &str = "chat-partial";
 
@@ -113,17 +118,33 @@ pub fn send_chat_message(
             return Err(AppError::Internal("cancelled".into()));
         }
 
-        /* Phase 2: the model call, with no lock held. The answer is emitted as
-        it is written so Chat can show it appearing rather than waiting for the
-        whole reply, which on a local model is the difference between a few
-        seconds and a few minutes of silence. */
+        /* Phase 2: the model call, with no lock held.
+
+        The answer is emitted as it is written so Chat can show it appearing
+        rather than waiting for the whole reply. A ticker runs alongside so the
+        bar advances even when the model is slow to say anything: reporting only
+        from the token callback left it frozen at the phase boundary whenever a
+        stream stayed quiet, which looks exactly like a hang. */
         handle.begin(jobs, PHASE_GENERATE);
         let response_content = {
             let providers = state.provider_read()?;
+            let (key, is_local) = providers.active_profile();
+            let expected = jobs.expected_generate_secs(&key, is_local);
+            let written = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+
+            let ticker = job_runner::Ticker::start(
+                app,
+                handle,
+                expected,
+                Some((std::sync::Arc::clone(&written), CHAT_ANSWER_CEILING)),
+            );
+
+            let counted = std::sync::Arc::clone(&written);
             let mut partial = String::new();
             let mut last = std::time::Instant::now();
             let mut on_token = |fragment: &str| {
                 partial.push_str(fragment);
+                counted.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 /* Throttled: a fast model emits hundreds of fragments a second
                 and each one crossing to the webview would swamp it. */
                 if last.elapsed() >= std::time::Duration::from_millis(120) {
@@ -138,7 +159,9 @@ pub fn send_chat_message(
                     .ok();
                 }
             };
-            rag_service::call_llm_streaming(&providers, &rag_context, &mut on_token)?
+            let answer = rag_service::call_llm_streaming(&providers, &rag_context, &mut on_token);
+            ticker.stop();
+            answer?
         };
         handle.finish_phase(jobs, PHASE_GENERATE);
 
