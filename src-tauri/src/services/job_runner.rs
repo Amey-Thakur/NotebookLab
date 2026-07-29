@@ -184,24 +184,7 @@ pub fn spawn(
             let (key, is_local) = providers.active_profile();
             let expected = jobs.expected_generate_secs(&key, is_local);
 
-            /* Size the request to the machine. A hosted model reads eight
-            thousand tokens and writes two thousand in seconds; a 3B model on a
-            CPU does perhaps ten tokens a second, so the same request is twenty
-            minutes of work and reads as a hang however patient the timeout is.
-            Asking a local model for less produces a shorter answer, which beats
-            a longer one the user never receives. */
-            let (user_content, max_tokens) = if is_local {
-                (
-                    crate::utils::text_utils::truncate_to_char_boundary(
-                        &composed,
-                        LOCAL_PROMPT_CHARS,
-                    )
-                    .to_string(),
-                    spec.max_tokens.min(LOCAL_MAX_TOKENS),
-                )
-            } else {
-                (composed, spec.max_tokens)
-            };
+            let (user_content, max_tokens) = size_request(&composed, spec.max_tokens, is_local);
 
             let started = Instant::now();
             let ticker = Ticker::start(&app, &handle, expected);
@@ -245,6 +228,26 @@ pub fn spawn(
     });
 
     Ok(job_id)
+}
+
+/// Fit a request to the machine that will answer it.
+///
+/// A hosted model reads eight thousand tokens and writes two thousand in
+/// seconds. A 3B model on a CPU manages single-digit tokens per second, so the
+/// same request is twenty minutes of work and reads as a hang however patient
+/// the timeout is. Asking a local model for less produces a shorter answer,
+/// which beats a longer one the user never receives.
+///
+/// Cloud requests are returned untouched: there is no reason to shorten an
+/// answer from a model that can write it quickly.
+fn size_request(prompt: &str, max_tokens: u32, is_local: bool) -> (String, u32) {
+    if !is_local {
+        return (prompt.to_string(), max_tokens);
+    }
+    (
+        crate::utils::text_utils::truncate_to_char_boundary(prompt, LOCAL_PROMPT_CHARS).to_string(),
+        max_tokens.min(LOCAL_MAX_TOKENS),
+    )
 }
 
 /// Marker for the early return taken when the user cancels between phases. It
@@ -304,5 +307,54 @@ impl Drop for Ticker {
     /// reporting progress for a job that is already over.
     fn drop(&mut self) {
         self.halt();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_cloud_request_is_left_alone() {
+        let long = "x".repeat(LOCAL_PROMPT_CHARS * 3);
+        let (prompt, tokens) = size_request(&long, 2048, false);
+        assert_eq!(prompt.len(), long.len(), "cloud prompts are not truncated");
+        assert_eq!(tokens, 2048, "cloud answers keep their full length");
+    }
+
+    #[test]
+    fn a_local_request_is_cut_to_fit() {
+        let long = "x".repeat(LOCAL_PROMPT_CHARS * 3);
+        let (prompt, tokens) = size_request(&long, 2048, true);
+        assert!(prompt.len() <= LOCAL_PROMPT_CHARS);
+        assert_eq!(tokens, LOCAL_MAX_TOKENS);
+    }
+
+    #[test]
+    fn a_short_local_request_is_not_padded_or_raised() {
+        /* Sizing is a ceiling, not a target: a feature that asks for less than
+        the local limit must still get what it asked for. */
+        let (prompt, tokens) = size_request("short prompt", 300, true);
+        assert_eq!(prompt, "short prompt");
+        assert_eq!(tokens, 300);
+    }
+
+    #[test]
+    fn truncation_never_splits_a_character() {
+        /* Cutting a multi-byte character in half panics on the slice, which
+        would take down the job for any notebook containing non-ASCII text. */
+        let text = "é".repeat(LOCAL_PROMPT_CHARS);
+        let (prompt, _) = size_request(&text, 900, true);
+        assert!(prompt.len() <= LOCAL_PROMPT_CHARS);
+        assert!(
+            text.starts_with(&prompt),
+            "the cut is a prefix of the input"
+        );
+    }
+
+    #[test]
+    fn local_max_tokens_helper_agrees_with_sizing() {
+        assert_eq!(local_max_tokens(2048), LOCAL_MAX_TOKENS);
+        assert_eq!(local_max_tokens(100), 100);
     }
 }
