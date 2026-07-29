@@ -127,6 +127,11 @@ pub fn run() {
                         services::auto_setup_service::register_detected(&mut providers, detected);
                     }
                 }
+
+                /* Keep looking. Detection used to stop here, so a server the
+                user started a moment later was never noticed and the app
+                insisted there was no model. */
+                services::auto_setup_service::watch_local_providers(handle.clone());
             });
 
             /* Check for updates in the background. When a new version has

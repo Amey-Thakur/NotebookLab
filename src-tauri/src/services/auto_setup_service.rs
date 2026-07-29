@@ -159,3 +159,68 @@ mod tests {
         assert_eq!(extract_model_name("not json", "fallback"), "fallback");
     }
 }
+
+/// How often to look for a local server while none is active.
+///
+/// The user in this state is waiting to start work, so the app should notice
+/// their server within a few seconds of them starting it rather than making
+/// them find the rescan button.
+const EAGER_INTERVAL: std::time::Duration = std::time::Duration::from_secs(5);
+
+/// How often to look once something is already answering. Slower, because
+/// nothing is blocked; this only keeps the Models list honest when another
+/// server appears later.
+const IDLE_INTERVAL: std::time::Duration = std::time::Duration::from_secs(60);
+
+/// Watch for local model servers for as long as the app runs.
+///
+/// Detection used to happen exactly once, during startup. Anyone who started
+/// Ollama or a llama.cpp server *after* opening NotebookLab was told there was
+/// no model, and the only way out was to know that Models has a rescan button.
+/// Starting a server is the most likely thing a user does right before trying
+/// to generate something, so that was precisely the wrong moment to stop
+/// looking.
+///
+/// Registration is safe to repeat: `register_or_replace` updates in place, and
+/// activation only happens when nothing is active, so a user's chosen model is
+/// never taken over by whatever answered a probe.
+pub fn watch_local_providers(app: tauri::AppHandle) {
+    use tauri::{Emitter, Manager};
+
+    std::thread::spawn(move || loop {
+        let state: tauri::State<'_, crate::state::AppState> = app.state();
+
+        let (existing, had_active) = match state.provider_read() {
+            Ok(providers) => (
+                provider_names(&providers),
+                providers.active_name().is_some(),
+            ),
+            Err(_) => (Vec::new(), false),
+        };
+
+        let detected = probe_local_providers(&existing);
+        if !detected.is_empty() {
+            if let Ok(mut providers) = state.provider_write() {
+                register_detected(&mut providers, detected);
+            }
+        }
+
+        /* Tell the frontend only when this changed something it is showing, so
+        a window sitting idle is not woken every five seconds. */
+        let now_active = state
+            .provider_read()
+            .ok()
+            .and_then(|p| p.active_name())
+            .is_some();
+        if now_active && !had_active {
+            tracing::info!("A local model became available");
+            app.emit("providers-changed", ()).ok();
+        }
+
+        std::thread::sleep(if now_active {
+            IDLE_INTERVAL
+        } else {
+            EAGER_INTERVAL
+        });
+    });
+}
