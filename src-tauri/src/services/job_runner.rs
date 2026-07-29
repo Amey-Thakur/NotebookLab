@@ -186,26 +186,59 @@ pub fn spawn(
 
             let (user_content, max_tokens) = size_request(&composed, spec.max_tokens, is_local);
 
+            let request = ChatRequest {
+                messages: vec![
+                    ChatMessage {
+                        role: MessageRole::System,
+                        content: spec.system_prompt,
+                    },
+                    ChatMessage {
+                        role: MessageRole::User,
+                        content: user_content,
+                    },
+                ],
+                max_tokens: Some(max_tokens),
+                temperature: Some(spec.temperature),
+                purpose: spec.purpose,
+            };
+
             let started = Instant::now();
-            let ticker = Ticker::start(&app, &handle, expected);
-            let response = providers
-                .chat_completion(ChatRequest {
-                    messages: vec![
-                        ChatMessage {
-                            role: MessageRole::System,
-                            content: spec.system_prompt,
-                        },
-                        ChatMessage {
-                            role: MessageRole::User,
-                            content: user_content,
-                        },
-                    ],
-                    max_tokens: Some(max_tokens),
-                    temperature: Some(spec.temperature),
-                    purpose: spec.purpose,
-                })
-                .map_err(|e| AppError::Provider(e.to_string()));
-            ticker.stop();
+            let response = if providers.active_supports_streaming() {
+                /* Measured progress. Words arriving against the ceiling asked
+                for is a real fraction of the work, so the bar no longer has to
+                extrapolate from how long previous runs took. */
+                let banked = handle.done_weight();
+                let id = handle.id.clone();
+                let app_for_tokens = app.clone();
+                let mut written = 0usize;
+                let mut last_report = Instant::now();
+                let mut on_token = |fragment: &str| {
+                    written += approximate_tokens(fragment);
+                    /* Throttled: a fast model emits hundreds of fragments a
+                    second and each report crosses to the webview. */
+                    if last_report.elapsed() >= TICK {
+                        last_report = Instant::now();
+                        let within =
+                            (written as f32 / max_tokens.max(1) as f32).min(ESTIMATE_CEILING);
+                        let state: tauri::State<'_, AppState> = app_for_tokens.state();
+                        state
+                            .jobs
+                            .report(&app_for_tokens, &id, PHASE_GENERATE, banked, within);
+                    }
+                };
+                providers
+                    .stream_chat_completion(request, &mut on_token)
+                    .map_err(|e| AppError::Provider(e.to_string()))
+            } else {
+                /* No stream to measure, so fall back to advancing against how
+                long this model has taken before. */
+                let ticker = Ticker::start(&app, &handle, expected);
+                let result = providers
+                    .chat_completion(request)
+                    .map_err(|e| AppError::Provider(e.to_string()));
+                ticker.stop();
+                result
+            };
             drop(providers);
 
             let response = response?;
@@ -228,6 +261,15 @@ pub fn spawn(
     });
 
     Ok(job_id)
+}
+
+/// Rough token count for a streamed fragment.
+///
+/// Only used to move a progress bar, so being a little off is harmless; what
+/// matters is that it is monotonic and cheap enough to run on every fragment.
+/// Most fragments are a single token, which is why the floor is one.
+fn approximate_tokens(fragment: &str) -> usize {
+    fragment.split_whitespace().count().max(1)
 }
 
 /// Fit a request to the machine that will answer it.
@@ -350,6 +392,17 @@ mod tests {
             text.starts_with(&prompt),
             "the cut is a prefix of the input"
         );
+    }
+
+    #[test]
+    fn a_fragment_always_counts_as_progress() {
+        /* Fragments are usually one token and often have no whitespace at all.
+        Counting words would score those as zero and freeze the bar for the
+        whole answer. */
+        assert_eq!(approximate_tokens("Hello"), 1);
+        assert_eq!(approximate_tokens(" world"), 1);
+        assert_eq!(approximate_tokens(""), 1);
+        assert_eq!(approximate_tokens("two words"), 2);
     }
 
     #[test]

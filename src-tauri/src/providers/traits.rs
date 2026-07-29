@@ -43,6 +43,34 @@ pub trait LlmProvider: Send + Sync {
     /// Generate a text completion from a list of messages.
     fn chat_completion(&self, request: ChatRequest) -> Result<ChatResponse, ProviderError>;
 
+    /// Stream a completion, calling `on_token` with each fragment as it arrives.
+    ///
+    /// Progress used to be estimated: with no way to see the model working, the
+    /// bar advanced against how long generation had taken before. That is a
+    /// guess, and on an unusually slow run it reads as a stall. A token stream
+    /// replaces the guess with a measurement, and lets a long answer show itself
+    /// being written rather than appearing all at once at the end.
+    ///
+    /// The default forwards to `chat_completion` and reports the whole answer as
+    /// one fragment, so a provider that cannot stream still works and simply
+    /// behaves as it did before.
+    fn stream_chat_completion(
+        &self,
+        request: ChatRequest,
+        on_token: &mut dyn FnMut(&str),
+    ) -> Result<ChatResponse, ProviderError> {
+        let response = self.chat_completion(request)?;
+        on_token(&response.content);
+        Ok(response)
+    }
+
+    /// Whether this provider really streams, as opposed to inheriting the
+    /// default above. Callers use it to decide between measured progress and an
+    /// estimate rather than pretending a single fragment is a stream.
+    fn supports_streaming(&self) -> bool {
+        false
+    }
+
     /// Generate an embedding vector for the given text.
     /// Not all providers support this. Returns None if unsupported.
     fn embed(&self, _text: &str) -> Result<Option<Vec<f32>>, ProviderError> {

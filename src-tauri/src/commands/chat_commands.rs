@@ -13,7 +13,7 @@
  * Date: 2026-07-12
  */
 
-use tauri::{Manager, State};
+use tauri::{Emitter, Manager, State};
 
 use crate::database::models::{Conversation, Message};
 use crate::database::repository::conversation_repository::{self, CitationSource};
@@ -22,6 +22,17 @@ use crate::services::job_runner;
 use crate::services::job_service::{PHASE_FINALIZE, PHASE_GENERATE, PHASE_PROMPT, PHASE_SOURCES};
 use crate::services::rag_service;
 use crate::state::AppState;
+
+/// The channel Chat listens on for an answer being written.
+pub const CHAT_PARTIAL_EVENT: &str = "chat-partial";
+
+/// A partial answer, addressed to the conversation it belongs to so a window
+/// showing a different thread ignores it.
+#[derive(Clone, serde::Serialize)]
+pub struct ChatPartial {
+    pub conversation_id: String,
+    pub content: String,
+}
 
 #[derive(serde::Serialize)]
 pub struct ChatResponse {
@@ -102,11 +113,32 @@ pub fn send_chat_message(
             return Err(AppError::Internal("cancelled".into()));
         }
 
-        /* Phase 2: the model call, with no lock held. */
+        /* Phase 2: the model call, with no lock held. The answer is emitted as
+        it is written so Chat can show it appearing rather than waiting for the
+        whole reply, which on a local model is the difference between a few
+        seconds and a few minutes of silence. */
         handle.begin(jobs, PHASE_GENERATE);
         let response_content = {
             let providers = state.provider_read()?;
-            rag_service::call_llm(&providers, &rag_context)?
+            let mut partial = String::new();
+            let mut last = std::time::Instant::now();
+            let mut on_token = |fragment: &str| {
+                partial.push_str(fragment);
+                /* Throttled: a fast model emits hundreds of fragments a second
+                and each one crossing to the webview would swamp it. */
+                if last.elapsed() >= std::time::Duration::from_millis(120) {
+                    last = std::time::Instant::now();
+                    app.emit(
+                        CHAT_PARTIAL_EVENT,
+                        ChatPartial {
+                            conversation_id: conversation_id.clone(),
+                            content: partial.clone(),
+                        },
+                    )
+                    .ok();
+                }
+            };
+            rag_service::call_llm_streaming(&providers, &rag_context, &mut on_token)?
         };
         handle.finish_phase(jobs, PHASE_GENERATE);
 
