@@ -26,7 +26,7 @@ describe("formatError", () => {
       "send_chat_message",
       "Provider error: No active provider. Select a model first.",
     );
-    expect(formatError(error)).toContain("Open Models");
+    expect(formatError(error)).toContain("No AI model is connected");
   });
 
   it("maps connection failures to a plain-language hint", () => {

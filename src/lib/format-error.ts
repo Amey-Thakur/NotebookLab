@@ -20,8 +20,12 @@ interface ErrorHint {
 
 const HINTS: ErrorHint[] = [
   {
-    match: /no active provider|select a model first/i,
-    message: "No AI model is connected. Open Models and pick a provider to continue.",
+    /* Matches both the older wording and the current one, so a mismatched
+       frontend and backend never leaves the raw error showing. */
+    match: /no active provider|select a model first|no model is connected/i,
+    message:
+      "No AI model is connected. Start Ollama or a local server and NotebookLab " +
+      "will pick it up within a few seconds, or open Models to add a provider.",
   },
   {
     match: /api key not valid|invalid api key|invalid x-api-key|http 401|unauthorized/i,
