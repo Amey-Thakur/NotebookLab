@@ -22,6 +22,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS, ROUTES } from "@/lib/constants";
+import { JobProgress } from "@/components/shared/job-progress";
+import { useJobRun } from "@/features/jobs/use-job-run";
 import { DownloadButton } from "@/components/shared/download-button";
 import { downloadText, toFileName } from "@/lib/download";
 import { formatError } from "@/lib/format-error";
@@ -31,7 +33,7 @@ import { useNotebooks } from "@/features/notebooks/hooks/use-notebooks";
 import { useDropImport } from "@/features/documents/hooks/use-drop-import";
 import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
 import { CitationList } from "../components/citation-list";
-import type { Conversation, Message, ChatResponse, Document } from "@/types/models";
+import type { Conversation, Message, Document } from "@/types/models";
 
 
 /** Render a conversation as Markdown.
@@ -103,28 +105,25 @@ export function ChatPage() {
     },
   });
 
-  /* Accept explicit convoId to avoid stale closure when starting a new conversation */
-  const sendMessage = useMutation({
-    mutationFn: ({ convoId, message }: { convoId: string; message: string }) =>
-      tauriInvoke<ChatResponse>("send_chat_message", {
-        conversation_id: convoId,
-        notebook_id: activeNotebookId,
-        message,
-      }),
-    onSuccess: (_data, variables) => {
-      setPendingMessage(null);
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CHAT, variables.convoId] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CONVERSATIONS, activeNotebookId] });
-    },
-    onError: (_error, variables) => {
-      /* The backend already stored the user message; refresh so it shows,
-         and hand the draft back so retrying is one keypress away. */
-      setPendingMessage(null);
-      setInput(variables.message);
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CHAT, variables.convoId] });
-      inputRef.current?.focus();
-    },
-  });
+  /* The reply is a tracked job, so it keeps going when the user leaves Chat and
+     is still there, finished or in progress, when they come back. */
+  const send = useJobRun("send_chat_message", "notebooklab-job-chat");
+
+  /* Pull the finished answer into view. The message itself was written to the
+     database by the backend, so this only has to invalidate; the content in the
+     job result is not the source of truth. */
+  useEffect(() => {
+    if (!send.job || send.job.status !== "done") return;
+    queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CHAT, conversationId] });
+    queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CONVERSATIONS, activeNotebookId] });
+  }, [send.job, conversationId, activeNotebookId, queryClient]);
+
+  /* A failure still leaves the user's question saved, so show it and hand the
+     draft back for a one-keypress retry. */
+  useEffect(() => {
+    if (!send.error) return;
+    queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CHAT, conversationId] });
+  }, [send.error, conversationId, queryClient]);
 
   const deleteConversation = useMutation({
     mutationFn: (id: string) => tauriInvoke<void>("delete_conversation", { id }),
@@ -137,8 +136,15 @@ export function ChatPage() {
     },
   });
 
+  const ask = (convoId: string, message: string) =>
+    void send.start({
+      conversation_id: convoId,
+      notebook_id: activeNotebookId,
+      message,
+    });
+
   const handleSend = () => {
-    if (!input.trim() || sendMessage.isPending) return;
+    if (!input.trim() || send.isRunning) return;
     const msg = input.trim();
     setInput("");
     setPendingMessage(msg);
@@ -147,7 +153,7 @@ export function ChatPage() {
       startChat.mutate(undefined, {
         onSuccess: (id) => {
           setSelected(id);
-          sendMessage.mutate({ convoId: id, message: msg });
+          ask(id, msg);
         },
         onError: () => {
           setPendingMessage(null);
@@ -155,7 +161,7 @@ export function ChatPage() {
         },
       });
     } else {
-      sendMessage.mutate({ convoId: conversationId, message: msg });
+      ask(conversationId, msg);
     }
   };
 
@@ -315,7 +321,7 @@ export function ChatPage() {
 
         {/* Messages area: role=log announces new entries to screen readers */}
         <div role="log" aria-live="polite" className="flex-1 overflow-auto px-8 py-4">
-          {(!messages || messages.length === 0) && !pendingMessage && !sendMessage.isPending && (
+          {(!messages || messages.length === 0) && !pendingMessage && !send.isRunning && (
             <div className="flex items-center justify-center h-full text-text-4">
               <p className="text-sm">Start a conversation by asking a question below.</p>
             </div>
@@ -337,7 +343,7 @@ export function ChatPage() {
                 {msg.role === "assistant" && (
                   <span className="flex items-center gap-3">
                     {/* Ask the same question again, on the last answer only */}
-                    {!sendMessage.isPending &&
+                    {!send.isRunning &&
                       messages[messages.length - 1]?.id === msg.id &&
                       lastUserMessage && (
                         <button
@@ -345,7 +351,7 @@ export function ChatPage() {
                           aria-label="Ask the same question again"
                           onClick={() => {
                             setPendingMessage(lastUserMessage);
-                            sendMessage.mutate({ convoId: conversationId!, message: lastUserMessage });
+                            ask(conversationId!, lastUserMessage);
                           }}
                           className="text-2xs font-mono text-text-4 opacity-0 group-hover:opacity-100
                                      focus-visible:opacity-100 hover:text-text-1 transition-opacity"
@@ -390,16 +396,18 @@ export function ChatPage() {
             </div>
           )}
 
-          {sendMessage.isPending && (
-            <div className="mb-4 p-4 max-w-[80%] mr-auto bg-surface border border-border">
-              <div className="text-xs font-mono text-text-4 mb-2">NotebookLab</div>
-              <div className="text-sm text-text-3 animate-pulse motion-reduce:animate-none">Thinking...</div>
+          {/* Real phases and an estimate, not an endless "Thinking...". On a
+              local model an answer can take minutes, and the pulse gave no way
+              to tell working from hung. */}
+          {send.job && send.job.status === "running" && (
+            <div className="mb-4 max-w-[80%] mr-auto">
+              <JobProgress job={send.job} onCancel={send.cancel} compact />
             </div>
           )}
 
-          {sendMessage.isError && (
+          {send.error && (
             <div role="alert" className="mb-4 p-3 border border-error text-xs text-error">
-              {formatError(sendMessage.error)}
+              {send.error}
             </div>
           )}
 
@@ -440,11 +448,11 @@ export function ChatPage() {
             <button
               type="button"
               onClick={handleSend}
-              disabled={sendMessage.isPending || !input.trim()}
+              disabled={send.isRunning || !input.trim()}
               className="px-4 py-3 text-sm font-mono bg-primary text-on-primary disabled:opacity-50
                          hover:bg-primary-hover transition-colors"
             >
-              {sendMessage.isPending ? "Waiting..." : "Send"}
+              {send.isRunning ? "Waiting..." : "Send"}
             </button>
           </div>
         </div>

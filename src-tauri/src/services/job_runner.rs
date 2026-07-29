@@ -90,6 +90,50 @@ pub type Compose = Box<dyn FnOnce(&str) -> String + Send>;
 /// message, which is how a feature rejects an unusable response.
 pub type Finish = Box<dyn FnOnce(String) -> AppResult<String> + Send>;
 
+/// Run arbitrary work as a tracked job, reporting its own phases.
+///
+/// `spawn` covers the common gather-compose-generate shape. Chat does not fit
+/// it: it embeds the question before reading the database and writes the answer
+/// back afterwards, so it drives the phases itself. This gives it the same job
+/// lifecycle, cancellation and progress reporting without pretending its shape
+/// is the same.
+///
+/// The closure returns the string the job carries as its result.
+pub fn spawn_task<F>(
+    app: &AppHandle,
+    kind: &'static str,
+    notebook_id: &str,
+    label: &str,
+    work: F,
+) -> AppResult<String>
+where
+    F: FnOnce(&AppHandle, &mut crate::services::job_service::JobHandle) -> AppResult<String>
+        + Send
+        + 'static,
+{
+    let state: tauri::State<'_, AppState> = app.state();
+    let mut handle = state.jobs.start(app, kind, notebook_id, label)?;
+    let job_id = handle.id.clone();
+
+    let app = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let state: tauri::State<'_, AppState> = app.state();
+        match work(&app, &mut handle) {
+            Ok(result) => handle.succeed(&state.jobs, result),
+            Err(_) if handle.cancelled() => handle.cancel(&state.jobs),
+            Err(e) => handle.fail(&state.jobs, e.to_string()),
+        }
+    });
+
+    Ok(job_id)
+}
+
+/// The ceiling a model on this computer is held to, for callers outside this
+/// module that build their own request.
+pub fn local_max_tokens(requested: u32) -> u32 {
+    requested.min(LOCAL_MAX_TOKENS)
+}
+
 /// Start a generation and return its job id at once.
 ///
 /// The caller does not wait. Progress, the result and any error all arrive
