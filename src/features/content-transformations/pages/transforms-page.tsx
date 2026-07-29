@@ -57,17 +57,30 @@ export function TransformsPage() {
 
   const run = useJobRun("transform_document", "notebooklab-job-transform");
 
+  /* Which document and which transform the running job is for. A result can
+     arrive after the user has changed either, and showing it against the new
+     selection would present a summary of one document as if it were another. */
+  const [ranFor, setRanFor] = useRetainedState<{ doc: string; type: TransformType } | null>(
+    "notebooklab-state-transform-ran-for",
+    null,
+  );
+
   useEffect(() => {
     if (run.result) setResult(run.result);
   }, [run.result, setResult]);
 
-  const transform = () =>
+  const resultMatchesSelection =
+    !!ranFor && ranFor.doc === selectedDoc && ranFor.type === transformType;
+
+  const transform = () => {
+    setRanFor({ doc: selectedDoc, type: transformType });
     void run.start({
       document_id: selectedDoc,
       notebook_id: activeNotebookId,
       transform_type: transformType,
       custom_prompt: transformType === "custom" ? customPrompt : null,
     });
+  };
 
   if (!activeNotebookId) {
     return (
@@ -172,7 +185,7 @@ export function TransformsPage() {
           </div>
         )}
 
-        {result && (
+        {result && resultMatchesSelection && (
           <div className="p-6 border border-border bg-surface">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xs font-mono tracking-widest uppercase text-text-4">
@@ -211,7 +224,7 @@ export function TransformsPage() {
           </div>
         )}
 
-        {!result && !run.isRunning && run.ready && (
+        {(!result || !resultMatchesSelection) && !run.isRunning && run.ready && (
           <div className="flex items-center justify-center h-full text-text-4">
             <p className="text-sm">Select a document and choose a transformation.</p>
           </div>
