@@ -392,7 +392,15 @@ impl ProviderRouter {
             .read()
             .map_err(|_| ProviderError::NotAvailable("Provider router lock poisoned".into()))?;
         active.ok_or_else(|| {
-            ProviderError::NotAvailable("No active provider. Select a model first.".into())
+            /* The app is now watching for a local server rather than probing
+            once at startup, so this says what it is doing instead of implying
+            the user must go and configure something. */
+            ProviderError::NotAvailable(
+                "No model is connected yet. Start Ollama or a local server and \
+                 NotebookLab will pick it up within a few seconds, or add a \
+                 provider in Models."
+                    .into(),
+            )
         })
     }
 
