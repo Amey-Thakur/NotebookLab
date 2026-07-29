@@ -106,6 +106,41 @@ export function ChatPage() {
     },
   });
 
+  /* The answer as it is being written. The backend emits it while the model
+     works, so a long reply shows itself arriving instead of the user watching a
+     bar for minutes with nothing to read. */
+  const [streaming, setStreaming] = useState<{ conversationId: string; content: string } | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("__TAURI_INTERNALS__" in window)) return;
+    let disposed = false;
+    let unlisten: (() => void) | undefined;
+
+    void import("@tauri-apps/api/event")
+      .then(async ({ listen }) => {
+        const stop = await listen<{ conversation_id: string; content: string }>(
+          "chat-partial",
+          (event) =>
+            setStreaming({
+              conversationId: event.payload.conversation_id,
+              content: event.payload.content,
+            }),
+        );
+        if (disposed) stop();
+        else unlisten = stop;
+      })
+      .catch(() => {
+        /* No event bridge: the answer still arrives, just all at once. */
+      });
+
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, []);
+
   /* The reply is a tracked job, so it keeps going when the user leaves Chat and
      is still there, finished or in progress, when they come back. */
   const send = useJobRun("send_chat_message", "notebooklab-job-chat");
@@ -115,6 +150,9 @@ export function ChatPage() {
      job result is not the source of truth. */
   useEffect(() => {
     if (!send.job || send.job.status !== "done") return;
+    /* The partial needs no clearing here: it is only rendered while the job is
+       running, so it disappears with the bar the moment the stored message
+       arrives. It is reset when the next question is asked instead. */
     queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CHAT, conversationId] });
     queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CONVERSATIONS, activeNotebookId] });
   }, [send.job, conversationId, activeNotebookId, queryClient]);
@@ -152,6 +190,9 @@ export function ChatPage() {
   const jobIsForThisChat = !!send.job && jobConvo === conversationId;
 
   const ask = (convoId: string, message: string) => {
+    /* Drop the previous answer so the last reply cannot flash under the new
+       question before the first fragment of this one arrives. */
+    setStreaming(null);
     setJobConvo(convoId);
     return void send.start({
       conversation_id: convoId,
@@ -424,6 +465,19 @@ export function ChatPage() {
               to tell working from hung. */}
           {jobIsForThisChat && send.job!.status === "running" && (
             <div className="mb-4 max-w-[80%] mr-auto">
+              {/* Show the answer forming above the bar once there is anything
+                  to read; the bar alone gives a number but nothing to do with
+                  the wait. */}
+              {streaming && streaming.conversationId === conversationId && streaming.content && (
+                <div className="mb-2 p-4 bg-surface border border-border">
+                  <div className="text-xs font-mono text-text-4 mb-2">NotebookLab</div>
+                  <div className="text-sm font-body text-text-2 whitespace-pre-wrap leading-relaxed">
+                    {streaming.content}
+                    <span className="inline-block w-2 h-4 ml-0.5 align-text-bottom bg-accent-dim
+                                     animate-pulse motion-reduce:animate-none" />
+                  </div>
+                </div>
+              )}
               <JobProgress job={send.job!} onCancel={send.cancel} compact />
             </div>
           )}
