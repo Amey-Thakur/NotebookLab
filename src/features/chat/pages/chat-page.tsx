@@ -23,6 +23,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { tauriInvoke } from "@/services/tauri-client";
 import { QUERY_KEYS, ROUTES } from "@/lib/constants";
 import { JobProgress } from "@/components/shared/job-progress";
+import { useRetainedState } from "@/lib/use-persistent-draft";
 import { useJobRun } from "@/features/jobs/use-job-run";
 import { DownloadButton } from "@/components/shared/download-button";
 import { downloadText, toFileName } from "@/lib/download";
@@ -136,12 +137,28 @@ export function ChatPage() {
     },
   });
 
-  const ask = (convoId: string, message: string) =>
-    void send.start({
+  /* Hide the echo as soon as the real message is back from the database. */
+  const showPendingEcho =
+    !!pendingMessage &&
+    !messages?.some((m) => m.role === "user" && m.content === pendingMessage);
+
+  /* Which conversation the running job belongs to. There is one job slot for
+     Chat, so without this the progress bar for a reply in one thread would also
+     appear in whichever other thread the user opened next. */
+  const [jobConvo, setJobConvo] = useRetainedState<string | null>(
+    "notebooklab-job-chat-convo",
+    null,
+  );
+  const jobIsForThisChat = !!send.job && jobConvo === conversationId;
+
+  const ask = (convoId: string, message: string) => {
+    setJobConvo(convoId);
+    return void send.start({
       conversation_id: convoId,
       notebook_id: activeNotebookId,
       message,
     });
+  };
 
   const handleSend = () => {
     if (!input.trim() || send.isRunning) return;
@@ -168,7 +185,7 @@ export function ChatPage() {
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     messagesEndRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
-  }, [messages, pendingMessage]);
+  }, [messages, showPendingEcho]);
 
   /* Confirm a dropped import once it settles cleanly. */
   useEffect(() => {
@@ -321,7 +338,7 @@ export function ChatPage() {
 
         {/* Messages area: role=log announces new entries to screen readers */}
         <div role="log" aria-live="polite" className="flex-1 overflow-auto px-8 py-4">
-          {(!messages || messages.length === 0) && !pendingMessage && !send.isRunning && (
+          {(!messages || messages.length === 0) && !showPendingEcho && !send.isRunning && (
             <div className="flex items-center justify-center h-full text-text-4">
               <p className="text-sm">Start a conversation by asking a question below.</p>
             </div>
@@ -386,8 +403,14 @@ export function ChatPage() {
             </div>
           ))}
 
-          {/* Optimistic echo of the message being answered */}
-          {pendingMessage && (
+          {/* Optimistic echo of the message being answered.
+
+              Derived rather than cleared on completion: the backend saves the
+              user's message before it calls the model, so once the refetch
+              brings it back this echo has to disappear or the question shows
+              twice. Deciding that from the message list means it corrects
+              itself, including after leaving Chat and returning. */}
+          {showPendingEcho && (
             <div className="mb-4 p-4 max-w-[80%] ml-auto bg-surface-2 border border-border">
               <div className="text-xs font-mono text-text-4 mb-2">You</div>
               <div className="text-sm font-body text-text-2 whitespace-pre-wrap leading-relaxed">
@@ -399,9 +422,9 @@ export function ChatPage() {
           {/* Real phases and an estimate, not an endless "Thinking...". On a
               local model an answer can take minutes, and the pulse gave no way
               to tell working from hung. */}
-          {send.job && send.job.status === "running" && (
+          {jobIsForThisChat && send.job!.status === "running" && (
             <div className="mb-4 max-w-[80%] mr-auto">
-              <JobProgress job={send.job} onCancel={send.cancel} compact />
+              <JobProgress job={send.job!} onCancel={send.cancel} compact />
             </div>
           )}
 
