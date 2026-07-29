@@ -173,6 +173,36 @@ impl ProviderRouter {
         Ok(())
     }
 
+    /// Stream a completion from the active provider.
+    ///
+    /// Only the explicit active provider is used, never the automatic-selection
+    /// fallback chain: a stream that switched providers mid-answer would have to
+    /// discard what the first one had already emitted, and the caller has
+    /// already shown it. Callers that need fallback use `chat_completion`.
+    pub fn stream_chat_completion(
+        &self,
+        request: ChatRequest,
+        on_token: &mut dyn FnMut(&str),
+    ) -> Result<ChatResponse, ProviderError> {
+        let idx = self.active_index_snapshot()?;
+        let provider = self.provider_at(idx)?;
+        let identity = identity_of(provider);
+        let response = provider.stream_chat_completion(request, on_token)?;
+        self.record_usage(identity, response.usage.clone(), false);
+        Ok(response)
+    }
+
+    /// Whether the active provider really streams.
+    pub fn active_supports_streaming(&self) -> bool {
+        self.active_index
+            .read()
+            .ok()
+            .and_then(|a| *a)
+            .and_then(|idx| self.providers.get(idx))
+            .map(|p| p.supports_streaming())
+            .unwrap_or(false)
+    }
+
     /// Identify the model that will answer the next request: a stable key and
     /// whether it runs locally.
     ///
