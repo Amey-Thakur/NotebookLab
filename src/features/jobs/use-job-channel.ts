@@ -17,10 +17,14 @@
  */
 
 import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { JOB_EVENT, useJobStore, type Job } from "@/stores/job-store";
+import { QUERY_KEYS } from "@/lib/constants";
 
 export function useJobChannel() {
+  const queryClient = useQueryClient();
+
   useEffect(() => {
     const { hydrate, upsert } = useJobStore.getState();
     void hydrate();
@@ -35,7 +39,21 @@ export function useJobChannel() {
 
     import("@tauri-apps/api/event")
       .then(async ({ listen }) => {
-        const stop = await listen<Job>(JOB_EVENT, (event) => upsert(event.payload));
+        const stopJobs = await listen<Job>(JOB_EVENT, (event) => upsert(event.payload));
+
+        /* A local model server the user started after opening the app. The
+           backend keeps watching for one and says so the moment it answers;
+           without this the window would keep insisting there is no model until
+           a poll happened to catch up. */
+        const stopProviders = await listen("providers-changed", () => {
+          void queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ACTIVE_PROVIDER] });
+          void queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PROVIDERS] });
+        });
+
+        const stop = () => {
+          stopJobs();
+          stopProviders();
+        };
         if (disposed) stop();
         else unlisten = stop;
       })
@@ -48,5 +66,5 @@ export function useJobChannel() {
       disposed = true;
       unlisten?.();
     };
-  }, []);
+  }, [queryClient]);
 }

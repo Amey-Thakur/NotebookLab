@@ -15,7 +15,7 @@
  * Date: 2026-07-12
  */
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 
 import { ModelRequiredNotice } from "@/components/shared/model-required-notice";
@@ -23,6 +23,13 @@ import { ROUTES } from "@/lib/constants";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { tauriInvoke } from "@/services/tauri-client";
 import { formatError } from "@/lib/format-error";
+import {
+  GAP_BETWEEN_SENTENCES_MS,
+  GAP_BETWEEN_SPEAKERS_MS,
+  SPEECH_RATE,
+  pickVoices,
+  toSegments,
+} from "../lib/speech";
 import { usePersistentDraft, useRetainedState } from "@/lib/use-persistent-draft";
 import { NotebookScope } from "@/components/shared/notebook-scope";
 import { SourcePicker } from "@/components/shared/source-picker";
@@ -201,54 +208,59 @@ export function PodcastPage() {
     setPlayback(IDLE);
   }, [script]);
 
-  /* Pick two distinct voices for the speakers */
-  const getVoiceForSpeaker = useCallback((speaker: string): SpeechSynthesisVoice | null => {
-    const englishVoices = voices.filter((v) => v.lang.startsWith("en"));
-    if (englishVoices.length === 0) return voices[0] ?? null;
-
-    if (speaker === "A") {
-      /* Try to find a female voice for Speaker A */
-      return englishVoices.find((v) => /female|zira|samantha|karen|fiona/i.test(v.name))
-        ?? englishVoices[0];
-    } else {
-      /* Try to find a male voice for Speaker B */
-      return englishVoices.find((v) => /male|david|daniel|james|mark/i.test(v.name))
-        ?? englishVoices[Math.min(1, englishVoices.length - 1)];
-    }
-  }, [voices]);
+  /* Two voices chosen by quality, not by guessing at names. */
+  const chosenVoices = useMemo(() => pickVoices(voices), [voices]);
 
   const playScript = useCallback(() => {
     if (!script || isPlaying) return;
 
     cancelledRef.current = false;
+    const segments = toSegments(script.turns);
+    if (segments.length === 0) return;
     setPlayback({ playing: true, turn: 0 });
 
-    const speakTurn = (index: number) => {
-      /* A cancel() during playback fires the current utterance's end/error, which
-      would otherwise re-enter here; bail so Stop and navigation truly stop. */
+    const speak = (index: number) => {
+      /* A cancel() during playback fires the current utterance's end/error,
+      which would otherwise re-enter here; bail so Stop and navigation
+      truly stop. */
       if (cancelledRef.current) return;
-      if (index >= script.turns.length) {
+      if (index >= segments.length) {
         setPlayback(IDLE);
         return;
       }
 
-      const turn = script.turns[index];
-      const utterance = new SpeechSynthesisUtterance(turn.text);
-      const voice = getVoiceForSpeaker(turn.speaker);
+      const segment = segments[index];
+      const utterance = new SpeechSynthesisUtterance(segment.text);
+      const voice = segment.speaker === "A" ? chosenVoices.a : chosenVoices.b;
       if (voice) utterance.voice = voice;
 
-      utterance.rate = 1.0;
-      utterance.pitch = turn.speaker === "A" ? 1.1 : 0.9;
+      utterance.rate = SPEECH_RATE;
+      /* A nudge, not a costume: the two voices already sound different, so
+      this only reinforces which is which. */
+      utterance.pitch = segment.speaker === "A" ? 1.04 : 0.96;
 
-      utterance.onstart = () => setPlayback({ playing: true, turn: index });
-      utterance.onend = () => speakTurn(index + 1);
-      utterance.onerror = () => speakTurn(index + 1);
+      utterance.onstart = () => setPlayback({ playing: true, turn: segment.turn });
+
+      const next = () => {
+        if (cancelledRef.current) return;
+        const following = segments[index + 1];
+        /* A beat where the speaker changes, a shorter one between sentences.
+        Running them together is what made this sound like one person reading
+        a transcript rather than two people talking. */
+        const gap =
+          following && following.speaker !== segment.speaker
+            ? GAP_BETWEEN_SPEAKERS_MS
+            : GAP_BETWEEN_SENTENCES_MS;
+        window.setTimeout(() => speak(index + 1), gap);
+      };
+      utterance.onend = next;
+      utterance.onerror = next;
 
       synthRef.current.speak(utterance);
     };
 
-    speakTurn(0);
-  }, [script, isPlaying, getVoiceForSpeaker]);
+    speak(0);
+  }, [script, isPlaying, chosenVoices]);
 
   const stopPlayback = () => {
     cancelledRef.current = true;
