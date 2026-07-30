@@ -4,6 +4,148 @@ All notable changes to NotebookLab will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-30
+
+### Added
+
+- **Idea Space** in the Thinking Partner: the claims, evidence, tensions and
+  open questions across your sources, laid out in three dimensions and turnable.
+  Contradictions are drawn dashed and held further apart, because the distance
+  is part of what the picture says; open questions are drawn hollow, because they
+  are the holes in the argument. Click an idea to park its label where it stays
+  still.
+- A voice for each speaker in the Audio Studio, chosen by you. The automatic
+  pick ranks by quality markers, which cannot settle taste, and on a machine with
+  several good voices the pair matters more to how human it sounds than any
+  pacing does.
+- The Audio Studio now says when only basic system voices are installed, and
+  where to get the free natural ones. No amount of pacing rescues a formant
+  synthesizer from 1995.
+
+### Changed
+
+- The Thinking Partner had been drawing the Studio's mind map from the Studio's
+  prompt, so both features produced the same picture from the same sources and
+  one of them had no reason to exist. The Studio keeps the mind map, which is
+  what an outline of a topic should be. Idea Space asks a different question: not
+  what the sources contain, but how they disagree.
+- Audio scripts are written for the ear rather than the page: short sentences,
+  contractions, numbers said the way a person says them, and commas where a
+  speaker draws breath. A synthesizer pauses at punctuation and nowhere else, so
+  punctuation is the only pacing available to it.
+- Delivery varies slightly from sentence to sentence, derived from the sentence
+  itself so a script always sounds the same on replay. Identical settings for
+  every sentence is most of what makes read-aloud drone.
+
+## [0.6.1] - 2026-07-29
+
+### Fixed
+
+- Every feature froze at 17% and produced nothing. Streaming had moved progress
+  reporting inside the token callback, which made the bar depend on the model
+  saying something: a quiet stream left it stopped at the phase boundary with no
+  elapsed time, which is indistinguishable from the app having died. The timer
+  always runs now and takes whichever signal is further along, and a stream that
+  fails or produces nothing is retried without streaming.
+
+## [0.6.0] - 2026-07-29
+
+### Added
+
+- Answers stream. Chat shows the reply being written rather than a bar, and
+  progress is now measured from tokens actually received instead of extrapolated
+  from how long previous runs took. Providers that cannot stream fall back to the
+  estimate and behave as before.
+
+## [0.5.4] - 2026-07-29
+
+### Fixed
+
+- A local model server started after opening NotebookLab was never noticed.
+  Detection ran once during startup and then stopped, so the app insisted there
+  was no model while one sat there answering, and the only way out was knowing
+  that Models has a rescan button. It watches continuously now and picks up a
+  server within a few seconds of it starting.
+- Voices for read-aloud were chosen by matching names against a list of guesses,
+  which ignored the neural voices Windows and macOS ship alongside the old
+  robotic ones. They are ranked by quality now.
+- Long turns are split into sentences before being spoken. Several speech engines
+  silently truncate an utterance past a few hundred characters, so a long answer
+  simply stopped partway through.
+- A real beat between speakers. Turns ran together with no gap, which made an
+  exchange sound like one person reading a transcript aloud.
+
+## [0.5.3] - 2026-07-29
+
+### Fixed
+
+- Chat showed your question twice once the answer arrived.
+- Chat's progress appeared in whichever conversation you opened next, not the one
+  that had asked.
+- A transform result was shown against the document selected when it arrived
+  rather than the one that produced it, so a summary of one document could be
+  presented as another's.
+
+## [0.5.2] - 2026-07-28
+
+### Changed
+
+- Chat runs as a tracked job like every other feature. The answer was always
+  saved either way, so the work was never lost, but nothing told you it was still
+  coming: leaving Chat and returning showed your question sitting alone with no
+  reply and no sign one was on its way.
+
+## [0.5.1] - 2026-07-28
+
+### Fixed
+
+- Every feature failed at exactly four minutes with "the model did not answer in
+  time" while the model was still writing. The request ceiling was four minutes,
+  chosen when there was no progress bar to look at; it is thirty now, and the
+  work is cancellable.
+- Requests are sized to the machine that will answer them. A local model on a CPU
+  was being handed the same eight thousand tokens of sources and asked for the
+  same two thousand words as a hosted model, which is fifteen minutes of real
+  work before the first word appears. Answers from a local model are shorter as a
+  result, which beats a longer one that never arrives.
+
+## [0.5.0] - 2026-07-28
+
+### Added
+
+- Generations run as tracked background jobs. Each reports what it is doing, a
+  percentage weighted so it advances at an honest rate, and an estimate once
+  there is enough signal to give one. Leaving the page no longer throws the work
+  away, and the status bar shows what is running from anywhere in the app.
+- Choose which documents a generation reads. It used to sample whatever the
+  notebook happened to hold, capped at twenty chunks, with no way to say "use
+  this one" and no way to tell afterwards what it had read.
+- Every AI page states which notebook it is working in, how many documents are
+  readable, and how many are still processing.
+- Save what a feature produced: the Studio formats, the Idea Space, Socratic
+  questions, transforms, a chat conversation, the canvas as a PNG, and an audio
+  script as a transcript or as a real audio file written by the platform's own
+  speech engine.
+
+### Fixed
+
+- Drag and drop was dead. Tauri's drag-and-drop was switched off, which killed
+  the events the document import listened for, while the canvas used the opposite
+  mechanism; a feature described in the CHANGELOG and on the landing page could
+  not fire. One mechanism now serves both.
+- The Audio Studio failed with "the model generated an empty script" on output
+  that was perfectly usable. The parser accepted only bare `A:` and `B:` prefixes,
+  so a model emitting `**A:**`, a list marker, or a line of preamble produced
+  nothing at all. It now accepts what models actually write, and reads unlabelled
+  prose as a single narrator rather than discarding it.
+- A document with no blank line in it became one unbounded chunk, which meant a
+  single enormous row to index and a single enormous prompt to send.
+- The transform prompt budget was tested after appending rather than before, so
+  it was always exceeded by one chunk.
+- Only the first detected local provider was registered, so a machine running
+  both Ollama and LM Studio showed one of them.
+
+
 ## [0.4.6] - 2026-07-27
 
 ### Added

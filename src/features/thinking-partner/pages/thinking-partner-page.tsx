@@ -1,11 +1,16 @@
 /*
  * Name: thinking-partner-page.tsx
  * Purpose: Thinking Partner page.
- * Description: Two modes: mind map generation from documents, and Socratic
- *   questioning to challenge the user's thinking. Requires an
- *   active notebook with imported documents. The mind map renders
- *   as a real visual tree through the shared Studio view; Socratic
- *   mode returns probing questions the user can reflect on.
+ * Description: Two modes. Idea Space maps how the claims, evidence, tensions
+ *   and open questions in the sources stand against each other, drawn
+ *   in three dimensions; Socratic returns probing questions to push
+ *   the user's own thinking. Requires an active notebook with
+ *   documents.
+ *
+ *   Idea Space exists because this page used to render the Studio's
+ *   mind map from the Studio's prompt, so both features produced the
+ *   same picture and one of them had no reason to exist. A hierarchy
+ *   answers what the sources contain; this answers how they disagree.
  * Tech Stack: React 19, TanStack Query, Tailwind CSS
  * License: MIT
  * Authors: Amey Thakur (https://github.com/Amey-Thakur)
