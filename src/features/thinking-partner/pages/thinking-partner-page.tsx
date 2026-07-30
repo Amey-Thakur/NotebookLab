@@ -28,6 +28,7 @@ import { useRetainedState } from "@/lib/use-persistent-draft";
 import { useJobRun } from "@/features/jobs/use-job-run";
 import { safeJson } from "@/features/studio/api/studio-api";
 import { IdeaSpaceView, type IdeaSpace } from "../components/idea-space-view";
+import { prepareSpace } from "../lib/prepare-space";
 
 
 type Mode = "ideas" | "socratic";
@@ -215,14 +216,25 @@ function IdeaSpaceResult({ text }: { text: string }) {
       </p>
     );
   }
-  /* A reply with no nodes is well-formed JSON and still useless, so it is
-     checked here rather than left to render as an empty canvas. */
-  if (!Array.isArray(parsed.data.nodes) || parsed.data.nodes.length === 0) {
+  /* Clean before drawing. A duplicate id, a self-edge or an edge naming an id
+     the model never defined are all things it emits, and all of them become
+     silent drawing faults rather than errors. */
+  const space = prepareSpace(parsed.data);
+  if (space.nodes.length === 0) {
     return (
       <p role="alert" className="text-sm text-error">
         The map came back empty. Try naming the question more concretely.
       </p>
     );
   }
-  return <IdeaSpaceView data={{ ...parsed.data, edges: parsed.data.edges ?? [] }} />;
+  return (
+    <>
+      <IdeaSpaceView data={space} />
+      {space.repaired && (
+        <p className="mt-2 text-xs text-text-4">
+          Part of the reply could not be used and was left out.
+        </p>
+      )}
+    </>
+  );
 }
