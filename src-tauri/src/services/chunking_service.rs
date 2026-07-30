@@ -297,6 +297,81 @@ mod tests {
     }
 
     #[test]
+    fn unspaced_scripts_are_counted_by_character() {
+        /* The bug in one line: whitespace words are meaningless here. */
+        let japanese = "\u{6a5f}\u{68b0}\u{5b66}\u{7fd2}";
+        assert_eq!(japanese.split_whitespace().count(), 1);
+        assert_eq!(approx_token_count(japanese), 4);
+    }
+
+    #[test]
+    fn spaced_text_counts_exactly_as_before() {
+        /* Nothing already indexed should change shape. */
+        assert_eq!(approx_token_count("one two three"), (3.0 * 1.3) as usize);
+        assert_eq!(approx_token_count(""), 0);
+    }
+
+    #[test]
+    fn mixed_scripts_add_up() {
+        /* Technical writing routinely mixes the two. */
+        let mixed = "RAG \u{306f}\u{691c}\u{7d22}\u{3067}\u{3059}";
+        assert_eq!(approx_token_count(mixed), 5 + (1.3_f32) as usize);
+    }
+
+    #[test]
+    fn a_long_japanese_document_actually_chunks() {
+        /* Before the fix this produced exactly one chunk holding the whole
+        document, whatever its length, so retrieval had nothing to rank and
+        every citation pointed at the entire file. */
+        let sentence = "\u{6a5f}\u{68b0}\u{5b66}\u{7fd2}\u{306f}\u{4eba}\u{5de5}\u{77e5}\u{80fd}\u{306e}\u{4e00}\u{5206}\u{91ce}\u{3067}\u{3042}\u{308b}\u{3002}";
+        let document = sentence.repeat(200);
+        let chunks = chunk_text("doc", &document, None, "");
+        assert!(
+            chunks.len() > 1,
+            "expected several chunks, got {}",
+            chunks.len()
+        );
+        assert_bounded(&chunks);
+    }
+
+    #[test]
+    fn a_japanese_paragraph_with_no_terminator_still_splits() {
+        /* No full stops and no spaces: the case where every previous strategy
+        had nothing to break on. */
+        let run = "\u{3042}".repeat(TARGET_TOKENS * 5);
+        let chunks = chunk_text("doc", &run, None, "");
+        assert!(chunks.len() > 1);
+        assert_bounded(&chunks);
+    }
+
+    #[test]
+    fn overlap_does_not_repeat_the_whole_chunk() {
+        /* Taking the last N whitespace words returned everything for an
+        unspaced script, so each chunk began with a full copy of the last. */
+        let text = "\u{3042}".repeat(1000);
+        let overlap = get_overlap_text(&text, OVERLAP_TOKENS);
+        assert!(
+            overlap.chars().count() < text.chars().count(),
+            "overlap took the whole text"
+        );
+        assert!(approx_token_count(&overlap) <= OVERLAP_TOKENS * 2);
+    }
+
+    #[test]
+    fn japanese_chunking_loses_nothing() {
+        /* Splitting must partition the text, never drop part of it. Overlap
+        means the rejoined text can repeat, so this checks it never shrinks. */
+        let sentence = "\u{6a5f}\u{68b0}\u{5b66}\u{7fd2}\u{3002}";
+        let document = sentence.repeat(300);
+        let chunks = chunk_text("doc", &document, None, "");
+        let rejoined: usize = chunks
+            .iter()
+            .map(|c| c.content.replace(['\n', ' '], "").chars().count())
+            .sum();
+        assert!(rejoined >= document.chars().count());
+    }
+
+    #[test]
     fn a_file_with_no_blank_line_still_chunks() {
         /* The failing shape. Splitting on "\n\n" alone found one paragraph,
         and the loop only emits when the buffer is non-empty, so the entire
