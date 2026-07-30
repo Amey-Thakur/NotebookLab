@@ -164,6 +164,47 @@ pub fn download_gguf_model(app: tauri::AppHandle, id: String) -> AppResult<Strin
 /// Allowed download hosts. Only trusted model repositories.
 const ALLOWED_HOSTS: &[&str] = &["huggingface.co"];
 
+/// Whether an https URL points at a host downloads are permitted from.
+///
+/// This guards what gets written to disk and then executed as a model, so it is
+/// worth being exact about. The naive version compared the text between "https://"
+/// and the first slash, which was case sensitive (DNS is not, so a legitimate
+/// `HuggingFace.co` link was refused) and kept any userinfo and port in the
+/// string it compared.
+///
+/// A subdomain is allowed, which is deliberate: Hugging Face serves model files
+/// from `cdn-lfs.huggingface.co`. The dot is required, so `evil-huggingface.co`
+/// does not qualify.
+fn host_is_allowed(url: &str) -> bool {
+    let Some(rest) = url.strip_prefix("https://") else {
+        return false;
+    };
+
+    let authority = rest.split(['/', '?', '#']).next().unwrap_or("");
+    /* Anything before an @ is userinfo, not the host. Without dropping it,
+    "https://huggingface.co@evil.example/x" compares the whole string, which
+    happens to fail here but only by luck. */
+    let host_and_port = match authority.rsplit_once('@') {
+        Some((_userinfo, host)) => host,
+        None => authority,
+    };
+    /* Strip a port. An IPv6 literal is bracketed, so only split on the last
+    colon when it comes after the closing bracket. */
+    let host = match host_and_port.rsplit_once(':') {
+        Some((head, tail)) if tail.chars().all(|c| c.is_ascii_digit()) && !tail.is_empty() => head,
+        _ => host_and_port,
+    };
+    let host = host.trim().to_ascii_lowercase();
+
+    if host.is_empty() {
+        return false;
+    }
+
+    ALLOWED_HOSTS
+        .iter()
+        .any(|allowed| host == *allowed || host.ends_with(&format!(".{allowed}")))
+}
+
 /// Global download guard: prevents concurrent downloads.
 static DOWNLOAD_IN_PROGRESS: AtomicBool = AtomicBool::new(false);
 
@@ -223,16 +264,7 @@ fn download_model(
         ));
     }
 
-    let host = download_url
-        .trim_start_matches("https://")
-        .split('/')
-        .next()
-        .unwrap_or("");
-
-    if !ALLOWED_HOSTS
-        .iter()
-        .any(|h| host == *h || host.ends_with(&format!(".{h}")))
-    {
+    if !host_is_allowed(&download_url) {
         DOWNLOAD_IN_PROGRESS.store(false, Ordering::Release);
         return Err(AppError::InvalidInput(format!(
             "Downloads only allowed from: {}",
@@ -437,4 +469,75 @@ pub fn has_local_model(app: tauri::AppHandle) -> AppResult<bool> {
 
     let models = crate::services::sidecar_service::find_model_files(&models_dir);
     Ok(!models.is_empty())
+}
+
+#[cfg(test)]
+mod host_tests {
+    use super::*;
+
+    #[test]
+    fn the_catalog_urls_are_allowed() {
+        /* Whatever else this rejects, it must not reject the app's own models. */
+        assert!(host_is_allowed(DEFAULT_MODEL_URL));
+        for entry in GGUF_CATALOG {
+            assert!(host_is_allowed(entry.url), "refused {}", entry.url);
+        }
+    }
+
+    #[test]
+    fn a_subdomain_is_allowed() {
+        /* Hugging Face serves the actual files from a CDN subdomain. */
+        assert!(host_is_allowed(
+            "https://cdn-lfs.huggingface.co/repo/model.gguf"
+        ));
+    }
+
+    #[test]
+    fn the_host_is_matched_case_insensitively() {
+        /* DNS is case insensitive, so this was refusing a legitimate link. */
+        assert!(host_is_allowed("https://HuggingFace.CO/repo/model.gguf"));
+    }
+
+    #[test]
+    fn a_lookalike_host_is_refused() {
+        /* The dot matters: without it, anyone can register the suffix. */
+        assert!(!host_is_allowed("https://evil-huggingface.co/model.gguf"));
+        assert!(!host_is_allowed(
+            "https://huggingface.co.evil.example/model.gguf"
+        ));
+    }
+
+    #[test]
+    fn userinfo_cannot_disguise_the_host() {
+        /* Everything before the @ is a username, not a host. Browsers have shown
+        this trick for decades. */
+        assert!(!host_is_allowed(
+            "https://huggingface.co@evil.example/model.gguf"
+        ));
+        assert!(!host_is_allowed(
+            "https://huggingface.co:pass@evil.example/x"
+        ));
+    }
+
+    #[test]
+    fn a_port_does_not_break_a_legitimate_host() {
+        assert!(host_is_allowed(
+            "https://huggingface.co:443/repo/model.gguf"
+        ));
+    }
+
+    #[test]
+    fn plain_http_and_other_schemes_are_refused() {
+        assert!(!host_is_allowed("http://huggingface.co/model.gguf"));
+        assert!(!host_is_allowed("file:///etc/passwd"));
+        assert!(!host_is_allowed("https://"));
+        assert!(!host_is_allowed(""));
+    }
+
+    #[test]
+    fn a_query_or_fragment_is_not_part_of_the_host() {
+        assert!(host_is_allowed("https://huggingface.co?x=1"));
+        assert!(!host_is_allowed("https://evil.example?x=huggingface.co"));
+        assert!(!host_is_allowed("https://evil.example#huggingface.co"));
+    }
 }
