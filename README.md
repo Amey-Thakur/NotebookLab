@@ -63,7 +63,8 @@ does, why every answer carries its source, and how we built it
 - **Search everything.** Keyword ranking blended with semantic similarity
   when embeddings are available.
 
-- **Think out loud.** Mind maps generated from your research, or Socratic
+- **Think out loud.** An Idea Space that maps the claims, evidence, tensions,
+  and open questions across your sources in three dimensions, or Socratic
   questions that push your thinking further.
 
 - **Sketch on a canvas.** One open space per notebook to draw, drop in images,
