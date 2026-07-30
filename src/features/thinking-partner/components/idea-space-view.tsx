@@ -68,18 +68,42 @@ function themeColor(name: string, fallback: string): string {
   return value || fallback;
 }
 
-/** Colour carries the kind, because that is the thing to see at a glance. */
-function kindColor(kind: IdeaKind): { fill: string; label: string } {
-  switch (kind) {
-    case "tension":
-      return { fill: themeColor("--color-error", "#e06c6c"), label: "Tension" };
-    case "question":
-      return { fill: themeColor("--color-accent", "#8ab2ea"), label: "Open question" };
-    case "evidence":
-      return { fill: themeColor("--color-ok", "#6cae75"), label: "Evidence" };
-    default:
-      return { fill: themeColor("--color-text-2", "#c9c4bc"), label: "Claim" };
-  }
+/** How each kind is drawn: which theme colour, and what shape. */
+type KindStyle = { variable: string; fallback: string; label: string; shape: "dot" | "square" | "ring" };
+
+/* Only variables the theme actually defines. An earlier version reached for a
+   success colour that does not exist here, so evidence silently fell back to a
+   hardcoded green that ignored light mode entirely. Shape carries the
+   claim/evidence distinction instead, which needs no new colour and survives
+   both themes and colour blindness. */
+const KIND_STYLES: Record<IdeaKind, KindStyle> = {
+  claim: { variable: "--color-text-2", fallback: "#c9c4bc", label: "Claim", shape: "dot" },
+  evidence: { variable: "--color-mark", fallback: "#5f8ed6", label: "Evidence", shape: "square" },
+  tension: { variable: "--color-error", fallback: "#d97f7a", label: "Tension", shape: "dot" },
+  question: { variable: "--color-accent", fallback: "#8ab2ea", label: "Open question", shape: "ring" },
+};
+
+function kindStyle(kind: IdeaKind): KindStyle {
+  return KIND_STYLES[kind] ?? KIND_STYLES.claim;
+}
+
+/** Resolve every colour the canvas needs, once. */
+function readPalette() {
+  const kinds = Object.fromEntries(
+    (Object.keys(KIND_STYLES) as IdeaKind[]).map((k) => [
+      k,
+      themeColor(KIND_STYLES[k].variable, KIND_STYLES[k].fallback),
+    ]),
+  ) as Record<IdeaKind, string>;
+  return {
+    kinds,
+    rule: themeColor("--color-border-hover", "#3a3a3a"),
+    error: themeColor("--color-error", "#d97f7a"),
+    accentDim: themeColor("--color-accent-dim", "#5f8ed6"),
+    surface: themeColor("--color-surface", "#161616"),
+    border: themeColor("--color-border", "#2a2a2a"),
+    text: themeColor("--color-text-1", "#eae6e0"),
+  };
 }
 
 export function IdeaSpaceView({ data }: { data: IdeaSpace }) {
@@ -179,6 +203,13 @@ export function IdeaSpaceView({ data }: { data: IdeaSpace }) {
     let frame = 0;
     let pointerX = -1;
     let pointerY = -1;
+    /* The simulation cools and stops. Running it every frame forever kept the
+       layout drifting under the reader, and spent an O(n squared) pass sixty
+       times a second on a picture that had already found its shape. */
+    let settling = 90;
+    /* What the last frame drew, so hit tests reuse it instead of recomputing the
+       transform. Two copies of that maths would drift apart. */
+    let hits: { node: IdeaNode; sx: number; sy: number; r: number }[] = [];
 
     const draw = () => {
       const width = canvas.clientWidth;
@@ -191,7 +222,10 @@ export function IdeaSpaceView({ data }: { data: IdeaSpace }) {
       context.clearRect(0, 0, width, HEIGHT);
 
       if (!state.dragging) state.yaw += SPIN_PER_FRAME;
-      settle();
+      if (settling > 0) {
+        settle();
+        settling -= 1;
+      }
 
       const cosY = Math.cos(state.yaw);
       const sinY = Math.sin(state.yaw);
@@ -210,7 +244,10 @@ export function IdeaSpaceView({ data }: { data: IdeaSpace }) {
       };
 
       const projected = new Map(nodes.map((n) => [n.id, { node: n, p: project(n) }]));
-      const rule = themeColor("--color-border-hover", "#3a3a3a");
+      /* Once per frame. getComputedStyle forces a style read, and the previous
+         version called it for every node and every edge on every frame: hundreds
+         of layout reads a second for colours that cannot change mid-frame. */
+      const palette = readPalette();
 
       for (const e of edges) {
         const a = projected.get(e.from);
@@ -221,15 +258,15 @@ export function IdeaSpaceView({ data }: { data: IdeaSpace }) {
         /* A contradiction is drawn dashed and in the warning colour, so the
            thing most worth noticing is the thing that stands out. */
         if (e.relation === "contradicts") {
-          context.strokeStyle = themeColor("--color-error", "#e06c6c");
+          context.strokeStyle = palette.error;
           context.setLineDash([4, 4]);
           context.lineWidth = 1.4;
         } else if (e.relation === "raises") {
-          context.strokeStyle = themeColor("--color-accent-dim", "#5f8ed6");
+          context.strokeStyle = palette.accentDim;
           context.setLineDash([1, 3]);
           context.lineWidth = 1;
         } else {
-          context.strokeStyle = rule;
+          context.strokeStyle = palette.rule;
           context.setLineDash([]);
           context.lineWidth = 1;
         }
@@ -244,27 +281,37 @@ export function IdeaSpaceView({ data }: { data: IdeaSpace }) {
       /* Back to front, so nearer nodes paint over further ones. */
       const ordered = [...projected.values()].sort((x, y) => y.p.depth - x.p.depth);
       let hovered: { node: IdeaNode; sx: number; sy: number; r: number } | null = null;
+      hits = [];
 
       for (const { node, p } of ordered) {
         const weight = Math.min(3, Math.max(1, node.weight ?? 1));
         const r = (5 + weight * 2.4 + Math.min(node.degree, 5)) * p.scale;
         const near = Math.max(0.28, 1 - p.depth / (radius * 2.6));
+        hits.push({ node, sx: p.sx, sy: p.sy, r });
         const isHover =
           pointerX >= 0 && (pointerX - p.sx) ** 2 + (pointerY - p.sy) ** 2 <= (r + 5) ** 2;
         if (isHover) hovered = { node, sx: p.sx, sy: p.sy, r };
 
-        const { fill } = kindColor(node.kind);
+        const style = kindStyle(node.kind);
+        const colour = palette.kinds[node.kind] ?? palette.kinds.claim;
         context.globalAlpha = near;
-        context.fillStyle = fill;
-        context.beginPath();
-        /* Questions are drawn hollow: they are the holes in the argument. */
-        context.arc(p.sx, p.sy, r, 0, Math.PI * 2);
-        if (node.kind === "question") {
-          context.strokeStyle = fill;
-          context.lineWidth = 1.6;
-          context.stroke();
+        context.fillStyle = colour;
+        context.strokeStyle = colour;
+
+        if (style.shape === "square") {
+          /* Evidence is a data point, so it is square. Shape rather than a
+             fourth colour, because the theme has none to spare. */
+          context.fillRect(p.sx - r, p.sy - r, r * 2, r * 2);
         } else {
-          context.fill();
+          context.beginPath();
+          context.arc(p.sx, p.sy, r, 0, Math.PI * 2);
+          if (style.shape === "ring") {
+            /* Questions are hollow: they are the holes in the argument. */
+            context.lineWidth = 1.8;
+            context.stroke();
+          } else {
+            context.fill();
+          }
         }
       }
       context.globalAlpha = 1;
@@ -275,14 +322,14 @@ export function IdeaSpaceView({ data }: { data: IdeaSpace }) {
         const w = context.measureText(label).width + 16;
         const x = Math.min(Math.max(hovered.sx - w / 2, 4), width - w - 4);
         const y = hovered.sy - hovered.r - 26;
-        context.fillStyle = themeColor("--color-surface", "#161616");
-        context.strokeStyle = themeColor("--color-border", "#2a2a2a");
+        context.fillStyle = palette.surface;
+        context.strokeStyle = palette.border;
         context.lineWidth = 1;
         context.beginPath();
         context.rect(x, y, w, 20);
         context.fill();
         context.stroke();
-        context.fillStyle = themeColor("--color-text-1", "#eae6e0");
+        context.fillStyle = palette.text;
         context.fillText(label, x + 8, y + 14);
       }
 
@@ -319,24 +366,17 @@ export function IdeaSpaceView({ data }: { data: IdeaSpace }) {
       pointerY = -1;
     };
     const onClick = (e: MouseEvent) => {
-      hit(e.clientX, e.clientY);
-      /* Reuse the same hit test the hover uses by reading the last projection
-         on the next frame; simplest is to find the nearest node in screen space
-         at click time. */
+      /* Reuses what the last frame drew, so the click and the hover agree by
+         construction. The first version recomputed the whole yaw, pitch and
+         perspective transform here: the same maths written twice, free to
+         drift apart the moment either changed. */
       const rect = canvas.getBoundingClientRect();
       const cx = e.clientX - rect.left;
       const cy = e.clientY - rect.top;
       let best: { node: IdeaNode; d: number } | null = null;
-      for (const n of nodes) {
-        const x1 = n.x * Math.cos(state.yaw) + n.z * Math.sin(state.yaw);
-        const z1 = -n.x * Math.sin(state.yaw) + n.z * Math.cos(state.yaw);
-        const y2 = n.y * Math.cos(state.pitch) - z1 * Math.sin(state.pitch);
-        const z2 = n.y * Math.sin(state.pitch) + z1 * Math.cos(state.pitch);
-        const scale = PERSPECTIVE / (PERSPECTIVE + z2);
-        const sx = canvas.clientWidth / 2 + x1 * scale;
-        const sy = HEIGHT / 2 + y2 * scale;
-        const d = (sx - cx) ** 2 + (sy - cy) ** 2;
-        if (d < 400 && (!best || d < best.d)) best = { node: n, d };
+      for (const h of hits) {
+        const d = (h.sx - cx) ** 2 + (h.sy - cy) ** 2;
+        if (d <= (h.r + 6) ** 2 && (!best || d < best.d)) best = { node: h.node, d };
       }
       setFocused(best?.node ?? null);
     };
@@ -375,7 +415,8 @@ export function IdeaSpaceView({ data }: { data: IdeaSpace }) {
 
       <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-text-3">
         {kinds.map((kind) => {
-          const { fill, label } = kindColor(kind);
+          const { label } = kindStyle(kind);
+          const fill = themeColor(kindStyle(kind).variable, kindStyle(kind).fallback);
           return (
             <span key={kind} className="flex items-center gap-1.5">
               <span
@@ -398,7 +439,7 @@ export function IdeaSpaceView({ data }: { data: IdeaSpace }) {
       {focused && (
         <div className="mt-3 p-3 border border-border bg-surface">
           <p className="text-xs font-mono uppercase tracking-widest text-text-4 mb-1">
-            {kindColor(focused.kind).label}
+            {kindStyle(focused.kind).label}
           </p>
           <p className="text-sm text-text-1">{focused.label}</p>
         </div>
