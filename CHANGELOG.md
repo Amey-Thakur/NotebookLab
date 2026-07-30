@@ -4,6 +4,30 @@ All notable changes to NotebookLab will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-07-30
+
+### Fixed
+
+- The Idea Space reached for a theme colour that does not exist, so evidence fell
+  back to a hardcoded green that ignored light mode. Evidence is drawn as a square
+  now: shape rather than a fourth colour, which also survives colour blindness.
+- The canvas read theme variables for every node and every edge on every frame,
+  hundreds of style reads a second for colours that cannot change mid-frame.
+- The layout simulation ran forever, so the picture kept drifting under the
+  reader. It cools and settles now.
+- Clicking an idea recomputed the projection separately from the drawing, the same
+  maths written twice and free to drift apart. Clicks reuse what was drawn.
+- A model's reply is cleaned before it is drawn. A duplicate id silently lost an
+  idea, an edge naming an id that was never defined drew to nowhere, and a
+  self-edge made the layout push a node against itself.
+
+### Changed
+
+- The changelog records 0.5.0 through 0.7.0, which shipped undocumented.
+- The README, the landing page and the page's own header described the Thinking
+  Partner as making mind maps, which it no longer does.
+
+
 ## [0.7.0] - 2026-07-30
 
 ### Added
