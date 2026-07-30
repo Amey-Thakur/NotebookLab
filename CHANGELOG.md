@@ -4,6 +4,26 @@ All notable changes to NotebookLab will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.6] - 2026-07-30
+
+### Fixed
+
+- The prompt budget under-counted text in CJK by about a quarter, because it
+  estimated tokens from byte length and a character there is three bytes but
+  roughly one token. Under-counting is the dangerous direction: it builds a
+  prompt larger than the window, and a server does not refuse that, it truncates
+  the system prompt away.
+
+### Changed
+
+- Search now has tests covering the path CJK actually takes. The full-text index
+  treats a run of those characters as one token, so a partial match finds nothing
+  through it and the LIKE fallback is what rescues the search. That fallback
+  looks redundant next to a full-text index and is not; it is now pinned, along
+  with search staying inside its own notebook and a wildcard typed into the query
+  not matching everything.
+
+
 ## [0.7.5] - 2026-07-30
 
 ### Fixed
