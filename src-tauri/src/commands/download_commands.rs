@@ -271,7 +271,7 @@ fn download_model(
         ));
     }
 
-    if !host_is_allowed(&download_url) {
+    if !host_is_allowed(download_url) {
         DOWNLOAD_IN_PROGRESS.store(false, Ordering::Release);
         return Err(AppError::InvalidInput(format!(
             "Downloads only allowed from: {}",
