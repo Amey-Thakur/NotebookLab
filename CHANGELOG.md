@@ -4,6 +4,19 @@ All notable changes to NotebookLab will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-07-30
+
+### Changed
+
+- The local REST API decides authentication as "everything except the health
+  check" rather than by listing the routes that need it, so a route added later
+  is private by default. The previous shape is how an endpoint ends up public by
+  omission. The token comparison and the public-path decision now have tests.
+- The full-text search sanitiser has tests. It is what stops a search query being
+  parsed as FTS5 syntax, and a regression there would be a query injection with
+  nothing to catch it.
+
+
 ## [0.7.2] - 2026-07-30
 
 ### Fixed
