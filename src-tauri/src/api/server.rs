@@ -56,9 +56,8 @@ pub fn start_api_server(db_path: PathBuf, api_token: String) {
         };
 
         for request in server.incoming_requests() {
-            /* Verify bearer token (skip for /api/health which is public) */
             let path = request.url().split('?').next().unwrap_or("/");
-            if path != "/api/health" {
+            if requires_auth(path) {
                 let auth_ok = request.headers().iter().any(|h| {
                     /* HTTP header names are case-insensitive (RFC 7230), and
                     HTTP/2 and the fetch API send them lowercased, so match the
@@ -101,6 +100,21 @@ pub fn start_api_server(db_path: PathBuf, api_token: String) {
     });
 }
 
+/// Whether a path needs the bearer token.
+///
+/// Everything does, except the exact health check, which exists so a caller can
+/// discover the port and confirm the app is up without holding a credential.
+///
+/// Written as "everything except" rather than as a list of protected routes, so
+/// a route added later is private by default. The opposite shape is how endpoints
+/// end up public by omission.
+fn requires_auth(path: &str) -> bool {
+    path != HEALTH_PATH
+}
+
+/// The one public route.
+const HEALTH_PATH: &str = "/api/health";
+
 /// Compare two byte strings in constant time to avoid leaking the token
 /// length-prefix through response timing. Local-only, but cheap to do right.
 fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
@@ -126,7 +140,7 @@ fn handle_request(
     let encode = |e: serde_json::Error| (500u16, e.to_string());
 
     match (method, path) {
-        (&Method::Get, "/api/health") => Ok(serde_json::json!({
+        (&Method::Get, p) if p == HEALTH_PATH => Ok(serde_json::json!({
             "status": "ok",
             "version": env!("CARGO_PKG_VERSION"),
             "api_port": API_PORT
@@ -172,5 +186,66 @@ fn handle_request(
         }
 
         _ => Err((404, format!("Not found: {} {}", method, path))),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn only_the_health_check_is_public() {
+        assert!(!requires_auth("/api/health"));
+        for path in [
+            "/api/notebooks",
+            "/api/notebooks/abc/notes",
+            "/api/notebooks/abc/documents",
+            "/api/documents/abc/chunks",
+            "/api/chunks/count",
+            "/",
+            "",
+        ] {
+            assert!(requires_auth(path), "{path} must require the token");
+        }
+    }
+
+    #[test]
+    fn a_path_that_merely_starts_with_health_still_needs_the_token() {
+        /* A prefix check here would have made every one of these public. */
+        for path in [
+            "/api/healthy",
+            "/api/health/notebooks",
+            "/api/health/../notebooks",
+            "/api/health2",
+        ] {
+            assert!(requires_auth(path), "{path} must require the token");
+        }
+    }
+
+    #[test]
+    fn the_health_path_is_matched_exactly() {
+        /* Case and trailing slash both fail closed, which is the safe way round:
+        the worst outcome is that a caller has to send the token it already has. */
+        assert!(requires_auth("/API/HEALTH"));
+        assert!(requires_auth("/api/health/"));
+        assert!(requires_auth(" /api/health"));
+    }
+
+    #[test]
+    fn constant_time_eq_matches_only_identical_input() {
+        assert!(constant_time_eq(b"Bearer abc", b"Bearer abc"));
+        assert!(!constant_time_eq(b"Bearer abc", b"Bearer abd"));
+        assert!(!constant_time_eq(b"Bearer abc", b"Bearer ab"));
+        assert!(!constant_time_eq(b"", b"x"));
+        assert!(constant_time_eq(b"", b""));
+    }
+
+    #[test]
+    fn a_prefix_of_the_token_is_not_accepted() {
+        /* The length check is what stops a truncated token matching; without it
+        a caller could walk the token one byte at a time. */
+        let real = b"Bearer nbl-api-0123456789abcdef";
+        assert!(!constant_time_eq(b"Bearer nbl-api-", real));
+        assert!(!constant_time_eq(real, b"Bearer nbl-api-"));
     }
 }
