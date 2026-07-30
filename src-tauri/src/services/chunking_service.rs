@@ -4,9 +4,10 @@
  * Description: Splits parsed document pages into overlapping chunks suitable
  *   for embedding and retrieval. Uses paragraph-aware splitting
  *   that respects sentence boundaries. Target ~400 tokens per
- *   chunk with 50-token overlap. Token count is approximated by
- *   word count * 1.3 (reasonable for English, conservative for
- *   CJK).
+ *   chunk with 50-token overlap. Tokens are approximated as word
+ *   count * 1.3 for spaced scripts, plus one per character for
+ *   scripts written without spaces (CJK, Thai, Lao), which have no
+ *   words to count.
  * Tech Stack: Rust
  * License: MIT
  * Authors: Amey Thakur (https://github.com/Amey-Thakur)
@@ -85,6 +86,15 @@ fn split_into_paragraphs(text: &str) -> Vec<String> {
         .collect()
 }
 
+/// Sentence terminators, including the full-width forms used in CJK text.
+///
+/// Splitting on the ASCII set alone never fired on Japanese or Chinese, which
+/// end sentences with a full-width stop. Those documents fell through to the
+/// word fallback, which is also meaningless for them, so nothing split at all.
+const SENTENCE_ENDERS: [char; 8] = [
+    '.', '!', '?', '\n', '\u{3002}', '\u{ff01}', '\u{ff1f}', '\u{ff0e}',
+];
+
 /// Break a paragraph that is on its own larger than a chunk.
 ///
 /// Splitting on blank lines alone assumes documents have them. A minified JSON
@@ -93,62 +103,180 @@ fn split_into_paragraphs(text: &str) -> Vec<String> {
 /// so that whole file became a single chunk. A 50 MB chunk is a 50 MB row for
 /// FTS5 to index and, worse, a 50 MB body sent to whichever provider is active.
 ///
-/// Sentences first, since they keep meaning intact; then words, for text that
-/// has no sentence endings either.
+/// Sentences first, since they keep meaning intact; then a hard split, which
+/// prefers a space but does not require one, because text in an unspaced script
+/// has none to prefer.
 fn split_oversized(paragraph: &str) -> Vec<String> {
     if approx_token_count(paragraph) <= TARGET_TOKENS {
         return vec![paragraph.to_string()];
     }
 
-    let mut out = Vec::new();
+    let mut out: Vec<String> = Vec::new();
     let mut buf = String::new();
-    for sentence in paragraph.split_inclusive(['.', '!', '?', '\n']) {
+
+    for sentence in paragraph.split_inclusive(SENTENCE_ENDERS) {
         if !buf.is_empty()
             && approx_token_count(&buf) + approx_token_count(sentence) > TARGET_TOKENS
         {
             out.push(std::mem::take(&mut buf).trim().to_string());
         }
-        /* A single sentence can still exceed the target, so fall back to words
-        rather than emitting something unbounded. */
         if approx_token_count(sentence) > TARGET_TOKENS {
-            for word in sentence.split_whitespace() {
-                if approx_token_count(&buf) + approx_token_count(word) > TARGET_TOKENS
-                    && !buf.is_empty()
-                {
-                    out.push(std::mem::take(&mut buf).trim().to_string());
-                }
-                if !buf.is_empty() {
-                    buf.push(' ');
-                }
-                buf.push_str(word);
+            /* One sentence too big on its own. Flush what is held, then break
+            the sentence itself rather than emitting it whole. */
+            if !buf.trim().is_empty() {
+                out.push(std::mem::take(&mut buf).trim().to_string());
             }
+            buf.clear();
+            out.extend(hard_split(sentence));
         } else {
             buf.push_str(sentence);
         }
     }
+
     if !buf.trim().is_empty() {
         out.push(buf.trim().to_string());
     }
-    out.retain(|p| !p.is_empty());
+    out.retain(|p| !p.trim().is_empty());
     out
 }
 
-/// Approximate token count from word count.
-fn approx_token_count(text: &str) -> usize {
-    let words = text.split_whitespace().count();
-    (words as f32 * APPROX_TOKENS_PER_WORD) as usize
+/// Cut text into pieces of at most `TARGET_TOKENS`, at a space when there is
+/// one nearby and at a character boundary otherwise.
+///
+/// The previous last resort was `split_whitespace`, which returns the entire
+/// input as a single item for Japanese, Chinese, Korean, Thai and Lao. The
+/// "fallback" therefore emitted exactly what it was meant to break up.
+fn hard_split(text: &str) -> Vec<String> {
+    let mut pieces = Vec::new();
+    let mut current = String::new();
+    let mut tokens = 0usize;
+    /* Where the last space sat in `current`, so a break can prefer it. */
+    let mut last_space: Option<usize> = None;
+
+    for c in text.chars() {
+        let cost = if is_unspaced_script(c) { 1 } else { 0 };
+        if c.is_whitespace() {
+            last_space = Some(current.len());
+        }
+        current.push(c);
+        tokens += cost;
+
+        /* Spaced text is measured by words, so its cost only lands at a
+        boundary; recount when there is no unspaced character to charge for. */
+        let measured = if tokens > 0 {
+            tokens
+        } else {
+            approx_token_count(&current)
+        };
+
+        if measured >= TARGET_TOKENS {
+            match last_space {
+                Some(at) if at > 0 => {
+                    let (head, tail) = current.split_at(at);
+                    let head = head.trim().to_string();
+                    let tail = tail.trim_start().to_string();
+                    if !head.is_empty() {
+                        pieces.push(head);
+                    }
+                    current = tail;
+                }
+                _ => {
+                    pieces.push(std::mem::take(&mut current).trim().to_string());
+                }
+            }
+            last_space = None;
+            tokens = approx_token_count(&current);
+        }
+    }
+
+    if !current.trim().is_empty() {
+        pieces.push(current.trim().to_string());
+    }
+    pieces.retain(|p| !p.is_empty());
+    pieces
 }
 
-/// Extract the last N approximate tokens from text for chunk overlap.
-fn get_overlap_text(text: &str, target_tokens: usize) -> String {
-    let words: Vec<&str> = text.split_whitespace().collect();
-    let target_words = (target_tokens as f32 / APPROX_TOKENS_PER_WORD) as usize;
+/// Scripts written without spaces between words.
+///
+/// Counting whitespace-separated words is meaningless for these: a page of
+/// Japanese is one "word", so every length check based on it reads as almost
+/// nothing.
+fn is_unspaced_script(c: char) -> bool {
+    matches!(c as u32,
+        0x3040..=0x30FF     // hiragana and katakana
+        | 0x3400..=0x4DBF   // CJK unified ideographs extension A
+        | 0x4E00..=0x9FFF   // CJK unified ideographs
+        | 0xF900..=0xFAFF   // CJK compatibility ideographs
+        | 0xAC00..=0xD7AF   // hangul syllables
+        | 0x0E00..=0x0E7F   // thai
+        | 0x0E80..=0x0EFF   // lao
+    )
+}
 
-    if words.len() <= target_words {
+/// Approximate token count.
+///
+/// This was word count times 1.3, and the header called it "conservative for
+/// CJK". It was the exact opposite. Japanese, Chinese, Korean and Thai are
+/// written without spaces, so `split_whitespace` returns one item for an entire
+/// document: five thousand characters of Japanese counted as one token, the
+/// 400-token target was never reached, and the whole document became a single
+/// chunk. Retrieval then had nothing to rank and every citation pointed at the
+/// entire file.
+///
+/// Characters in those scripts are counted individually, which is close to what
+/// real tokenizers do and errs slightly high, so chunks come out a little small
+/// rather than unbounded. Text in spaced scripts counts exactly as before, so
+/// nothing already indexed changes shape.
+fn approx_token_count(text: &str) -> usize {
+    let mut unspaced = 0usize;
+    let mut words = 0usize;
+    let mut inside_word = false;
+
+    for c in text.chars() {
+        if is_unspaced_script(c) {
+            unspaced += 1;
+            inside_word = false;
+        } else if c.is_whitespace() {
+            inside_word = false;
+        } else if !inside_word {
+            inside_word = true;
+            words += 1;
+        }
+    }
+
+    unspaced + (words as f32 * APPROX_TOKENS_PER_WORD) as usize
+}
+
+/// Extract roughly the last N tokens of a chunk, to overlap into the next one.
+///
+/// Measured the same way the budget is. Taking the last N whitespace-separated
+/// words returned the entire text for an unspaced script, since it is one
+/// "word", so the overlap was the whole chunk and every chunk after the first
+/// began with a full copy of its predecessor.
+fn get_overlap_text(text: &str, target_tokens: usize) -> String {
+    if approx_token_count(text) <= target_tokens {
         return text.to_string();
     }
 
-    words[words.len() - target_words..].join(" ")
+    /* Walk back from the end until enough tokens are held. char_indices keeps
+    every candidate on a character boundary, so no slice can split one. */
+    let mut start = text.len();
+    for (index, c) in text.char_indices().rev() {
+        let piece = &text[index..];
+        if approx_token_count(piece) >= target_tokens {
+            start = index;
+            /* Prefer beginning at a word boundary where the script has them. */
+            if !is_unspaced_script(c) {
+                if let Some(space) = piece.find(char::is_whitespace) {
+                    start = index + space + 1;
+                }
+            }
+            break;
+        }
+        start = index;
+    }
+
+    text[start..].trim_start().to_string()
 }
 
 #[cfg(test)]
