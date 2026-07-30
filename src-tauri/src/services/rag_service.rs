@@ -27,6 +27,9 @@ const RAG_TOP_K: usize = 10;
 const MAX_HISTORY_MESSAGES: usize = 20;
 /* Headroom for tokenizer variance, since chars/4 is an estimate. */
 const SAFETY_MARGIN_TOKENS: u32 = 256;
+/* Below this there is no room for a passage worth reading, so no sources are
+sent at all rather than a fragment that crowds out the system prompt. */
+const MIN_USEFUL_SOURCE_TOKENS: u32 = 256;
 /* The note map stays small: it is a hint, not the payload. */
 const NOTE_MAP_MAX_EDGES: usize = 40;
 
@@ -135,7 +138,23 @@ pub fn prepare_rag_context(
         + estimate_tokens(&note_map)
         + answer_tokens
         + SAFETY_MARGIN_TOKENS;
-    let mut budget = context_window.saturating_sub(fixed_cost).max(512);
+    /* What is genuinely left for sources.
+
+    This used to be `saturating_sub(fixed_cost).max(512)`. The floor was meant to
+    guarantee some context, but it did the opposite where it mattered: once a long
+    conversation pushed the fixed cost past the window, the subtraction saturated
+    to zero and the floor then added 512 tokens of sources on top of a prompt that
+    was already too big. The server does not reject that, it truncates from the
+    front, and the front is the system prompt, so the model loses the instruction
+    to cite anything at exactly the moment the prompt is most crowded.
+
+    Nothing is better than something here: dropping sources costs grounding for
+    one turn, while overrunning costs the rules for the whole answer. */
+    let mut budget = context_window.saturating_sub(fixed_cost);
+    if budget < MIN_USEFUL_SOURCE_TOKENS {
+        /* Not enough room for even one worthwhile passage. */
+        budget = 0;
+    }
 
     let mut context_blocks: Vec<String> = Vec::new();
     let mut sources: Vec<RetrievedSource> = Vec::new();
@@ -158,9 +177,10 @@ pub fn prepare_rag_context(
         };
         let block = format!("{}\n{}\n", source_label, r.content);
         let cost = estimate_tokens(&block);
-        if cost > budget && !context_blocks.is_empty() {
-            /* Window full: later, lower-ranked chunks wait for a bigger
-            model. Stop rather than truncate mid-passage. */
+        /* Stop rather than truncate mid-passage. The `!is_empty()` exception
+        that used to be here let the highest-ranked chunk in whatever its size,
+        so a single long passage could overrun the window on its own. */
+        if cost > budget {
             break;
         }
         budget = budget.saturating_sub(cost);
@@ -386,6 +406,50 @@ mod tests {
             reserved < smallest_window / 2,
             "reserved {reserved} of {smallest_window} leaves too little for sources"
         );
+    }
+
+    /// The budget rule, extracted so it can be exercised without a database.
+    fn source_budget(context_window: u32, fixed_cost: u32) -> u32 {
+        let budget = context_window.saturating_sub(fixed_cost);
+        if budget < MIN_USEFUL_SOURCE_TOKENS {
+            0
+        } else {
+            budget
+        }
+    }
+
+    #[test]
+    fn a_crowded_window_sends_no_sources_rather_than_overrunning() {
+        /* The old floor returned 512 here, which added sources to a prompt that
+        was already over the window. The server truncates from the front, so the
+        system prompt went first and the model lost the instruction to cite. */
+        assert_eq!(source_budget(4096, 5000), 0);
+        assert_eq!(source_budget(4096, 4096), 0);
+        assert_eq!(source_budget(4096, 4000), 0, "96 spare is not a passage");
+    }
+
+    #[test]
+    fn a_roomy_window_spends_what_is_left() {
+        assert_eq!(source_budget(8192, 2000), 6192);
+        assert_eq!(source_budget(128_000, 3000), 125_000);
+    }
+
+    #[test]
+    fn the_allowance_change_widens_the_budget_on_a_local_model() {
+        /* The concrete gain from matching the reservation to the request: on the
+        conservative 4096 window every local chat gets this much more room for
+        sources than it did. */
+        let fixed_without_answer = 800;
+        let before = source_budget(4096, fixed_without_answer + 2048 + SAFETY_MARGIN_TOKENS);
+        let after = source_budget(
+            4096,
+            fixed_without_answer + answer_allowance(true) + SAFETY_MARGIN_TOKENS,
+        );
+        assert!(
+            after > before,
+            "expected more room, got {before} then {after}"
+        );
+        assert_eq!(after - before, 2048 - answer_allowance(true));
     }
 
     #[test]

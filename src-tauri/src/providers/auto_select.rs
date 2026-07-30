@@ -136,6 +136,21 @@ pub fn context_window(kind: &str, model: &str) -> Option<u32> {
                 Some(128_000)
             }
         }
+        /* Locally hosted servers deliberately return None, which the caller
+        turns into a conservative 4096.
+
+        It is tempting to map a model name to its published window instead:
+        Llama 3.2 is 128k, Qwen 3 is 32k, and assuming 4096 leaves most of that
+        unused. The reason not to is that the binding limit is the server's
+        setting, not the model's capability. Ollama defaults `num_ctx` to 4096
+        whatever the model can do, and a prompt built for 128k against a server
+        configured for 4k is not rejected, it is silently truncated from the
+        front, which is where the system prompt lives. Under-using the window
+        costs some retrieval quality; overrunning it removes the instructions
+        that make the answer cite anything.
+
+        The right fix is to ask the server (Ollama exposes this on /api/show,
+        llama.cpp on /props) rather than to guess more optimistically. */
         _ => None,
     }
 }
@@ -143,6 +158,28 @@ pub fn context_window(kind: &str, model: &str) -> Option<u32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn local_servers_report_no_known_window() {
+        /* Deliberate: the caller falls back to a conservative 4096 because the
+        server's configured context, not the model's published maximum, is what
+        binds. Returning a large number here would overrun a default Ollama and
+        truncate the system prompt away. */
+        assert_eq!(context_window("ollama", "llama3.2:3b"), None);
+        assert_eq!(context_window("lmstudio", "local-model"), None);
+        assert_eq!(context_window("llamacpp", "local-model"), None);
+        assert_eq!(context_window("custom", "whatever"), None);
+    }
+
+    #[test]
+    fn hosted_providers_report_their_real_window() {
+        assert_eq!(
+            context_window("anthropic", "claude-opus-4-8"),
+            Some(200_000)
+        );
+        assert!(context_window("openai", "gpt-5.1").unwrap() >= 128_000);
+        assert!(context_window("gemini", "gemini-2.5-pro").unwrap() > 1_000_000);
+    }
 
     #[test]
     fn tiers_recognise_flagships_and_light_models() {
