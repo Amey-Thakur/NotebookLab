@@ -4,6 +4,26 @@ All notable changes to NotebookLab will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.4] - 2026-07-30
+
+### Fixed
+
+- Chat answers were grounded in fewer sources than they should have been. Packing
+  the context reserved 2048 tokens for the answer while a local model was only
+  ever asked for 900, so on the conservative 4096-token window more than a
+  thousand tokens were held back for an answer that could not use them and
+  passages that would have fitted were dropped. One function now decides the
+  allowance and both the packing and the request read it.
+- A long conversation could push the prompt past the context window. The floor
+  that was meant to guarantee some room for sources added 512 tokens on top of a
+  prompt that was already too big; a server does not reject that, it truncates
+  from the front, which is where the system prompt lives, so the model lost the
+  instruction to cite its sources exactly when the prompt was most crowded. No
+  sources are sent now when there is no room for them.
+- A single very long passage could overrun the window on its own, because the
+  highest-ranked chunk was admitted regardless of its size.
+
+
 ## [0.7.3] - 2026-07-30
 
 ### Changed
