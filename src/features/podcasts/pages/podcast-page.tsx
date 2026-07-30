@@ -26,9 +26,10 @@ import { formatError } from "@/lib/format-error";
 import {
   GAP_BETWEEN_SENTENCES_MS,
   GAP_BETWEEN_SPEAKERS_MS,
-  SPEECH_RATE,
   pickVoices,
+  prosodyFor,
   toSegments,
+  voicesAreBasic,
 } from "../lib/speech";
 import { usePersistentDraft, useRetainedState } from "@/lib/use-persistent-draft";
 import { NotebookScope } from "@/components/shared/notebook-scope";
@@ -208,8 +209,25 @@ export function PodcastPage() {
     setPlayback(IDLE);
   }, [script]);
 
-  /* Two voices chosen by quality, not by guessing at names. */
-  const chosenVoices = useMemo(() => pickVoices(voices), [voices]);
+  /* Two voices chosen by quality, not by guessing at names. An explicit choice
+     overrides it, because taste is not something a score can settle. */
+  const [voiceA, setVoiceA] = useRetainedState<string>("notebooklab-audio-voice-a", "");
+  const [voiceB, setVoiceB] = useRetainedState<string>("notebooklab-audio-voice-b", "");
+  const chosenVoices = useMemo(() => {
+    const auto = pickVoices(voices);
+    const byName = (name: string) => voices.find((v) => v.name === name);
+    return { a: byName(voiceA) ?? auto.a, b: byName(voiceB) ?? auto.b };
+  }, [voices, voiceA, voiceB]);
+
+  /* English voices, best first, for the two pickers. */
+  const voiceOptions = useMemo(
+    () =>
+      voices
+        .filter((v) => v.lang.toLowerCase().startsWith("en"))
+        .slice()
+        .sort((x, y) => x.name.localeCompare(y.name)),
+    [voices],
+  );
 
   const playScript = useCallback(() => {
     if (!script || isPlaying) return;
@@ -234,10 +252,14 @@ export function PodcastPage() {
       const voice = segment.speaker === "A" ? chosenVoices.a : chosenVoices.b;
       if (voice) utterance.voice = voice;
 
-      utterance.rate = SPEECH_RATE;
-      /* A nudge, not a costume: the two voices already sound different, so
-      this only reinforces which is which. */
-      utterance.pitch = segment.speaker === "A" ? 1.04 : 0.96;
+      /* Vary the delivery a little per sentence. Identical settings for every
+      sentence is what makes read-aloud drone; the variation is derived from the
+      sentence so the same script always sounds the same. */
+      const prosody = prosodyFor(segment.text, index);
+      utterance.rate = prosody.rate;
+      /* A nudge on top, not a costume: the two voices already sound different,
+      so this only reinforces which is which. */
+      utterance.pitch = prosody.pitch * (segment.speaker === "A" ? 1.03 : 0.97);
 
       utterance.onstart = () => setPlayback({ playing: true, turn: segment.turn });
 
@@ -367,6 +389,49 @@ export function PodcastPage() {
       </div>
 
       {/* Script display + playback */}
+      {/* Voice choice. The automatic pick is by quality markers, which cannot
+          settle taste, and on a machine with several good voices the pair
+          matters more to how human this sounds than any pacing does. */}
+      {voiceOptions.length > 1 && (
+        <div className="border border-border bg-surface-2 p-4 mb-6">
+          <h2 className="text-xs font-mono tracking-widest uppercase text-text-4 mb-3">
+            Voices
+          </h2>
+          <div className="flex flex-col sm:flex-row gap-3">
+            {([
+              ["A", voiceA, setVoiceA] as const,
+              ["B", voiceB, setVoiceB] as const,
+            ]).map(([which, value, set]) => (
+              <label key={which} className="flex-1 text-xs text-text-3">
+                Speaker {which}
+                <select
+                  value={value}
+                  onChange={(e) => set(e.target.value)}
+                  className="mt-1 w-full px-2 py-2 text-sm bg-surface border border-border
+                             text-text-1 outline-none focus:border-accent-dim"
+                >
+                  <option value="">Best available</option>
+                  {voiceOptions.map((v) => (
+                    <option key={v.name} value={v.name}>
+                      {v.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ))}
+          </div>
+
+          {voicesAreBasic(voices) && (
+            <p className="mt-3 text-xs text-text-4">
+              Only basic system voices are installed, which is why this sounds
+              robotic. On Windows, Settings then Time &amp; language then Speech
+              offers free natural voices; installing one and picking it here is the
+              single biggest improvement available.
+            </p>
+          )}
+        </div>
+      )}
+
       {script && (
         <div>
           <div className="flex items-center justify-between mb-4">

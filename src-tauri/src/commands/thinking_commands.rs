@@ -62,15 +62,20 @@ fn gather_context(
     Ok(passages.join("\n\n---\n\n"))
 }
 
-const MIND_MAP_PROMPT: &str = include_str!("../../resources/prompts/mind-map.txt");
+/* Thinking Partner used the same mind-map prompt as the Studio, so the two
+features produced the same output from the same sources and one of them was
+redundant. The Studio keeps the mind map, which is what an outline of a topic
+should look like. This asks a different question: how the ideas stand against
+each other, and where the thinking is unfinished. */
+const IDEA_SPACE_PROMPT: &str = include_str!("../../resources/prompts/idea-space.txt");
 const SOCRATIC_PROMPT: &str = include_str!("../../resources/prompts/socratic.txt");
 
-/// Start a mind map and return its job id at once.
+/// Start an idea space and return its job id at once.
 ///
 /// `document_ids` narrows the sources to the documents the user picked; empty
 /// means the whole notebook, which is what it always did.
 #[tauri::command(rename_all = "snake_case")]
-pub fn generate_mind_map(
+pub fn generate_idea_space(
     app: tauri::AppHandle,
     notebook_id: String,
     topic: String,
@@ -85,19 +90,22 @@ pub fn generate_mind_map(
     job_runner::spawn(
         &app,
         Generation {
-            kind: "mindmap",
-            label: format!("Mind map: {}", topic.trim()),
+            kind: "ideaspace",
+            label: format!("Idea space: {}", topic.trim()),
             notebook_id,
-            system_prompt: MIND_MAP_PROMPT.to_string(),
+            system_prompt: IDEA_SPACE_PROMPT.to_string(),
             max_tokens: 2048,
-            temperature: 0.3,
+            /* A shade warmer than the Studio's mind map: naming a tension takes
+            more interpretation than listing themes, and at 0.3 models tend to
+            restate the headings instead. */
+            temperature: 0.4,
             purpose: TaskPurpose::Quality,
         },
         Box::new(move |conn| gather_context(conn, &nb, &tp, 15, &docs)),
         Box::new(move |context| {
             format!(
                 "<document_context>\n{context}\n</document_context>\n\n\
-                 Generate a mind map about: {topic}"
+                 Map the ideas, tensions and open questions around: {topic}"
             )
         }),
         Box::new(Ok),

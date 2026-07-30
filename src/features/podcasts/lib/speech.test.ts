@@ -14,7 +14,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { pickVoices, toSegments, voiceQuality } from "./speech";
+import { pickVoices, prosodyFor, toSegments, voiceQuality, voicesAreBasic } from "./speech";
 
 function voice(name: string, extra: Partial<SpeechSynthesisVoice> = {}): SpeechSynthesisVoice {
   return {
@@ -128,5 +128,67 @@ describe("toSegments", () => {
   it("produces nothing for empty turns rather than an empty utterance", () => {
     expect(toSegments([{ speaker: "A", text: "   " }])).toEqual([]);
     expect(toSegments([])).toEqual([]);
+  });
+});
+
+describe("prosodyFor", () => {
+  it("is deterministic, so a script sounds the same every time", () => {
+    /* Random variation would mean the same audio read differently on each
+       playback, which is unsettling rather than natural. */
+    expect(prosodyFor("A sentence.", 0)).toEqual(prosodyFor("A sentence.", 0));
+  });
+
+  it("varies between sentences", () => {
+    const a = prosodyFor("First sentence here.", 0);
+    const b = prosodyFor("A different sentence entirely.", 1);
+    expect(a.rate === b.rate && a.pitch === b.pitch).toBe(false);
+  });
+
+  it("lifts every question above every statement", () => {
+    /* The lift has to beat the sentence-to-sentence variation, or a question can
+       land lower than the statement before it and the rise that makes it sound
+       like a question is simply absent. */
+    const questions = Array.from({ length: 50 }, (_, i) =>
+      prosodyFor(`Is number ${i} really right?`, i).pitch,
+    );
+    const statements = Array.from({ length: 50 }, (_, i) =>
+      prosodyFor(`Number ${i} is right.`, i).pitch,
+    );
+    expect(Math.min(...questions)).toBeGreaterThan(Math.max(...statements));
+  });
+
+  it("stays within a range that still sounds like a person", () => {
+    /* Past a couple of percent it reads as a fault rather than as speech. */
+    for (let i = 0; i < 200; i += 1) {
+      const { rate, pitch } = prosodyFor(`sentence number ${i} of the script.`, i);
+      expect(rate).toBeGreaterThan(0.85);
+      expect(rate).toBeLessThan(1.1);
+      expect(pitch).toBeGreaterThan(0.9);
+      expect(pitch).toBeLessThan(1.1);
+    }
+  });
+});
+
+describe("voicesAreBasic", () => {
+  it("flags a machine with only old desktop voices", () => {
+    expect(
+      voicesAreBasic([
+        { name: "Microsoft Zira Desktop", lang: "en-US", localService: true } as SpeechSynthesisVoice,
+      ]),
+    ).toBe(true);
+  });
+
+  it("does not flag a machine with neural voices", () => {
+    expect(
+      voicesAreBasic([
+        { name: "Microsoft Aria (Natural)", lang: "en-US", localService: false } as SpeechSynthesisVoice,
+      ]),
+    ).toBe(false);
+  });
+
+  it("says nothing when voices have not loaded yet", () => {
+    /* getVoices() is empty until the engine is ready; warning then would show
+       the hint to everyone on first paint. */
+    expect(voicesAreBasic([])).toBe(false);
   });
 });
