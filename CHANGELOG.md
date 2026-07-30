@@ -4,6 +4,28 @@ All notable changes to NotebookLab will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.5] - 2026-07-30
+
+### Fixed
+
+- Documents in Japanese, Chinese, Korean, Thai and Lao were not being split into
+  chunks at all. Length was measured by counting whitespace-separated words, and
+  those scripts are written without spaces, so five thousand characters of
+  Japanese counted as a single token: the target was never reached and an entire
+  document became one chunk. Retrieval then had nothing to rank, and every
+  citation pointed at the whole file rather than a passage. Characters in those
+  scripts are now counted individually.
+- Sentence splitting only recognised the ASCII full stop, so it never fired on
+  text ending in the full-width stop those languages use. The last-resort split
+  had the same blind spot: it broke on spaces, which that text does not have.
+- Chunk overlap took the last N whitespace-separated words, which for an unspaced
+  script is the entire chunk, so every chunk after the first began with a
+  complete copy of its predecessor.
+
+Text in spaced scripts counts exactly as it did before, so nothing already
+indexed changes shape.
+
+
 ## [0.7.4] - 2026-07-30
 
 ### Fixed
