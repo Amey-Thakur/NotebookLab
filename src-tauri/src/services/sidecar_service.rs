@@ -27,7 +27,7 @@ pub const STATE_CRASHED: u8 = 3;
 pub const STATE_STOPPING: u8 = 4;
 
 /// Serializable state for the frontend.
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SidecarState {
     Stopped,
@@ -93,8 +93,21 @@ impl SidecarManager {
     }
 
     /// Store the spawned child process handle.
+    ///
+    /// Any handle already held is killed first. Today the start command's atomic
+    /// transition makes a second spawn impossible, so this never fires; it is
+    /// here because dropping a `CommandChild` does not stop the process it
+    /// refers to. If that guard is ever loosened, the failure would be a
+    /// llama-server left running with nothing holding its handle, invisible
+    /// until the user noticed the memory. Cheaper to make it unreachable than to
+    /// rely on a caller elsewhere staying correct.
     pub fn set_child(&self, child: CommandChild) {
         let mut guard = self.child.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(previous) = guard.take() {
+            let pid = previous.pid();
+            tracing::warn!("Replacing a live llama-server handle (PID {pid}); killing it first");
+            previous.kill().ok();
+        }
         *guard = Some(child);
     }
 
@@ -375,4 +388,80 @@ fn num_cpus() -> usize {
     std::thread::available_parallelism()
         .map(|n| n.get())
         .unwrap_or(4)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_second_start_cannot_win_the_transition() {
+        /* The guard that stops two llama-servers being spawned. Only one caller
+        may move out of Stopped, and the loser reads the running status instead
+        of launching a process whose handle would then be replaced. */
+        let mgr = SidecarManager::new();
+        assert!(mgr.try_transition(STATE_STOPPED, STATE_STARTING));
+        assert!(!mgr.try_transition(STATE_STOPPED, STATE_STARTING));
+    }
+
+    #[test]
+    fn a_crashed_sidecar_can_be_restarted() {
+        /* Crashed is recoverable; the user should not have to restart the app. */
+        let mgr = SidecarManager::new();
+        mgr.set_state(STATE_CRASHED);
+        assert!(mgr.try_transition(STATE_CRASHED, STATE_STARTING));
+    }
+
+    #[test]
+    fn a_clean_stop_is_not_reported_as_a_crash() {
+        /* The exit watcher marks Crashed only from Starting or Ready. A stop has
+        already moved the state to Stopped, and overwriting it there would strand
+        the manager in a phantom crash and show the user an error for something
+        they asked for. */
+        let mgr = SidecarManager::new();
+        mgr.set_state(STATE_STOPPED);
+        assert!(!mgr.try_transition(STATE_STARTING, STATE_CRASHED));
+        assert!(!mgr.try_transition(STATE_READY, STATE_CRASHED));
+        assert_eq!(mgr.current_state(), SidecarState::Stopped);
+    }
+
+    #[test]
+    fn an_unexpected_exit_while_running_is_a_crash() {
+        let mgr = SidecarManager::new();
+        mgr.set_state(STATE_READY);
+        assert!(mgr.try_transition(STATE_READY, STATE_CRASHED));
+        assert_eq!(mgr.current_state(), SidecarState::Crashed);
+    }
+
+    #[test]
+    fn an_exit_during_startup_is_also_a_crash() {
+        /* A model too large for the machine dies before it is ever Ready. */
+        let mgr = SidecarManager::new();
+        mgr.set_state(STATE_STARTING);
+        assert!(mgr.try_transition(STATE_STARTING, STATE_CRASHED));
+    }
+
+    #[test]
+    fn shutdown_is_safe_from_every_state() {
+        /* Called on app exit whatever happened before, including twice. */
+        for start in [STATE_STOPPED, STATE_STARTING, STATE_READY, STATE_CRASHED] {
+            let mgr = SidecarManager::new();
+            mgr.set_state(start);
+            mgr.shutdown();
+            mgr.shutdown();
+            assert_eq!(mgr.current_state(), SidecarState::Stopped);
+        }
+    }
+
+    #[test]
+    fn an_unknown_state_byte_reads_as_stopped() {
+        /* From<u8> has to be total. Anything unrecognised must fail safe to a
+        state the user can start from, not to a phantom running one. */
+        assert_eq!(SidecarState::from(200), SidecarState::Stopped);
+    }
+
+    #[test]
+    fn a_fresh_manager_is_stopped() {
+        assert_eq!(SidecarManager::new().current_state(), SidecarState::Stopped);
+    }
 }
