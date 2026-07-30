@@ -200,9 +200,16 @@ fn host_is_allowed(url: &str) -> bool {
         return false;
     }
 
-    ALLOWED_HOSTS
-        .iter()
-        .any(|allowed| host == *allowed || host.ends_with(&format!(".{allowed}")))
+    ALLOWED_HOSTS.iter().any(|allowed| {
+        if host == *allowed {
+            return true;
+        }
+        /* A subdomain: the dot is required, so `evil-huggingface.co` does not
+        qualify. Built once rather than borrowed inline, which clippy reads as
+        a reference it has to dereference straight back. */
+        let suffix = format!(".{allowed}");
+        host.ends_with(suffix.as_str())
+    })
 }
 
 /// Global download guard: prevents concurrent downloads.
