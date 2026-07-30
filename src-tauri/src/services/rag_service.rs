@@ -33,11 +33,27 @@ const MIN_USEFUL_SOURCE_TOKENS: u32 = 256;
 /* The note map stays small: it is a hint, not the payload. */
 const NOTE_MAP_MAX_EDGES: usize = 40;
 
-/// Rough token estimate (~4 characters per token for English-like text).
-/// Used only for context budgeting, never for the usage display, which shows
-/// real numbers reported by providers.
+/// Rough token estimate, used only for context budgeting. Never for the usage
+/// display, which shows real numbers reported by providers.
+///
+/// Bytes divided by four is a fair rule for English. It is not for CJK, where a
+/// character is three bytes and roughly one token, so the same rule guesses
+/// three quarters of the real cost and the prompt is built too large. Since the
+/// only consequence of over-running is the server silently truncating the system
+/// prompt away, the estimate has to err high on that text, not low.
 fn estimate_tokens(text: &str) -> u32 {
-    (text.len() as u32) / 4 + 1
+    let mut bytes = 0usize;
+    let mut wide = 0usize;
+    for c in text.chars() {
+        let len = c.len_utf8();
+        if len >= 3 {
+            /* Roughly one token each: count directly rather than by byte. */
+            wide += 1;
+        } else {
+            bytes += len;
+        }
+    }
+    (bytes / 4 + wide + 1) as u32
 }
 
 /// A retrieved source chunk with its real relevance score, kept so citations
@@ -450,6 +466,26 @@ mod tests {
             "expected more room, got {before} then {after}"
         );
         assert_eq!(after - before, 2048 - answer_allowance(true));
+    }
+
+    #[test]
+    fn wide_characters_are_not_under_counted() {
+        /* Bytes over four guesses three quarters of the real cost for CJK, and
+        under-counting is the dangerous direction: it builds a prompt too large,
+        and the server truncates the system prompt away rather than complaining. */
+        let japanese = "\u{6a5f}\u{68b0}\u{5b66}\u{7fd2}";
+        assert!(
+            estimate_tokens(japanese) >= 4,
+            "four characters must cost at least four tokens"
+        );
+    }
+
+    #[test]
+    fn ascii_costs_about_a_quarter_of_its_length() {
+        /* The English rule is unchanged, so existing budgets behave as before. */
+        let text = "a".repeat(400);
+        let estimate = estimate_tokens(&text);
+        assert!((99..=102).contains(&estimate), "got {estimate}");
     }
 
     #[test]

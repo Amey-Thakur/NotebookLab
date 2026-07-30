@@ -249,6 +249,86 @@ fn search_like(
 mod tests {
     use super::*;
 
+    /// A database with the real schema and the real FTS5 table, holding one
+    /// chunk of the given text.
+    fn db_with_chunk(content: &str) -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+        for sql in [
+            include_str!("../../resources/migrations/001_initial_schema.sql"),
+            include_str!("../../resources/migrations/002_chat_tables.sql"),
+            include_str!("../../resources/migrations/003_fts5_search.sql"),
+        ] {
+            conn.execute_batch(sql).unwrap();
+        }
+        conn.execute(
+            "INSERT INTO notebooks (id, name, created_at, updated_at)
+             VALUES ('nb', 'Test', '2026-01-01', '2026-01-01')",
+            [],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO documents (id, notebook_id, title, file_path, file_type, file_hash,
+                                    file_size, status, created_at, updated_at)
+             VALUES ('doc', 'nb', 'Doc', '(test)', 'txt', 'h', 1, 'processed',
+                     '2026-01-01', '2026-01-01')",
+            [],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO chunks (id, document_id, content, position, heading_context,
+                                 token_count, created_at)
+             VALUES ('c1', 'doc', ?1, 0, '', 10, '2026-01-01')",
+            rusqlite::params![content],
+        )
+        .unwrap();
+        conn
+    }
+
+    #[test]
+    fn english_search_finds_a_word() {
+        let conn = db_with_chunk("Retrieval augmented generation grounds every answer.");
+        let hits = search_chunks(&conn, "nb", "augmented", 10).unwrap();
+        assert_eq!(hits.len(), 1);
+    }
+
+    #[test]
+    fn a_japanese_substring_is_still_found() {
+        /* FTS5's default tokenizer treats a run of CJK as a single token, so a
+        search for part of a compound matches nothing through the index. The
+        LIKE fallback is what rescues it, and this test exists so that fallback
+        is never optimised away as redundant: without it, search and chat return
+        nothing at all for these languages. */
+        let conn = db_with_chunk("\u{6a5f}\u{68b0}\u{5b66}\u{7fd2}\u{306f}\u{4eba}\u{5de5}\u{77e5}\u{80fd}\u{306e}\u{4e00}\u{5206}\u{91ce}\u{3067}\u{3059}");
+        let hits = search_chunks(&conn, "nb", "\u{6a5f}\u{68b0}", 10).unwrap();
+        assert_eq!(hits.len(), 1, "a partial CJK match must still be found");
+    }
+
+    #[test]
+    fn search_is_scoped_to_its_notebook() {
+        /* Leaking another notebook's passages into an answer would be a privacy
+        failure, not just a relevance one. */
+        let conn = db_with_chunk("Retrieval augmented generation.");
+        let hits = search_chunks(&conn, "other-notebook", "augmented", 10).unwrap();
+        assert!(hits.is_empty());
+    }
+
+    #[test]
+    fn a_query_of_only_operators_finds_nothing_and_does_not_error() {
+        /* The sanitiser empties this, and the LIKE fallback then runs with a
+        wildcard-free pattern. Neither may raise. */
+        let conn = db_with_chunk("Retrieval augmented generation.");
+        assert!(search_chunks(&conn, "nb", "***", 10).unwrap().is_empty());
+    }
+
+    #[test]
+    fn a_like_wildcard_in_the_query_is_not_treated_as_a_wildcard() {
+        /* Otherwise a search for "%" returns every chunk in the notebook. */
+        let conn = db_with_chunk("Retrieval augmented generation.");
+        assert!(search_chunks(&conn, "nb", "%", 10).unwrap().is_empty());
+        assert!(search_chunks(&conn, "nb", "_", 10).unwrap().is_empty());
+    }
+
     #[test]
     fn ordinary_words_become_quoted_phrases() {
         /* Quoting is what forces literal matching. Without it every word is
