@@ -25,9 +25,7 @@ use crate::services::search_service;
 const RAG_SYSTEM_PROMPT: &str = include_str!("../../resources/prompts/rag-system.txt");
 const RAG_TOP_K: usize = 10;
 const MAX_HISTORY_MESSAGES: usize = 20;
-/* Reserved room inside the context window: the answer itself plus headroom
-for tokenizer variance, since chars/4 is an estimate. */
-const ANSWER_TOKENS: u32 = 2048;
+/* Headroom for tokenizer variance, since chars/4 is an estimate. */
 const SAFETY_MARGIN_TOKENS: u32 = 256;
 /* The note map stays small: it is a hint, not the payload. */
 const NOTE_MAP_MAX_EDGES: usize = 40;
@@ -62,6 +60,7 @@ pub fn prepare_rag_context(
     user_message: &str,
     query_vector: Option<&[f32]>,
     context_window: u32,
+    answer_tokens: u32,
 ) -> AppResult<RagContext> {
     /* Verify conversation belongs to this notebook */
     let convo = conversation_repository::get_conversation(conn, conversation_id)?;
@@ -134,7 +133,7 @@ pub fn prepare_rag_context(
             .sum::<u32>()
         + estimate_tokens(user_message)
         + estimate_tokens(&note_map)
-        + ANSWER_TOKENS
+        + answer_tokens
         + SAFETY_MARGIN_TOKENS;
     let mut budget = context_window.saturating_sub(fixed_cost).max(512);
 
@@ -245,6 +244,26 @@ fn build_note_map(conn: &Connection, notebook_id: &str) -> String {
 /// times out.
 const LOCAL_CHAT_MAX_TOKENS: u32 = 900;
 
+/// What a hosted model is allowed to write.
+const CLOUD_CHAT_MAX_TOKENS: u32 = 2048;
+
+/// How many tokens to set aside for the answer when packing the context.
+///
+/// This has to be the number the request will actually ask for. It was a
+/// constant 2048 while local models were capped at 900, so on every local model
+/// more than a thousand tokens of context window were reserved for an answer
+/// that could never use them, and passages that would have fitted were dropped.
+/// Retrieval got quietly worse on exactly the setup the app is built around.
+///
+/// One function decides it, and both the packing and the request read it here.
+pub fn answer_allowance(is_local: bool) -> u32 {
+    if is_local {
+        LOCAL_CHAT_MAX_TOKENS
+    } else {
+        CLOUD_CHAT_MAX_TOKENS
+    }
+}
+
 /// Phase 2: Call LLM provider (no locks needed).
 pub fn call_llm(providers: &ProviderRouter, context: &RagContext) -> AppResult<String> {
     call_llm_streaming(providers, context, &mut |_| {})
@@ -263,11 +282,7 @@ pub fn call_llm_streaming(
     let (_, is_local) = providers.active_profile();
     let request = ChatRequest {
         messages: context.messages.clone(),
-        max_tokens: Some(if is_local {
-            LOCAL_CHAT_MAX_TOKENS
-        } else {
-            2048
-        }),
+        max_tokens: Some(answer_allowance(is_local)),
         temperature: Some(0.3),
         purpose: TaskPurpose::Balanced,
     };
@@ -337,4 +352,47 @@ pub fn start_conversation(
     )?;
 
     Ok(convo.id)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_local_answer_is_shorter_than_a_hosted_one() {
+        assert!(answer_allowance(true) < answer_allowance(false));
+    }
+
+    #[test]
+    fn the_allowance_is_what_the_request_will_ask_for() {
+        /* This is the bug this function exists to prevent. The packing reserved
+        a constant 2048 while a local request asked for 900, so on every local
+        model more than a thousand tokens of context window were held back for an
+        answer that could never use them, and source passages that would have
+        fitted were dropped instead. Both sides read this now, so they cannot
+        drift apart again without this test failing. */
+        assert_eq!(answer_allowance(true), LOCAL_CHAT_MAX_TOKENS);
+        assert_eq!(answer_allowance(false), CLOUD_CHAT_MAX_TOKENS);
+    }
+
+    #[test]
+    fn the_allowance_leaves_room_in_a_small_window() {
+        /* A 4k window is the smallest thing anyone runs. Reserving the answer
+        plus the margin must still leave usable room for sources, or retrieval
+        returns nothing and every answer is ungrounded. */
+        let smallest_window = 4096;
+        let reserved = answer_allowance(true) + SAFETY_MARGIN_TOKENS;
+        assert!(
+            reserved < smallest_window / 2,
+            "reserved {reserved} of {smallest_window} leaves too little for sources"
+        );
+    }
+
+    #[test]
+    fn token_estimate_grows_with_length() {
+        /* Used only for budgeting, so it needs to be monotonic and never zero,
+        not accurate. A zero would let unlimited text through the budget. */
+        assert!(estimate_tokens("") >= 1);
+        assert!(estimate_tokens("a short line") < estimate_tokens(&"a longer line ".repeat(20)));
+    }
 }

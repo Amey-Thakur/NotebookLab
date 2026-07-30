@@ -93,11 +93,15 @@ pub fn send_chat_message(
         search and assemble. Both DB and provider locks are released before the
         model call, exactly as before. */
         handle.begin(jobs, PHASE_SOURCES);
-        let (query_vector, context_window) = {
+        let (query_vector, context_window, answer_tokens) = {
             let providers = state.provider_read()?;
+            let (_, is_local) = providers.active_profile();
             (
                 providers.embed(&message).ok().flatten(),
                 providers.planned_context_window(),
+                /* The same number the request will ask for, so the packing does
+                not reserve window for an answer that cannot use it. */
+                rag_service::answer_allowance(is_local),
             )
         };
         let rag_context = {
@@ -109,6 +113,7 @@ pub fn send_chat_message(
                 &message,
                 query_vector.as_deref(),
                 context_window,
+                answer_tokens,
             )?
         };
         handle.finish_phase(jobs, PHASE_SOURCES);
