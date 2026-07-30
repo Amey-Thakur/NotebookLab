@@ -244,3 +244,75 @@ fn search_like(
 
     Ok(results)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ordinary_words_become_quoted_phrases() {
+        /* Quoting is what forces literal matching. Without it every word is
+        parsed as FTS5 syntax. */
+        assert_eq!(
+            sanitize_fts5_query("prompt engineering"),
+            "\"prompt\" \"engineering\""
+        );
+    }
+
+    #[test]
+    fn a_double_quote_cannot_escape_the_quoting() {
+        /* The one character that matters. If it survived, a query could close
+        the phrase and write its own FTS5 expression. */
+        let out = sanitize_fts5_query("foo\" OR \"bar");
+        assert!(!out.contains("\"\""), "no empty phrase: {out}");
+        assert_eq!(out, "\"foo\" \"OR\" \"bar\"");
+    }
+
+    #[test]
+    fn operators_are_stripped_or_neutralised() {
+        /* Prefix and column syntax must not survive as syntax. */
+        assert_eq!(sanitize_fts5_query("data*"), "\"data\"");
+        assert_eq!(sanitize_fts5_query("^start"), "\"start\"");
+        assert_eq!(sanitize_fts5_query("(a)"), "\"a\"");
+        /* A colon is a column filter outside quotes and a literal inside one,
+        so quoting is enough and the character can be kept. */
+        assert_eq!(sanitize_fts5_query("content:secret"), "\"content:secret\"");
+    }
+
+    #[test]
+    fn boolean_keywords_are_searched_for_literally() {
+        /* Someone searching for the word "and" should find it, not run a
+        conjunction. */
+        assert_eq!(
+            sanitize_fts5_query("cats AND dogs"),
+            "\"cats\" \"AND\" \"dogs\""
+        );
+        assert_eq!(sanitize_fts5_query("a NOT b"), "\"a\" \"NOT\" \"b\"");
+        assert_eq!(sanitize_fts5_query("x NEAR y"), "\"x\" \"NEAR\" \"y\"");
+    }
+
+    #[test]
+    fn a_query_of_only_operators_comes_back_empty() {
+        /* The caller returns no results for an empty query rather than passing
+        an empty MATCH to SQLite, which is an error. */
+        assert_eq!(sanitize_fts5_query("***"), "");
+        assert_eq!(sanitize_fts5_query("\"\""), "");
+        assert_eq!(sanitize_fts5_query("   "), "");
+        assert_eq!(sanitize_fts5_query(""), "");
+    }
+
+    #[test]
+    fn hyphens_and_apostrophes_survive() {
+        /* Both are ordinary in real queries and harmless inside a phrase. A
+        hyphen outside quotes would be a NOT. */
+        assert_eq!(sanitize_fts5_query("well-known"), "\"well-known\"");
+        assert_eq!(sanitize_fts5_query("it's"), "\"it's\"");
+    }
+
+    #[test]
+    fn non_ascii_is_preserved() {
+        /* Stripping by byte rather than by character would corrupt these. */
+        assert_eq!(sanitize_fts5_query("café"), "\"café\"");
+        assert_eq!(sanitize_fts5_query("日本語"), "\"日本語\"");
+    }
+}
