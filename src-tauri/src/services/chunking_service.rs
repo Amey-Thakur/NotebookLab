@@ -149,44 +149,51 @@ fn split_oversized(paragraph: &str) -> Vec<String> {
 fn hard_split(text: &str) -> Vec<String> {
     let mut pieces = Vec::new();
     let mut current = String::new();
-    let mut tokens = 0usize;
-    /* Where the last space sat in `current`, so a break can prefer it. */
+    let (mut dense, mut words) = (0usize, 0usize);
+    let mut inside_word = false;
+    /* Byte offset of the last space seen in `current`, so a break can prefer a
+    word boundary when the script has them. */
     let mut last_space: Option<usize> = None;
 
     for c in text.chars() {
-        let cost = if is_unspaced_script(c) { 1 } else { 0 };
         if c.is_whitespace() {
             last_space = Some(current.len());
         }
+        classify(c, &mut dense, &mut words, &mut inside_word);
         current.push(c);
-        tokens += cost;
 
-        /* Spaced text is measured by words, so its cost only lands at a
-        boundary; recount when there is no unspaced character to charge for. */
-        let measured = if tokens > 0 {
-            tokens
-        } else {
-            approx_token_count(&current)
-        };
-
-        if measured >= TARGET_TOKENS {
-            match last_space {
-                Some(at) if at > 0 => {
-                    let (head, tail) = current.split_at(at);
-                    let head = head.trim().to_string();
-                    let tail = tail.trim_start().to_string();
-                    if !head.is_empty() {
-                        pieces.push(head);
-                    }
-                    current = tail;
-                }
-                _ => {
-                    pieces.push(std::mem::take(&mut current).trim().to_string());
-                }
-            }
-            last_space = None;
-            tokens = approx_token_count(&current);
+        if measure(dense, words) < TARGET_TOKENS {
+            continue;
         }
+
+        match last_space {
+            Some(at) if at > 0 => {
+                let (head, tail) = current.split_at(at);
+                let head = head.trim().to_string();
+                let tail = tail.trim_start().to_string();
+                if !head.is_empty() {
+                    pieces.push(head);
+                }
+                current = tail;
+            }
+            _ => {
+                /* No space to break at: an unspaced script, or one enormous
+                token. Cut on the character boundary, which is always safe. */
+                pieces.push(std::mem::take(&mut current).trim().to_string());
+            }
+        }
+        last_space = None;
+        /* Recount what was carried over. The counters are incremental, and an
+        earlier version left them holding the pre-split totals: for spaced text
+        that froze the measurement, so nothing split after the first cut and the
+        remainder came out as one unbounded piece. */
+        let counted = count_parts(&current);
+        dense = counted.0;
+        words = counted.1;
+        inside_word = current
+            .chars()
+            .next_back()
+            .is_some_and(|c| !c.is_whitespace() && !is_unspaced_script(c));
     }
 
     if !current.trim().is_empty() {
@@ -194,6 +201,34 @@ fn hard_split(text: &str) -> Vec<String> {
     }
     pieces.retain(|p| !p.is_empty());
     pieces
+}
+
+/// Fold one character into a running count of unspaced characters and words.
+fn classify(c: char, dense: &mut usize, words: &mut usize, inside_word: &mut bool) {
+    if is_unspaced_script(c) {
+        *dense += 1;
+        *inside_word = false;
+    } else if c.is_whitespace() {
+        *inside_word = false;
+    } else if !*inside_word {
+        *inside_word = true;
+        *words += 1;
+    }
+}
+
+/// Combine the two counts into an approximate token total.
+fn measure(dense: usize, words: usize) -> usize {
+    dense + (words as f32 * APPROX_TOKENS_PER_WORD) as usize
+}
+
+/// Count a whole string, for the places that need to start over.
+fn count_parts(text: &str) -> (usize, usize) {
+    let (mut dense, mut words) = (0usize, 0usize);
+    let mut inside_word = false;
+    for c in text.chars() {
+        classify(c, &mut dense, &mut words, &mut inside_word);
+    }
+    (dense, words)
 }
 
 /// Scripts written without spaces between words.
@@ -228,23 +263,8 @@ fn is_unspaced_script(c: char) -> bool {
 /// rather than unbounded. Text in spaced scripts counts exactly as before, so
 /// nothing already indexed changes shape.
 fn approx_token_count(text: &str) -> usize {
-    let mut unspaced = 0usize;
-    let mut words = 0usize;
-    let mut inside_word = false;
-
-    for c in text.chars() {
-        if is_unspaced_script(c) {
-            unspaced += 1;
-            inside_word = false;
-        } else if c.is_whitespace() {
-            inside_word = false;
-        } else if !inside_word {
-            inside_word = true;
-            words += 1;
-        }
-    }
-
-    unspaced + (words as f32 * APPROX_TOKENS_PER_WORD) as usize
+    let (dense, words) = count_parts(text);
+    measure(dense, words)
 }
 
 /// Extract roughly the last N tokens of a chunk, to overlap into the next one.
