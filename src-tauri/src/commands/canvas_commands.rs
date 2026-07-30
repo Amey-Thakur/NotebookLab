@@ -19,9 +19,11 @@ use crate::database::repository::canvas_repository;
 use crate::error::{AppError, AppResult};
 use crate::state::AppState;
 
-/// Cap the stored scene so embedded images cannot grow the database without
-/// bound. Generous, but a real ceiling.
-const MAX_SCENE_BYTES: usize = 48 * 1024 * 1024;
+/* The ceiling now lives with the write itself, in canvas_repository, so every
+route into the database is covered rather than just this one. Checking here as
+well is not redundant: it refuses an oversized scene before it crosses the IPC
+boundary and before the database lock is taken. */
+use crate::database::repository::canvas_repository::MAX_SCENE_BYTES;
 
 #[tauri::command(rename_all = "snake_case")]
 pub fn get_or_create_canvas(state: State<'_, AppState>, notebook_id: String) -> AppResult<Canvas> {
