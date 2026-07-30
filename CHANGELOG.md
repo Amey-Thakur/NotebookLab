@@ -4,6 +4,30 @@ All notable changes to NotebookLab will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-07-30
+
+### Fixed
+
+- Importing a shared notebook could write a canvas of any size straight into the
+  database. The ceiling that stops embedded images growing the database without
+  bound lived in the save command, so the import path walked past it. The limit
+  now sits with the write itself, where no caller can route around it.
+- A notebook file with no name imported as a notebook with nothing to click, and
+  an absurdly long name broke every list it appeared in. Names are trimmed,
+  required, and capped.
+- The download host check compared the host case sensitively, so a legitimate
+  link written `HuggingFace.co` was refused, and it kept any userinfo and port in
+  the string it compared. It now parses the authority properly: a subdomain is
+  allowed because Hugging Face serves files from a CDN, a lookalike domain is not,
+  and text before an `@` cannot disguise the real host.
+
+### Changed
+
+- Notebook export and import, and the download host check, now have tests. Both
+  had none, and both are places where a defect either loses a user's data or
+  decides what gets written to disk and run as a model.
+
+
 ## [0.7.1] - 2026-07-30
 
 ### Fixed
