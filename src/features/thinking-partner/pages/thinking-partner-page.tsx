@@ -26,27 +26,27 @@ import { ROUTES } from "@/lib/constants";
 import { useNotebookStore } from "@/stores/notebook-store";
 import { useRetainedState } from "@/lib/use-persistent-draft";
 import { useJobRun } from "@/features/jobs/use-job-run";
-import { safeJson, type MindMap } from "@/features/studio/api/studio-api";
-import { MindMapView } from "@/features/studio/components/mind-map-view";
+import { safeJson } from "@/features/studio/api/studio-api";
+import { IdeaSpaceView, type IdeaSpace } from "../components/idea-space-view";
 
 
-type Mode = "mindmap" | "socratic";
+type Mode = "ideas" | "socratic";
 
 
 export function ThinkingPartnerPage() {
   const activeNotebookId = useNotebookStore((s) => s.activeNotebookId);
-  const [mode, setMode] = useRetainedState<Mode>("notebooklab-state-think-mode", "mindmap");
+  const [mode, setMode] = useRetainedState<Mode>("notebooklab-state-think-mode", "ideas");
   const [input, setInput] = useState("");
   const [result, setResult] = useRetainedState<string | null>(
     "notebooklab-state-think-result",
     null,
   );
 
-  /* One run per mode, each remembering its own job, so switching between Mind
-     Map and Socratic does not detach from a generation that is still going. */
-  const mindmap = useJobRun("generate_mind_map", "notebooklab-job-mindmap");
+  /* One run per mode, each remembering its own job, so switching between Idea
+     Space and Socratic does not detach from a generation that is still going. */
+  const ideas = useJobRun("generate_idea_space", "notebooklab-job-ideaspace");
   const socratic = useJobRun("generate_socratic_questions", "notebooklab-job-socratic");
-  const run = mode === "mindmap" ? mindmap : socratic;
+  const run = mode === "ideas" ? ideas : socratic;
 
   const [sources, setSources] = useRetainedState<string[]>(
     "notebooklab-think-sources",
@@ -64,7 +64,7 @@ export function ThinkingPartnerPage() {
     if (!text) return;
     setResult(null);
     void run.start(
-      mode === "mindmap"
+      mode === "ideas"
         ? { notebook_id: activeNotebookId, topic: text, document_ids: sources }
         : { notebook_id: activeNotebookId, thinking: text, document_ids: sources },
     );
@@ -95,7 +95,7 @@ export function ThinkingPartnerPage() {
 
         {/* Mode toggle */}
         <div className="flex gap-1 mb-4" role="group" aria-label="Thinking mode">
-          {([["mindmap", "Mind Map"], ["socratic", "Socratic"]] as const).map(([m, label]) => (
+          {([["ideas", "Idea Space"], ["socratic", "Socratic"]] as const).map(([m, label]) => (
             <button
               key={m}
               type="button"
@@ -126,8 +126,8 @@ export function ThinkingPartnerPage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submit()}
-            placeholder={mode === "mindmap" ? "Topic for mind map..." : "Describe your current thinking..."}
-            aria-label={mode === "mindmap" ? "Topic for mind map" : "Describe your current thinking"}
+            placeholder={mode === "ideas" ? "What are you trying to work out?" : "Describe your current thinking..."}
+            aria-label={mode === "ideas" ? "What are you trying to work out" : "Describe your current thinking"}
             className="flex-1 px-4 py-3 text-sm bg-surface border border-border text-text-1
                        placeholder:text-text-4 outline-none focus:border-accent-dim"
           />
@@ -137,7 +137,7 @@ export function ThinkingPartnerPage() {
             disabled={run.isRunning || !input.trim()}
             className="px-4 py-3 text-sm font-mono bg-primary text-on-primary disabled:opacity-50"
           >
-            {mode === "mindmap" ? "Generate" : "Ask"}
+            {mode === "ideas" ? "Map it" : "Ask"}
           </button>
         </div>
       </div>
@@ -160,27 +160,27 @@ export function ThinkingPartnerPage() {
           <div className="p-6 border border-border bg-surface">
             <div className="flex items-center gap-3 mb-4">
               <h2 className="text-xs font-mono tracking-widest uppercase text-text-4">
-                {mode === "mindmap" ? "Mind Map" : "Socratic Questions"}
+                {mode === "ideas" ? "Idea Space" : "Socratic Questions"}
               </h2>
               <div className="ml-auto">
                 <DownloadButton
-                  format={mode === "mindmap" ? "JSON" : "Markdown"}
-                  what={mode === "mindmap" ? "the mind map" : "the questions"}
+                  format={mode === "ideas" ? "JSON" : "Markdown"}
+                  what={mode === "ideas" ? "the idea space" : "the questions"}
                   onDownload={() =>
                     downloadText(
                       result,
                       toFileName(
-                        mode === "mindmap" ? "notebooklab-mind-map" : "notebooklab-socratic",
-                        mode === "mindmap" ? "json" : "md",
+                        mode === "ideas" ? "notebooklab-idea-space" : "notebooklab-socratic",
+                        mode === "ideas" ? "json" : "md",
                       ),
-                      mode === "mindmap" ? "application/json" : "text/markdown",
+                      mode === "ideas" ? "application/json" : "text/markdown",
                     )
                   }
                 />
               </div>
             </div>
-            {mode === "mindmap" ? (
-              <MindMapResult text={result} />
+            {mode === "ideas" ? (
+              <IdeaSpaceResult text={result} />
             ) : (
               <pre className="text-sm font-body text-text-2 whitespace-pre-wrap leading-relaxed">
                 {result}
@@ -192,8 +192,8 @@ export function ThinkingPartnerPage() {
         {!result && !run.job && run.ready && (
           <div className="flex items-center justify-center h-full text-text-4">
             <p className="text-sm">
-              {mode === "mindmap"
-                ? "Enter a topic to generate a mind map from your documents."
+              {mode === "ideas"
+                ? "Name what you are working out. This maps the claims, the evidence, the tensions between them, and what the sources leave open."
                 : "Describe what you're thinking about and get probing questions."}
             </p>
           </div>
@@ -203,11 +203,11 @@ export function ThinkingPartnerPage() {
   );
 }
 
-/* Parse the generated mind map and draw it, falling back to a plain message if
-   the model's reply was not usable. Parsing is in safeJson so no try/catch
-   sits in the render path. */
-function MindMapResult({ text }: { text: string }) {
-  const parsed = safeJson<MindMap>(text);
+/* Parse the generated space and draw it, falling back to a plain message if the
+   model's reply was not usable. Parsing is in safeJson so no try/catch sits in
+   the render path. */
+function IdeaSpaceResult({ text }: { text: string }) {
+  const parsed = safeJson<IdeaSpace>(text);
   if ("error" in parsed) {
     return (
       <p role="alert" className="text-sm text-error">
@@ -215,5 +215,14 @@ function MindMapResult({ text }: { text: string }) {
       </p>
     );
   }
-  return <MindMapView data={parsed.data} />;
+  /* A reply with no nodes is well-formed JSON and still useless, so it is
+     checked here rather than left to render as an empty canvas. */
+  if (!Array.isArray(parsed.data.nodes) || parsed.data.nodes.length === 0) {
+    return (
+      <p role="alert" className="text-sm text-error">
+        The map came back empty. Try naming the question more concretely.
+      </p>
+    );
+  }
+  return <IdeaSpaceView data={{ ...parsed.data, edges: parsed.data.edges ?? [] }} />;
 }

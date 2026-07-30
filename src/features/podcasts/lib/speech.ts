@@ -38,6 +38,62 @@ export const GAP_BETWEEN_SENTENCES_MS = 140;
 /** Engines start dropping audio somewhere past this; sentences stay well under. */
 const MAX_UTTERANCE_CHARS = 240;
 
+/**
+ * Small, deterministic variation in rate and pitch per sentence.
+ *
+ * A synthesizer given identical settings for every sentence produces a flat
+ * drone, which is most of what makes read-aloud sound artificial. Real speech
+ * varies continuously. This is not random: the same script must sound the same
+ * on every playback, so the variation is derived from the sentence itself.
+ *
+ * The amounts are deliberately small. Past roughly two percent it stops sounding
+ * like a person and starts sounding like a fault.
+ */
+export function prosodyFor(text: string, index: number): { rate: number; pitch: number } {
+  /* A cheap stable hash of the sentence, so the same words always get the same
+     delivery. */
+  let hash = index * 2654435761;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash ^ text.charCodeAt(i)) * 16777619;
+    hash >>>= 0;
+  }
+  const spread = ((hash % 1000) / 1000 - 0.5) * 2;
+
+  /* A question lifts at the end and is a touch slower; a long sentence is read
+     slightly faster, the way people hurry through a subordinate clause.
+
+     The question lift is deliberately larger than the whole sentence-to-sentence
+     spread. When they were the same size, a question could come out lower than
+     the statement before it, so the rise that makes it sound like a question was
+     not reliably there at all. */
+  const asks = text.trimEnd().endsWith("?");
+  const long = text.length > 140;
+  const wobble = spread * 0.015;
+
+  return {
+    rate: clamp(SPEECH_RATE + wobble + (long ? 0.02 : 0) + (asks ? -0.05 : 0), 0.8, 1.15),
+    pitch: clamp(1 + wobble + (asks ? 0.05 : 0), 0.85, 1.15),
+  };
+}
+
+function clamp(value: number, low: number, high: number): number {
+  return Math.min(high, Math.max(low, value));
+}
+
+/**
+ * Whether the best available voice is one of the old robotic ones.
+ *
+ * Worth telling the user: on Windows the neural voices are a free optional
+ * install, and no amount of pacing makes a 1990s formant synthesizer sound
+ * human. Without saying so, the app just sounds bad for no visible reason.
+ */
+export function voicesAreBasic(voices: SpeechSynthesisVoice[]): boolean {
+  if (voices.length === 0) return false;
+  const best = Math.max(...voices.map(voiceQuality));
+  /* Anything scoring at or below this has none of the quality markers. */
+  return best <= 1;
+}
+
 /** One thing to say: a single sentence, and which turn it belongs to. */
 export interface Segment {
   text: string;
