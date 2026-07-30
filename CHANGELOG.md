@@ -4,6 +4,20 @@ All notable changes to NotebookLab will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.7] - 2026-07-30
+
+### Changed
+
+- The local model server's lifecycle is now covered by tests: that a second start
+  cannot win the race and spawn a second process, that a crash is recoverable
+  without restarting the app, and that a stop the user asked for is never
+  reported back to them as a crash.
+- Replacing the handle to a running server kills it first. Dropping that handle
+  does not stop the process it refers to, so if the start guard were ever
+  loosened the result would be a llama-server running with nothing holding it,
+  invisible until the memory was noticed.
+
+
 ## [0.7.6] - 2026-07-30
 
 ### Fixed
