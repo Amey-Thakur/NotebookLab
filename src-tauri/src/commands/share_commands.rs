@@ -33,6 +33,8 @@ const BUNDLE_FORMAT: &str = "notebooklab-notebook";
 const BUNDLE_VERSION: u32 = 1;
 /* Cap the file we will read on import so a hostile bundle cannot exhaust memory. */
 const MAX_BUNDLE_BYTES: u64 = 256 * 1024 * 1024;
+/* Longer than any name someone types, short enough to render in a sidebar. */
+const MAX_NAME_BYTES: usize = 200;
 
 #[derive(Serialize, Deserialize)]
 pub struct NotebookBundle {
@@ -135,10 +137,22 @@ pub fn build_bundle(conn: &Connection, notebook_id: &str) -> AppResult<NotebookB
 pub fn write_bundle(conn: &Connection, bundle: NotebookBundle) -> AppResult<String> {
     let optional = |value: String| if value.is_empty() { None } else { Some(value) };
 
+    /* A bundle is a file from elsewhere, so its name is not to be trusted. An
+    empty one produces a notebook with nothing to click in the sidebar, and an
+    absurdly long one breaks every list it appears in. */
+    let name = bundle.notebook.name.trim();
+    if name.is_empty() {
+        return Err(AppError::InvalidInput(
+            "This notebook file has no name.".into(),
+        ));
+    }
+    let name =
+        crate::utils::text_utils::truncate_to_char_boundary(name, MAX_NAME_BYTES).to_string();
+
     let notebook = notebook_repository::create(
         conn,
         CreateNotebook {
-            name: bundle.notebook.name,
+            name,
             description: optional(bundle.notebook.description),
             color: optional(bundle.notebook.color),
         },
@@ -271,4 +285,147 @@ pub async fn import_notebook(app: tauri::AppHandle, src_path: String) -> AppResu
     })
     .await
     .map_err(|e| AppError::Internal(format!("Import task failed: {e}")))?
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A bundle with the given notebook name and nothing else in it.
+    fn bundle(name: &str) -> NotebookBundle {
+        NotebookBundle {
+            format: BUNDLE_FORMAT.to_string(),
+            version: BUNDLE_VERSION,
+            notebook: BundleNotebook {
+                name: name.to_string(),
+                description: String::new(),
+                color: String::new(),
+            },
+            notes: Vec::new(),
+            documents: Vec::new(),
+            canvas: String::new(),
+        }
+    }
+
+    /// An in-memory database with the real schema, so these exercise the same
+    /// statements and constraints the app runs against.
+    fn memory_db() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+        conn.execute_batch(include_str!(
+            "../../resources/migrations/001_initial_schema.sql"
+        ))
+        .unwrap();
+        conn.execute_batch(include_str!("../../resources/migrations/005_canvas.sql"))
+            .unwrap();
+        conn
+    }
+
+    #[test]
+    fn a_nameless_bundle_is_refused() {
+        /* Importing one produced a notebook with nothing to click on. */
+        let conn = memory_db();
+        assert!(write_bundle(&conn, bundle("")).is_err());
+        assert!(write_bundle(&conn, bundle("   ")).is_err());
+    }
+
+    #[test]
+    fn a_name_is_trimmed_and_capped() {
+        let conn = memory_db();
+        let id = write_bundle(&conn, bundle("  Reading list  ")).unwrap();
+        let created = notebook_repository::get_by_id(&conn, &id).unwrap();
+        assert_eq!(created.name, "Reading list");
+
+        let long = "n".repeat(MAX_NAME_BYTES * 3);
+        let id = write_bundle(&conn, bundle(&long)).unwrap();
+        let created = notebook_repository::get_by_id(&conn, &id).unwrap();
+        assert!(created.name.len() <= MAX_NAME_BYTES);
+    }
+
+    #[test]
+    fn an_import_round_trips_notes_and_chunks() {
+        let conn = memory_db();
+        let mut b = bundle("Imported");
+        b.notes.push(BundleNote {
+            title: "A note".into(),
+            content: "Its body".into(),
+        });
+        b.documents.push(BundleDocument {
+            title: "A document".into(),
+            file_type: "pdf".into(),
+            file_hash: "abc123".into(),
+            file_size: 10,
+            chunks: vec![BundleChunk {
+                content: "A passage".into(),
+                position: 0,
+                page_number: Some(1),
+                heading_context: "Intro".into(),
+                token_count: 3,
+            }],
+        });
+
+        let id = write_bundle(&conn, b).unwrap();
+        let notes = note_repository::list_by_notebook(&conn, &id).unwrap();
+        assert_eq!(notes.len(), 1);
+        let docs = document_repository::list_by_notebook(&conn, &id).unwrap();
+        assert_eq!(docs.len(), 1);
+        /* Imported documents must read as ready: their text is already in the
+        bundle, so leaving them pending would hide them from every feature that
+        filters on processed. */
+        assert_eq!(docs[0].status, DocumentStatus::Processed);
+        let chunks = chunk_repository::get_by_document(&conn, &docs[0].id).unwrap();
+        assert_eq!(chunks.len(), 1);
+        assert_eq!(chunks[0].content, "A passage");
+    }
+
+    #[test]
+    fn a_failed_import_leaves_no_notebook_behind() {
+        /* A document with no title violates the schema, so this fails partway
+        through and must roll the whole thing back rather than leave a
+        half-built notebook in the sidebar. */
+        let conn = memory_db();
+        let before = notebook_repository::list_all(&conn).unwrap().len();
+
+        let mut b = bundle("Doomed");
+        b.documents.push(BundleDocument {
+            title: "Fine".into(),
+            file_type: "pdf".into(),
+            file_hash: "h".into(),
+            file_size: 1,
+            chunks: vec![BundleChunk {
+                content: "text".into(),
+                /* A chunk pointing at no document would break the foreign key;
+                position is fine, so force the failure with the canvas below. */
+                position: 0,
+                page_number: None,
+                heading_context: String::new(),
+                token_count: 1,
+            }],
+        });
+        /* An oversized canvas is refused by the repository, which is the
+        failure this exercises. */
+        b.canvas = "x".repeat(canvas_repository::MAX_SCENE_BYTES + 1);
+
+        assert!(write_bundle(&conn, b).is_err());
+        assert_eq!(notebook_repository::list_all(&conn).unwrap().len(), before);
+    }
+
+    #[test]
+    fn an_oversized_canvas_cannot_be_written_through_import() {
+        /* The ceiling used to live only in the command, so this path wrote a
+        scene of any size straight into the database. */
+        let conn = memory_db();
+        let notebook = notebook_repository::create(
+            &conn,
+            CreateNotebook {
+                name: "Host".into(),
+                description: None,
+                color: None,
+            },
+        )
+        .unwrap();
+        let canvas = canvas_repository::get_or_create(&conn, &notebook.id).unwrap();
+        let huge = "x".repeat(canvas_repository::MAX_SCENE_BYTES + 1);
+        assert!(canvas_repository::update_scene(&conn, &canvas.id, &huge).is_err());
+    }
 }

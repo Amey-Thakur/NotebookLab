@@ -63,8 +63,25 @@ pub fn get_by_id(conn: &Connection, id: &str) -> AppResult<Canvas> {
     })
 }
 
+/// Cap the stored scene so embedded images cannot grow the database without
+/// bound. Generous, but a real ceiling.
+///
+/// This lives here rather than in the command because the command was the only
+/// thing enforcing it, and importing a shared notebook writes a scene through
+/// `update_scene` directly. A bundle could therefore carry a scene of any size up
+/// to the whole bundle limit and write it straight into the database, walking
+/// past the guard that exists to prevent exactly that. A limit that one caller
+/// can route around is not a limit.
+pub const MAX_SCENE_BYTES: usize = 48 * 1024 * 1024;
+
 /// Replace the stored scene JSON.
 pub fn update_scene(conn: &Connection, id: &str, scene: &str) -> AppResult<Canvas> {
+    if scene.len() > MAX_SCENE_BYTES {
+        return Err(AppError::InvalidInput(
+            "This canvas is too large to save. Try using fewer or smaller images.".into(),
+        ));
+    }
+
     let now = chrono::Utc::now().to_rfc3339();
     let affected = conn.execute(
         "UPDATE canvases SET scene = ?1, updated_at = ?2 WHERE id = ?3",
