@@ -76,10 +76,8 @@ pub(crate) fn decode_text(bytes: Vec<u8>) -> String {
 /// Decode a UTF-16 byte stream into a String using the given endianness. A
 /// trailing odd byte, if any, is dropped.
 fn decode_utf16(bytes: &[u8], to_u16: fn([u8; 2]) -> u16) -> String {
-    let units: Vec<u16> = bytes
-        .chunks_exact(2)
-        .map(|pair| to_u16([pair[0], pair[1]]))
-        .collect();
+    let (pairs, _) = bytes.as_chunks::<2>();
+    let units: Vec<u16> = pairs.iter().copied().map(to_u16).collect();
     String::from_utf16_lossy(&units)
 }
 

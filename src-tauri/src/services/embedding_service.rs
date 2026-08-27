@@ -191,9 +191,9 @@ fn floats_to_blob(floats: &[f32]) -> Vec<u8> {
 /// Convert a byte blob back to float32 values.
 fn blob_to_floats(blob: &[u8], expected_dims: usize) -> Vec<f32> {
     let mut floats = Vec::with_capacity(expected_dims);
-    for chunk in blob.chunks_exact(4) {
-        let bytes: [u8; 4] = chunk.try_into().unwrap_or([0; 4]);
-        floats.push(f32::from_le_bytes(bytes));
+    let (quads, _) = blob.as_chunks::<4>();
+    for bytes in quads {
+        floats.push(f32::from_le_bytes(*bytes));
     }
     floats
 }
