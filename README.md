@@ -38,6 +38,12 @@ does, why every answer carries its source, and how we built it
 
 </div>
 
+<br>
+
+---
+
+<br>
+
 **Jump to:**
 [What it does](#what-it-does) ·
 [Install](#install) ·
