@@ -34,7 +34,9 @@ does, why every answer carries its source, and how we built it
 
 <br>
 
-<img src="docs/brand/hero.svg" alt="NotebookLab answering a question with answers grounded in cited sources from the user's documents" width="820">
+<a href="https://amey-thakur.github.io/NotebookLab/" title="NotebookLab: a private, local-first notebook that answers from your own documents">
+  <img src="docs/brand/hero.svg" title="NotebookLab: a private, local-first notebook that answers from your own documents" alt="NotebookLab answering a question with answers grounded in cited sources from the user's documents" width="820">
+</a>
 
 <br>
 
