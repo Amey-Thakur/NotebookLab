@@ -1,0 +1,39 @@
+# NotebookLab
+
+> NotebookLab | Your thinking partner, on your machine. Import your
+> documents. Ask questions. Get answers with sources. Write connected notes,
+> search everything, and let a local AI help you think. Nothing leaves your
+> computer.
+
+Licence: CC BY 4.0, attribution required
+Repository created: 5 April 2026
+Work dated: 28 July 2026
+
+## What is in this repository
+
+- config, 5 files
+- docs, 14 files
+- scripts, 3 files
+- site, 6 files
+- src, 153 files
+- src-tauri, 121 files
+- CHANGELOG.md
+- CLAUDE.md
+- THIRD-PARTY-LICENSES.md
+- package-lock.json
+- package.json
+- tsconfig.json
+
+## Subject terms
+
+ai, knowledge-management, llm, local-ai, note-taking, notebook,
+notebooklab, notebooklm, notes-app, offline-first, pdf-chat,
+personal-knowledge-management, pkm, podcast-generator, privacy-first, rag,
+tauri
+
+## Where this sits
+
+- This repository: https://github.com/Amey-Thakur/NotebookLab
+- Project page: https://amey-thakur.github.io/NotebookLab/
+- Author: https://github.com/Amey-Thakur
+- Research notes and reflections: https://amey-thakur.github.io/
