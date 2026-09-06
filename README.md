@@ -294,7 +294,7 @@ and release, so the promise can be checked, not merely trusted.
 
 <div align="center">
 
-<a href="site/makers-pledge.png"><img src="site/makers-pledge.png" alt="The Makers' Pledge, a certificate of authenticity signed by Amey Thakur and Archit Konde: your work stays on your machine, the source stays open, and they ship only what they run themselves" width="520"></a>
+<a href="site/makers-pledge.png" title="The Makers' Pledge: your work stays on your machine, the source stays open, and we ship only what we run ourselves"><img src="site/makers-pledge.png" title="The Makers' Pledge: your work stays on your machine, the source stays open, and we ship only what we run ourselves" alt="The Makers' Pledge, a certificate of authenticity signed by Amey Thakur and Archit Konde: your work stays on your machine, the source stays open, and they ship only what they run themselves" width="520"></a>
 
 [**Download the certificate**](https://raw.githubusercontent.com/Amey-Thakur/NotebookLab/main/site/makers-pledge.png) &nbsp;·&nbsp; [Read the full pledge](docs/AUTHORS.md)
 
