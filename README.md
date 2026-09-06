@@ -2,7 +2,9 @@
 
 <br>
 
-<img src="site/favicon.svg" alt="NotebookLab icon" width="88">
+<a href="https://amey-thakur.github.io/NotebookLab/" title="NotebookLab: a private, local-first notebook that answers from your own documents">
+  <img src="site/favicon.svg" title="NotebookLab: a private, local-first notebook that answers from your own documents" alt="NotebookLab icon" width="88">
+</a>
 
 # NotebookLab
 
