@@ -294,7 +294,7 @@ and release, so the promise can be checked, not merely trusted.
 
 <div align="center">
 
-<a href="site/makers-pledge.png" title="The Makers' Pledge: your work stays on your machine, the source stays open, and we ship only what we run ourselves"><img src="site/makers-pledge.png" title="The Makers' Pledge: your work stays on your machine, the source stays open, and we ship only what we run ourselves" alt="The Makers' Pledge, a certificate of authenticity signed by Amey Thakur and Archit Konde: your work stays on your machine, the source stays open, and they ship only what they run themselves" width="520"></a>
+<a href="site/makers-pledge.png" title="The Makers' Pledge: your work stays on your machine, the source stays open, and we ship only what we run ourselves"><img src="site/makers-pledge.png" title="The Makers' Pledge: your work stays on your machine, the source stays open, and we ship only what we run ourselves" alt="The Makers' Pledge, a certificate of authenticity signed by Amey Thakur and Archit Konde: your work stays on your machine, the source stays open, and we ship only what we run ourselves" width="520"></a>
 
 [**Download the certificate**](https://raw.githubusercontent.com/Amey-Thakur/NotebookLab/main/site/makers-pledge.png) &nbsp;·&nbsp; [Read the full pledge](docs/AUTHORS.md)
 
@@ -310,6 +310,6 @@ the llama.cpp inference server, the ocrs OCR engine and rten runtime, and the
 Play, Source Serif 4, and JetBrains Mono typefaces.
 
 Built by [Amey Thakur](https://github.com/Amey-Thakur) and
-[Archit Konde](https://github.com/Archit-Konde). Their story, and the
-pledge they sign their names to, is in [The Makers](docs/AUTHORS.md)
+[Archit Konde](https://github.com/Archit-Konde). Our story, and the
+pledge we sign our names to, is in [The Makers](docs/AUTHORS.md)
 and on the About page inside the app.
