@@ -4,6 +4,31 @@ All notable changes to NotebookLab will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.13] - 2026-11-04
+
+### Security
+
+- Twenty-three npm advisories closed, among them one critical and eight high.
+  The critical and one high were in dompurify, which sanitises what the notes
+  editor renders and is the only one of these that ships to users; the rest were
+  build and test tooling (undici, vite, vitest, source-map-js, launch-editor,
+  zod). Rust crates were refreshed too, taking rustls to 0.23.46 and clearing
+  its three advisories.
+- Ten moderate advisories remain, all for minimatch, and all reached only
+  through eslint and typescript-eslint. Both are already on their newest
+  release, so there is nothing to upgrade to: npm's suggested fix would
+  downgrade typescript-eslint from 8.72.1 to 8.14.0, which trades a lint-time
+  denial of service for a year of lost lint coverage. It is development
+  tooling and never reaches a user's machine.
+
+### Changed
+
+- Every dependency that could move within its own major moved, which is 26 npm
+  packages, including the Milkdown editor, Tauri's own API and CLI, React and
+  React Router, and 213 Rust crates.
+- TypeScript stays at 6. typescript-eslint still refuses 7 outright, so taking
+  it would mean shipping with no lint coverage at all.
+
 ## [0.8.12] - 2026-08-02
 
 ### Fixed
